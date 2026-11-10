@@ -130,6 +130,8 @@ export interface LaunchTarget {
   score: number
   /** Icono de Windows como data URL, si se pudo obtener. */
   icon?: string
+  /** Veces que se ha abierto (solo en la lista de las más usadas). */
+  uses?: number
 }
 
 /** Servicios del sistema que el proceso principal pone a disposición de los comandos. */
@@ -178,6 +180,11 @@ export interface CommandContext {
   launcher: {
     search(query: string, limit: number): Promise<LaunchTarget[]>
     favorites(): Promise<LaunchTarget[]>
+    /** Las más usadas, de más a menos (frecuencia y lo reciente). */
+    mostUsed(limit: number): Promise<LaunchTarget[]>
+    /** Quita una de las más usadas. */
+    forgetUse(id: string): boolean
+    /** Abre y cuenta el uso. */
     open(id: string): Promise<Outcome>
     removeFavorite(id: string): boolean
   }

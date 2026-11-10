@@ -10,6 +10,8 @@ export function fakeContext(now = new Date(2026, 10, 10, 12, 0, 0).getTime()) {
     pomodoro: null as PomodoroStatus | null,
     apps: [] as LaunchTarget[],
     launched: [] as string[],
+    /** Ids de `apps`, de más a menos usada. */
+    mostUsed: [] as string[],
     clipboard: '',
     ai: { state: 'ready', model: 'gemma3:4b', models: ['gemma3:4b'] } as AiStatus,
     interpretResult: { kind: 'activate', commandId: 'youtube', text: 'pan casero' } as Outcome,
@@ -82,6 +84,17 @@ export function fakeContext(now = new Date(2026, 10, 10, 12, 0, 0).getTime()) {
     launcher: {
       search: async (q) => state.apps.filter((a) => a.name.toLowerCase().includes(q.toLowerCase())),
       favorites: async () => state.apps.filter((a) => a.favorite),
+      mostUsed: async (limit) =>
+        state.mostUsed
+          .map((id) => state.apps.find((a) => a.id === id))
+          .filter((a): a is LaunchTarget => !!a)
+          .slice(0, limit)
+          .map((a) => ({ ...a, uses: 3 })),
+      forgetUse: (targetId) => {
+        const before = state.mostUsed.length
+        state.mostUsed = state.mostUsed.filter((id) => id !== targetId)
+        return state.mostUsed.length < before
+      },
       open: async (targetId) => {
         state.launched.push(targetId)
         return { kind: 'close', mood: 'happy' }

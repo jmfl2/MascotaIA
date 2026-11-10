@@ -20,6 +20,7 @@ import { existsSync, readdirSync, statSync } from 'node:fs'
 import { basename, extname, isAbsolute, join, parse } from 'node:path'
 import type { LaunchTarget, Outcome } from '../../commands'
 import { normalize, matchScore } from '../../commands/match'
+import { rankUsage, recordUse, type UsageRecord } from '../../commands/usage'
 import { extractIcons, lowPriority } from './iconExtractor'
 import { arrayOf, isNum, isStr, newId, readJson, writeJson } from './jsonFile'
 
@@ -42,6 +43,8 @@ interface Favorite {
 }
 
 const FAVORITES_FILE = 'favorites.json'
+/** Cuántas veces (y cuándo) se ha abierto cada app o favorito. */
+const USAGE_FILE = 'usage.json'
 /** Iconos ya extraídos, para no repetir el trabajo en cada arranque. */
 const ICONS_FILE = 'icons.json'
 const REFRESH_AFTER_MS = 10 * 60_000
@@ -56,6 +59,7 @@ let index: Entry[] = []
 let indexedAt = 0
 let indexing: Promise<void> | null = null
 let favorites: Favorite[] | null = null
+let usage: UsageRecord[] | null = null
 /** Iconos de Electron (32 px), solo mientras no llegan los buenos. */
 const iconCache = new Map<string, string | null>()
 /** Iconos en alta resolución por elemento (ruta o shell:AppsFolder\<AppID>). */
@@ -142,6 +146,27 @@ export function addFavorites(paths: string[]): string[] {
     loadIcons(favorites.map(favoriteEntry))
   }
   return added
+}
+
+// --- Uso ---------------------------------------------------------------------------
+
+function loadUsage(): UsageRecord[] {
+  usage ??= readJson(
+    USAGE_FILE,
+    (raw) =>
+      arrayOf(raw, (u) =>
+        isStr(u.id, 1100) && isNum(u.score) && isNum(u.count) && isNum(u.lastUsedAt) && u.score > 0
+          ? { id: u.id, score: u.score, count: Math.max(1, Math.round(u.count)), lastUsedAt: u.lastUsedAt }
+          : null
+      ),
+    () => []
+  )
+  return usage
+}
+
+function saveUsage(next: UsageRecord[]): void {
+  usage = next
+  writeJson(USAGE_FILE, next)
 }
 
 // --- Índice de apps ------------------------------------------------------------
@@ -306,16 +331,34 @@ async function iconFor(e: Entry): Promise<string | undefined> {
   }
 }
 
-async function toTarget(e: Entry, score: number): Promise<LaunchTarget> {
+async function toTarget(e: Entry, score: number, uses?: number): Promise<LaunchTarget> {
   // Las apps guardan "Aplicación" como detalle; los favoritos, su ruta.
   const detail = e.favorite ? e.detail : t('Aplicación', 'Application')
-  return { id: e.id, name: e.name, detail, favorite: e.favorite, score, icon: await iconFor(e) }
+  return { id: e.id, name: e.name, detail, favorite: e.favorite, score, icon: await iconFor(e), uses }
 }
 
 // --- API para los comandos ---------------------------------------------------------
 
 function allEntries(): Entry[] {
   return [...loadFavorites().map(favoriteEntry), ...index]
+}
+
+async function openEntry(id: string): Promise<Outcome> {
+  const entry = allEntries().find((e) => e.id === id)
+  if (!entry) return { kind: 'error', message: t('Ya no está disponible', 'No longer available') }
+  if (entry.path) {
+    if (!existsSync(entry.path)) return { kind: 'error', message: t('No se encuentra: ¿se movió o se borró?', 'Not found: was it moved or deleted?') }
+    const error = await shell.openPath(entry.path)
+    return error ? { kind: 'error', message: `${t('No se pudo abrir', 'Could not open')}: ${error}` } : { kind: 'close', mood: 'happy' }
+  }
+  if (entry.appId && SAFE_APP_ID.test(entry.appId)) {
+    // Argumentos como array y sin shell: no hay interpretación de comandos.
+    const child = spawn('explorer.exe', [`shell:AppsFolder\\${entry.appId}`], { detached: true, stdio: 'ignore' })
+    child.on('error', (err) => console.warn('[lanzador] explorer.exe falló:', err))
+    child.unref()
+    return { kind: 'close', mood: 'happy' }
+  }
+  return { kind: 'error', message: t('No se puede abrir', "Can't be opened") }
 }
 
 export const launcherService = {
@@ -334,22 +377,32 @@ export const launcherService = {
     return Promise.all(loadFavorites().map((f) => toTarget(favoriteEntry(f), 100)))
   },
 
+  /** Las apps y favoritos más usados (los que ya no existen se saltan). */
+  async mostUsed(limit: number): Promise<LaunchTarget[]> {
+    if (!index.length) void refreshIndex() // sin índice aún, solo salen los favoritos
+    const byId = new Map(allEntries().map((e) => [e.id, e]))
+    const top: Array<{ e: Entry; uses: number }> = []
+    for (const r of rankUsage(loadUsage(), Date.now())) {
+      const e = byId.get(r.id)
+      if (e) top.push({ e, uses: r.count })
+      if (top.length >= limit) break
+    }
+    return Promise.all(top.map(({ e, uses }) => toTarget(e, 100, uses)))
+  },
+
+  /** Quita una app de las más usadas (vuelve a contar desde cero). */
+  forgetUse(id: string): boolean {
+    const list = loadUsage()
+    const next = list.filter((r) => r.id !== id)
+    if (next.length === list.length) return false
+    saveUsage(next)
+    return true
+  },
+
   async open(id: string): Promise<Outcome> {
-    const entry = allEntries().find((e) => e.id === id)
-    if (!entry) return { kind: 'error', message: t('Ya no está disponible', 'No longer available') }
-    if (entry.path) {
-      if (!existsSync(entry.path)) return { kind: 'error', message: t('No se encuentra: ¿se movió o se borró?', 'Not found: was it moved or deleted?') }
-      const error = await shell.openPath(entry.path)
-      return error ? { kind: 'error', message: `${t('No se pudo abrir', 'Could not open')}: ${error}` } : { kind: 'close', mood: 'happy' }
-    }
-    if (entry.appId && SAFE_APP_ID.test(entry.appId)) {
-      // Argumentos como array y sin shell: no hay interpretación de comandos.
-      const child = spawn('explorer.exe', [`shell:AppsFolder\\${entry.appId}`], { detached: true, stdio: 'ignore' })
-      child.on('error', (err) => console.warn('[lanzador] explorer.exe falló:', err))
-      child.unref()
-      return { kind: 'close', mood: 'happy' }
-    }
-    return { kind: 'error', message: t('No se puede abrir', "Can't be opened") }
+    const outcome = await openEntry(id)
+    if (outcome.kind === 'close') saveUsage(recordUse(loadUsage(), id, Date.now()))
+    return outcome
   },
 
   removeFavorite(id: string): boolean {

@@ -10,9 +10,10 @@
 import { t } from '../shared/i18n'
 import { looksLikeUrl } from '../security'
 import { ai } from './ai'
+import { launcher } from './launcher'
 import { link } from './link'
 import { COMMANDS, findCommandById } from './index'
-import type { CommandContext, CommandModule, Suggestion } from './types'
+import type { CommandContext, CommandModule, LaunchTarget, Suggestion } from './types'
 
 export interface Ranked {
   command: CommandModule
@@ -27,6 +28,8 @@ const MAX_GLOBAL_RANKED = 3
 const MAX_ROWS = 60
 /** Palabras mínimas para ofrecer la interpretación con IA. */
 export const MIN_INTERPRET_WORDS = 3
+/** Apps más usadas que se ven al abrir la barra, encima de los comandos. */
+export const MOST_USED_ROWS = 4
 
 async function safeSuggest(command: CommandModule, query: string, ctx: CommandContext): Promise<Ranked[]> {
   try {
@@ -38,6 +41,36 @@ async function safeSuggest(command: CommandModule, query: string, ctx: CommandCo
   }
 }
 
+/** Las apps que más abres, para tenerlas a un Intro nada más abrir la barra. */
+async function mostUsedRows(ctx: CommandContext): Promise<Ranked[]> {
+  let targets: LaunchTarget[]
+  try {
+    targets = await ctx.launcher.mostUsed(MOST_USED_ROWS)
+  } catch (err) {
+    console.warn('[comandos] no se pudieron leer las apps más usadas:', err)
+    return []
+  }
+  return targets.map((target) => ({
+    command: launcher,
+    suggestion: {
+      title: target.name,
+      subtitle: target.uses
+        ? `${t('Más usada', 'Most used')} · ${t(`abierta ${target.uses} ${target.uses === 1 ? 'vez' : 'veces'}`, `opened ${target.uses} ${target.uses === 1 ? 'time' : 'times'}`)}`
+        : t('Más usada', 'Most used'),
+      icon: target.icon ? { kind: 'image', src: target.icon } : undefined,
+      badge: target.favorite ? '★' : undefined,
+      run: () => ctx.launcher.open(target.id),
+      secondary: {
+        label: t('quitar de las más usadas', 'remove from most used'),
+        run: () => {
+          ctx.launcher.forgetUse(target.id)
+          return { kind: 'refresh' }
+        }
+      }
+    }
+  }))
+}
+
 export async function suggestFor(commandId: string | null, text: string, ctx: CommandContext): Promise<Ranked[]> {
   if (commandId) {
     const command = findCommandById(commandId)
@@ -45,7 +78,7 @@ export async function suggestFor(commandId: string | null, text: string, ctx: Co
   }
 
   if (!text.trim()) {
-    return COMMANDS.map((command) => ({
+    const commandRows: Ranked[] = COMMANDS.map((command) => ({
       command,
       suggestion: {
         title: command.name,
@@ -54,6 +87,7 @@ export async function suggestFor(commandId: string | null, text: string, ctx: Co
         run: () => ({ kind: 'activate', commandId: command.id })
       }
     }))
+    return [...(await mostUsedRows(ctx)), ...commandRows]
   }
 
   // Si se pega un enlace, lo primero es ofrecer comprobarlo.
