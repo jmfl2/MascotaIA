@@ -9,6 +9,10 @@ export interface TrayActions {
   isRobotVisible(): boolean
   openBar(): void
   changeShortcut(accelerator: string): boolean
+  isClipboardEnabled(): boolean
+  setClipboardEnabled(enabled: boolean): void
+  isPomodoroRunning(): boolean
+  stopPomodoro(): void
   quit(): void
 }
 
@@ -76,6 +80,15 @@ export function createTray(actions: TrayActions): Tray {
       },
       { type: 'separator' },
       {
+        label: 'Portapapeles inteligente',
+        type: 'checkbox',
+        checked: actions.isClipboardEnabled(),
+        click: (item) => actions.setClipboardEnabled(item.checked)
+      },
+      ...(actions.isPomodoroRunning()
+        ? [{ label: 'Detener pomodoro', click: () => actions.stopPomodoro() }]
+        : []),
+      {
         label: 'Iniciar con Windows',
         type: 'checkbox',
         checked: startsWithWindows(),
@@ -88,6 +101,8 @@ export function createTray(actions: TrayActions): Tray {
   }
 
   rebuild()
+  // El menú se rehace al abrirlo, para que refleje el estado actual (pomodoro...).
+  tray.on('right-click', rebuild)
   // Clic izquierdo: mostrar u ocultar el robot.
   tray.on('click', () => {
     actions.toggleRobot()

@@ -3,8 +3,11 @@
  * Lo comparten el proceso principal, el preload y los renderers para que
  * los nombres de canal y los tipos no se desincronicen.
  */
+import type { IconSpec } from '../commands/types'
 
-export type RobotState = 'idle' | 'listening' | 'thinking' | 'happy' | 'confused' | 'sleeping'
+export type { IconSpec }
+
+export type RobotState = 'idle' | 'listening' | 'thinking' | 'happy' | 'confused' | 'sleeping' | 'alert'
 
 /** Posición del cursor relativa al centro de la cara del robot, en píxeles. */
 export interface CursorOffset {
@@ -12,30 +15,114 @@ export interface CursorOffset {
   dy: number
 }
 
-export type RunResult = { ok: true } | { ok: false; error: string }
+/** Progreso del pomodoro para la barrita del pecho del robot (null = no hay). */
+export type PomodoroView = { phase: 'focus' | 'break'; progress: number } | null
+
+// --- Barra ----------------------------------------------------------------------
+
+/** Lo que la barra necesita saber de cada comando para pintar la etiqueta. */
+export interface CommandMeta {
+  id: string
+  name: string
+  prefixes: readonly string[]
+  placeholder: string
+  accent: string
+  iconPath: string
+}
 
 export interface AppInfo {
   /** Atajo global en formato de Electron, p. ej. "Control+Space". */
   shortcut: string
+  commands: CommandMeta[]
 }
 
+/** Vista serializable de una sugerencia (la acción real se queda en el proceso principal). */
+export interface ResultView {
+  title: string
+  subtitle?: string
+  icon: IconSpec
+  badge?: string
+  disabled?: boolean
+  /** Si existe, Supr ejecuta la acción secundaria ("borrar", "cancelar"...). */
+  secondaryLabel?: string
+  /** Comando al que pertenece la fila (para fijarlo con Tab). */
+  commandId: string
+}
+
+export interface QueryRequest {
+  seq: number
+  commandId: string | null
+  text: string
+}
+export interface QueryResponse {
+  seq: number
+  items: ResultView[]
+}
+
+export interface ExecuteRequest {
+  seq: number
+  index: number
+  secondary: boolean
+}
+export type ExecuteResponse =
+  | { kind: 'close' }
+  | { kind: 'error'; message: string }
+  | { kind: 'activate'; commandId: string }
+  | { kind: 'refresh' }
+  /** La lista cambió mientras tanto: hay que volver a consultar. */
+  | { kind: 'stale' }
+
+// --- Bocadillo --------------------------------------------------------------------
+
+export interface BubbleAction {
+  id: string
+  label: string
+  primary?: boolean
+}
+
+export interface BubbleView {
+  id: string
+  kind: 'clipboard' | 'reminder' | 'pomodoro' | 'info' | 'favorite'
+  title: string
+  text?: string
+  actions: BubbleAction[]
+  /** Se cierra solo tras este tiempo (null = hasta que el usuario actúe). */
+  timeoutMs: number | null
+  /** Lado del robot en el que aparece; la cola apunta hacia él. */
+  side: 'left' | 'right'
+  /** Sonar un aviso suave. */
+  chime?: boolean
+}
+
+// --- Canales ------------------------------------------------------------------------
+
 export const IPC = {
-  // Ventana del robot
-  robotSetIgnoreMouse: 'robot:set-ignore-mouse',
+  // Robot
   robotDragStart: 'robot:drag-start',
   robotDragEnd: 'robot:drag-end',
   robotClick: 'robot:click',
+  robotDrop: 'robot:drop',
   robotCursor: 'robot:cursor',
+  robotHover: 'robot:hover',
   robotState: 'robot:state',
   robotDragMoving: 'robot:drag-moving',
+  robotPomodoro: 'robot:pomodoro',
   // Barra de comandos
-  barRun: 'bar:run',
+  barQuery: 'bar:query',
+  barExecute: 'bar:execute',
   barHidden: 'bar:hidden',
   barRequestClose: 'bar:request-close',
+  barError: 'bar:error',
   barOpen: 'bar:open',
   barClose: 'bar:close',
-  barError: 'bar:error',
-  appInfo: 'app:info'
+  appInfo: 'app:info',
+  // Bocadillo
+  bubbleShow: 'bubble:show',
+  bubbleHide: 'bubble:hide',
+  bubbleHidden: 'bubble:hidden',
+  bubbleResize: 'bubble:resize',
+  bubbleAction: 'bubble:action',
+  bubbleDismiss: 'bubble:dismiss'
 } as const
 
 /** Función que, al llamarla, deja de escuchar el evento. */
@@ -44,26 +131,38 @@ export type Unsubscribe = () => void
 /** API que el preload expone en `window.mascota`. */
 export interface MascotaApi {
   robot: {
-    /** true = los clics atraviesan la ventana hasta el escritorio. */
-    setIgnoreMouse(ignore: boolean): void
     dragStart(): void
     /** Termina el arrastre; `moved` es false si fue un simple clic. */
     dragEnd(): Promise<{ moved: boolean }>
     click(): void
+    /** Archivos o carpetas soltados sobre el robot (se añaden a favoritos). */
+    dropFiles(files: File[]): void
     onCursor(cb: (offset: CursorOffset) => void): Unsubscribe
+    onHover(cb: (hover: boolean) => void): Unsubscribe
     onState(cb: (state: RobotState) => void): Unsubscribe
     onDragMoving(cb: () => void): Unsubscribe
+    onPomodoro(cb: (view: PomodoroView) => void): Unsubscribe
   }
   bar: {
-    run(commandId: string, query: string): Promise<RunResult>
+    query(req: QueryRequest): Promise<QueryResponse>
+    execute(req: ExecuteRequest): Promise<ExecuteResponse>
     /** La animación de cierre terminó: el proceso principal ya puede ocultar la ventana. */
     hidden(): void
     /** Pide cerrar la barra (Esc, clic fuera del panel). */
     requestClose(): void
-    /** Errores leves desde la barra (p. ej. consulta vacía) para que el robot reaccione. */
+    /** Error leve en la barra (p. ej. Intro sin nada) para que el robot reaccione. */
     reportError(): void
     onOpen(cb: () => void): Unsubscribe
     onClose(cb: () => void): Unsubscribe
-    getInfo(): Promise<AppInfo>
+    getInfo(): Promise<AppInfo | null>
+  }
+  bubble: {
+    action(bubbleId: string, actionId: string): void
+    dismiss(bubbleId: string): void
+    /** Altura del contenido, para ajustar la ventana. */
+    resize(height: number): void
+    hidden(): void
+    onShow(cb: (view: BubbleView) => void): Unsubscribe
+    onHide(cb: () => void): Unsubscribe
   }
 }

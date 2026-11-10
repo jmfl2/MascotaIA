@@ -12,7 +12,7 @@ import { loadPage, PRELOAD_PATH } from './paths'
 import { hardenWebContents, secureWebPreferences } from './security'
 
 /** Panel de 680 px + 20 px de margen por lado para la sombra. */
-const BAR_SIZE = { width: 720, height: 440 }
+const BAR_SIZE = { width: 720, height: 480 }
 /** Altura a la que aparece, como fracción de la pantalla. */
 const BAR_TOP = 0.2
 /** Si el renderer no confirma el cierre en este tiempo, ocultamos igualmente. */
