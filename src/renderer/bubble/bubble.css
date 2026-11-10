@@ -11,7 +11,8 @@ body {
   padding: 14px 16px 14px;
   border-radius: 22px;
   background: var(--glass-bg);
-  backdrop-filter: blur(40px) saturate(180%);
+  /* Sin backdrop-filter: en una ventana transparente no hay nada detrás que
+     desenfocar (el escritorio no le llega a Chromium) y cuesta GPU en cada fotograma. */
   border: 1px solid var(--glass-border);
   box-shadow:
     0 10px 30px rgba(15, 23, 42, 0.2),
@@ -20,7 +21,6 @@ body {
     inset 0 1px 0 var(--glass-shine);
   color: var(--text);
   opacity: 0;
-  will-change: transform, opacity;
 }
 
 /* Cola que apunta al robot */

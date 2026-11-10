@@ -222,7 +222,7 @@ export function isRobotVisible(): boolean {
 
 // --- Seguimiento del cursor -------------------------------------------------
 // El ratón casi nunca está sobre la ventana, así que preguntamos su posición
-// global unas 30 veces por segundo y enviamos solo los cambios.
+// global unas 60 veces por segundo y enviamos solo los cambios.
 
 function setHovering(value: boolean): void {
   const w = getRobotWindow()
@@ -248,7 +248,7 @@ function startCursorTracking(): void {
       dy: p.y - (b.y + b.height * FACE_CENTER.y)
     }
     w.webContents.send(IPC.robotCursor, offset)
-  }, 33)
+  }, 16)
 }
 
 function stopCursorTracking(): void {

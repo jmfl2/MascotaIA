@@ -12,7 +12,8 @@
   border-radius: 24px;
   background: var(--glass-bg);
   /* Difumina lo que haya detrás dentro de la ventana (el escritorio no: ver README). */
-  backdrop-filter: blur(40px) saturate(180%);
+  /* Sin backdrop-filter: en una ventana transparente no hay nada detrás que
+     desenfocar (el escritorio no le llega a Chromium) y cuesta GPU en cada fotograma. */
   border: 1px solid var(--glass-border);
   box-shadow:
     var(--shadow),
@@ -22,7 +23,6 @@
   overflow: hidden;
   opacity: 0;
   transform-origin: 50% 0;
-  will-change: transform, opacity;
 }
 
 /* --- Fila de búsqueda --- */

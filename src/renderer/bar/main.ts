@@ -12,6 +12,7 @@ import { animate } from 'motion'
 import { formatAccelerator } from '../../shared/accelerator'
 import { t } from '../../shared/i18n'
 import type { CommandMeta, ExecuteResponse, IconSpec, ResultView } from '../../shared/ipc'
+import { animateCrisp } from '../shared/crisp'
 import { localizeDocument } from '../shared/i18nDom'
 import './bar.css'
 import { createChatView } from './chat'
@@ -215,7 +216,7 @@ function activate(command: CommandMeta, rest: string): void {
   input.value = rest
   input.placeholder = command.placeholder
   selected = 0
-  animate(chip, { scale: [0.6, 1], opacity: [0, 1] }, { type: 'spring', visualDuration: 0.3, bounce: 0.4 })
+  animateCrisp(chip, { scale: [0.6, 1], opacity: [0, 1] }, { type: 'spring', visualDuration: 0.3, bounce: 0.4 })
   void refreshResults()
 }
 
@@ -240,7 +241,7 @@ function detectPrefix(): boolean {
 
 // --- Acciones -----------------------------------------------------------------------
 function shake(): void {
-  animate(panel, { x: [0, -10, 9, -6, 4, 0] }, { duration: 0.4, ease: 'easeOut' })
+  animateCrisp(panel, { x: [0, -10, 9, -6, 4, 0] }, { duration: 0.4, ease: 'easeOut' })
 }
 
 async function execute(secondary: boolean): Promise<void> {
@@ -390,14 +391,14 @@ api.onOpen(() => {
     shortcutHint.textContent = t(`${formatAccelerator(info.shortcut)} para abrir`, `${formatAccelerator(info.shortcut)} to open`)
   })
   void refreshResults() // los datos pueden haber cambiado (notas, pomodoro...)
-  animate(panel, { opacity: [0, 1], scale: [0.94, 1], y: [-14, 0] }, { ...SPRING_OPEN, opacity: { duration: 0.16, ease: 'easeOut' } })
+  animateCrisp(panel, { opacity: [0, 1], scale: [0.94, 1], y: [-14, 0] }, { ...SPRING_OPEN, opacity: { duration: 0.16, ease: 'easeOut' } })
   input.focus()
   input.select()
 })
 
 api.onClose(() => {
   const mySession = session
-  void animate(panel, { opacity: 0, scale: 0.97, y: -6 }, SPRING_CLOSE).finished.then(() => {
+  void animateCrisp(panel, { opacity: 0, scale: 0.97, y: -6 }, SPRING_CLOSE).finished.then(() => {
     // Si se volvió a abrir durante la animación, no ocultamos.
     if (mySession === session) api.hidden()
   })

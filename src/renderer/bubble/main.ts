@@ -5,6 +5,7 @@
  */
 import { animate } from 'motion'
 import type { BubbleView } from '../../shared/ipc'
+import { animateCrisp } from '../shared/crisp'
 import { localizeDocument } from '../shared/i18nDom'
 import './bubble.css'
 
@@ -105,7 +106,7 @@ api.onShow((view) => {
 
   const fromX = view.side === 'left' ? 18 : -18
   bubble.style.transformOrigin = view.side === 'left' ? '100% 50%' : '0% 50%'
-  animate(bubble, { opacity: [0, 1], scale: [0.7, 1], x: [fromX, 0] }, { ...SPRING_IN, opacity: { duration: 0.15 } })
+  animateCrisp(bubble, { opacity: [0, 1], scale: [0.7, 1], x: [fromX, 0] }, { ...SPRING_IN, opacity: { duration: 0.15 } })
   if (view.chime) chime()
   startCountdown()
 })
@@ -123,7 +124,7 @@ api.onHide(() => {
   const closing = current
   current = null
   const toX = closing?.side === 'left' ? 10 : -10
-  void animate(bubble, { opacity: 0, scale: 0.85, x: toX }, SPRING_OUT).finished.then(() => {
+  void animateCrisp(bubble, { opacity: 0, scale: 0.85, x: toX }, SPRING_OUT).finished.then(() => {
     if (!current) api.hidden() // si llegó otro mientras se cerraba, no ocultamos
   })
 })

@@ -97,13 +97,13 @@ export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" ar
       <stop offset="0" class="stop-eye" stop-opacity="0.9" />
       <stop offset="1" class="stop-eye" stop-opacity="0" />
     </radialGradient>
-    <filter id="f-eye-glow" x="-100%" y="-100%" width="300%" height="300%">
-      <feGaussianBlur stdDeviation="2.4" result="blur" />
-      <feMerge>
-        <feMergeNode in="blur" />
-        <feMergeNode in="SourceGraphic" />
-      </feMerge>
-    </filter>
+    <pattern id="p-hazard" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="9" height="9" fill="#f5c518" />
+      <rect width="4.5" height="9" fill="#17181c" />
+    </pattern>
+    <clipPath id="c-body">
+      <rect x="40" y="48" width="120" height="120" rx="54" />
+    </clipPath>
     <clipPath id="c-screen">
       <rect x="54" y="68" width="92" height="68" rx="30" />
     </clipPath>
@@ -123,6 +123,15 @@ export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" ar
     <!-- Accesorio: espada a la espalda (detrás del cuerpo) -->
     <g id="acc-espada" class="acc" transform="translate(150 54) rotate(36)">${SWORD}</g>
 
+    <!-- Accesorio: cuchillo de combate a la espalda (asoma la hoja por arriba) -->
+    <g id="acc-cuchillo" class="acc" transform="translate(62 62) rotate(-32)">
+      <path d="M-4.5 0 V-30 Q-4.5 -40 0 -46 Q4.5 -40 4.5 -30 V0 Z" fill="#d7dde5" />
+      <path d="M0 -44 Q3.4 -39 3.4 -30 V0 H0 Z" fill="#aab4c2" />
+      <path d="M-2.6 -6 V-26 M-2.6 -30 l-1.6 -2 M-2.6 -26 l-1.6 -2 M-2.6 -22 l-1.6 -2" stroke="#8d97a6" stroke-width="0.9" fill="none" />
+      <rect x="-9" y="0" width="18" height="4.5" rx="1.5" fill="#33373f" />
+      <rect x="-4" y="4.5" width="8" height="18" rx="2.5" fill="#24272d" />
+    </g>
+
     <!-- Orejas -->
     <rect x="29" y="94" width="14" height="32" rx="7" fill="url(#g-body)" class="part-edge" />
     <rect x="157" y="94" width="14" height="32" rx="7" fill="url(#g-body)" class="part-edge" />
@@ -138,6 +147,13 @@ export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" ar
       <rect id="pomo-fill" x="78" y="148.5" width="0" height="6" rx="3" fill="#ff6b5a" />
     </g>
 
+    <!-- Accesorio: cinta de peligro cruzada sobre el cuerpo -->
+    <g id="acc-cinta" class="acc" clip-path="url(#c-body)">
+      <rect x="20" y="137" width="160" height="12" transform="rotate(-13 100 143)" fill="url(#p-hazard)" />
+      <rect x="20" y="137" width="160" height="12" transform="rotate(-13 100 143)" fill="none" stroke="#000" stroke-opacity="0.18" stroke-width="1" />
+      <rect x="20" y="137" width="160" height="3" transform="rotate(-13 100 143)" fill="#fff" opacity="0.18" />
+    </g>
+
     <!-- Accesorio: pajarita -->
     <g id="acc-pajarita" class="acc">
       <path d="M100 163 L85 155.5 Q82 163 85 170.5 Z M100 163 L115 155.5 Q118 163 115 170.5 Z" class="acc-main" />
@@ -149,12 +165,16 @@ export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" ar
     <rect x="54" y="68" width="92" height="68" rx="30" fill="url(#g-screen)" />
     <g clip-path="url(#c-screen)">
       <g id="face">
-        <g filter="url(#f-eye-glow)">
+        <!-- El brillo de los ojos es un halo con degradado: un filtro de desenfoque
+             habría que recalcularlo en cada fotograma. -->
+        <g>
           <g id="eye-l" transform="translate(82 100)">
+            <ellipse class="eye-halo" rx="15" ry="19" fill="url(#g-glow)" opacity="0.5" />
             <rect class="eye-open eye-fill" x="-8" y="-11" width="16" height="22" rx="8" />
             <path class="eye-happy" d="M -9 3 Q 0 -8 9 3" opacity="0" />
           </g>
           <g id="eye-r" transform="translate(118 100)">
+            <ellipse class="eye-halo" rx="15" ry="19" fill="url(#g-glow)" opacity="0.5" />
             <rect class="eye-open eye-fill" x="-8" y="-11" width="16" height="22" rx="8" />
             <path class="eye-happy" d="M -9 3 Q 0 -8 9 3" opacity="0" />
           </g>
@@ -182,6 +202,28 @@ export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" ar
         </g>
       </g>
       <rect x="54" y="68" width="92" height="30" fill="url(#g-screen-gloss)" />
+    </g>
+
+    <!-- Accesorio: máscara de gas (respirador sobre la parte baja de la pantalla) -->
+    <g id="acc-mascara-gas" class="acc">
+      <path d="M36 108 Q52 102 70 112 M164 108 Q148 102 130 112" fill="none" stroke="#25282e" stroke-width="5" stroke-linecap="round" />
+      <path d="M68 112 Q100 99 132 112 Q135 136 100 149 Q65 136 68 112 Z" fill="#3a3f47" />
+      <path d="M72 114 Q100 103 128 114" fill="none" stroke="#fff" stroke-opacity="0.14" stroke-width="2" />
+      <circle cx="78" cy="127" r="6" fill="#2a2d33" />
+      <circle cx="122" cy="127" r="6" fill="#2a2d33" />
+      <circle cx="100" cy="133" r="12.5" fill="#5d636d" />
+      <circle cx="100" cy="133" r="8.5" fill="#2b2f36" />
+      <path d="M94 129.5 H106 M93 133 H107 M94 136.5 H106" stroke="#6f7680" stroke-width="1.3" stroke-linecap="round" />
+      <circle cx="96" cy="127" r="2" fill="#fff" opacity="0.25" />
+    </g>
+
+    <!-- Accesorio: vendas en la cabeza, con una mancha -->
+    <g id="acc-vendas" class="acc">
+      <path d="M49 66 Q100 45 151 66 L152 77 Q100 57 48 77 Z" fill="#efe8d8" />
+      <path d="M52 70 Q100 51 148 70 M60 63 L57 74 M84 55 L82 66 M112 54 L114 65 M138 61 L141 72" fill="none" stroke="#c9bfa8" stroke-width="1.2" />
+      <ellipse cx="122" cy="61" rx="6.5" ry="4" fill="#a8231b" opacity="0.75" transform="rotate(14 122 61)" />
+      <circle cx="128" cy="66" r="1.6" fill="#a8231b" opacity="0.6" />
+      <path d="M52 73 Q44 80 46 94 L52 92 Q51 82 56 76 Z" fill="#e6dec9" />
     </g>
 
     <!-- Accesorio: gorro de lana (tapa la antena) -->
@@ -291,6 +333,28 @@ export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" ar
       <rect x="-7" y="-18" width="14" height="34" rx="6" fill="none" stroke="#fff" stroke-opacity="0.8" stroke-width="1.2" />
       <rect x="-8" y="-23" width="16" height="7" rx="2" fill="#3b3f48" />
       <rect x="-4.6" y="-14" width="2.2" height="24" rx="1.1" fill="#fff" opacity="0.5" />
+    </g>
+
+    <!-- Accesorio: hierba en una maceta, en la mano -->
+    <g id="acc-hierba" class="acc" transform="translate(38 150) rotate(-6)">
+      <path d="M0 2 C-3 -8, -12 -14, -16 -12 C-14 -5, -7 0, 0 2 Z" fill="#2f9e44" />
+      <path d="M0 2 C3 -8, 12 -14, 16 -12 C14 -5, 7 0, 0 2 Z" fill="#37b24d" />
+      <path d="M0 3 C-2 -8, -1 -18, 2 -22 C5 -16, 4 -6, 0 3 Z" fill="#51cf66" />
+      <path d="M0 2 V-14" stroke="#1e7a34" stroke-width="1" />
+      <path d="M-11 2 H11 L8.5 17 H-8.5 Z" fill="#c8693a" />
+      <rect x="-12.5" y="0" width="25" height="5" rx="1.6" fill="#b25a2f" />
+      <path d="M-6 8 H6" stroke="#fff" stroke-opacity="0.2" stroke-width="1.6" stroke-linecap="round" />
+    </g>
+
+    <!-- Accesorio: spray de primeros auxilios (con una cruz genérica) -->
+    <g id="acc-spray" class="acc" transform="translate(40 152) rotate(-12)">
+      <rect x="-3" y="-25" width="6" height="5" rx="1" fill="#2b2f36" />
+      <rect x="-1" y="-28" width="6" height="3" rx="1" fill="#2b2f36" />
+      <rect x="-6" y="-21" width="12" height="5" rx="2" fill="#9aa3ae" />
+      <rect x="-8" y="-17" width="16" height="33" rx="4" fill="#eef2f5" />
+      <rect x="-8" y="-9" width="16" height="13" fill="#2f9e44" />
+      <path d="M0 -7 V2 M-4.5 -2.5 H4.5" stroke="#fff" stroke-width="2.6" stroke-linecap="round" />
+      <rect x="-6" y="-15" width="2.4" height="28" rx="1.2" fill="#fff" opacity="0.6" />
     </g>
 
     <!-- Accesorio: gancho colgando de una cadena, al lado -->

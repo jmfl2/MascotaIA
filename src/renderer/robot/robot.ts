@@ -99,6 +99,7 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
       g,
       x: i === 0 ? 82 : 118,
       open: g.querySelector<SVGRectElement>('.eye-open')!,
+      halo: g.querySelector<SVGEllipseElement>('.eye-halo')!,
       happy: g.querySelector<SVGPathElement>('.eye-happy')!
     }
   })
@@ -300,10 +301,10 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
   }
 
   // --- Bucle de animación ----------------------------------------------------
-  // Pintar una ventana transparente cuesta GPU en cada fotograma. Cuando nada se
-  // mueve solo queda la respiración, que es lenta: basta con pocos fps.
-  const IDLE_FRAME_MS = 1000 / 30
-  const SLEEP_FRAME_MS = 1000 / 12
+  // Despierto se pinta en cada fotograma de la pantalla (60, 120, 144 Hz...):
+  // limitarlo a una cifra fija reparte mal los fotogramas y se ve a tirones.
+  // Dormido solo respira despacio y basta con 30 fps.
+  const SLEEP_FRAME_MS = 1000 / 30 - 1
   const SETTLED = 0.002
 
   /** ¿Algún muelle sigue en movimiento o lejos de su objetivo? */
@@ -331,7 +332,7 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
     s.gazeX.target = gx
     s.gazeY.target = gy
 
-    if (!lively(state) && !moving() && now - last < (state === 'sleeping' ? SLEEP_FRAME_MS : IDLE_FRAME_MS)) {
+    if (state === 'sleeping' && !lively(state) && !moving() && now - last < SLEEP_FRAME_MS) {
       requestAnimationFrame(frame)
       return
     }
@@ -385,6 +386,8 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
       eye.g.setAttribute('transform', `translate(${eye.x} ${(100 - asym * 4).toFixed(2)})`)
       eye.open.setAttribute('transform', `scale(${size.toFixed(4)} ${(size * eyeOpen).toFixed(4)})`)
       eye.open.setAttribute('opacity', (1 - happy).toFixed(3))
+      eye.halo.setAttribute('transform', eye.open.getAttribute('transform')!)
+      eye.halo.setAttribute('opacity', (0.5 * (1 - happy * 0.6) * Math.min(1, eyeOpen * 1.4)).toFixed(3))
       eye.happy.setAttribute('opacity', happy.toFixed(3))
       eye.happy.setAttribute('transform', `scale(${size.toFixed(4)})`)
     })
