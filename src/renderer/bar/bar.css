@@ -96,9 +96,13 @@
 .results-wrap.has-content { border-top-color: var(--separator); }
 
 .results {
+  position: relative;
   list-style: none;
   margin: 0;
   padding: 8px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  overscroll-behavior: contain;
 }
 
 .row {
@@ -122,6 +126,15 @@
   border-radius: 9px;
   background: var(--row-color);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+.row-icon.is-image {
+  background: transparent;
+  box-shadow: none;
+}
+.row-icon img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
 }
 .row-icon svg {
   width: 18px;
@@ -153,6 +166,10 @@
 }
 
 .row-kbd { flex: none; }
+.row-kbd:empty { display: none; }
+
+.row.is-disabled .row-icon { opacity: 0.45; }
+.row.is-disabled .row-title { color: var(--text-2); }
 
 kbd {
   display: inline-grid;
@@ -210,4 +227,5 @@ kbd {
   font-size: 11px;
   padding: 0 4px;
 }
+.footer span[hidden] { display: none; }
 .footer-right { margin-left: auto; }

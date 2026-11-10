@@ -1,22 +1,21 @@
 /**
  * Barra de comandos tipo Spotlight.
  *
- * - Sin prefijo: busca en Google (y ofrece el resto de comandos debajo).
- * - Con prefijo ("yt ", "maps "...): el prefijo se convierte en una etiqueta
- *   y solo queda el texto a buscar. Retroceso con el campo vacío la quita.
- * - El renderer solo propone; el proceso principal valida y abre la URL.
- *
- * El texto del usuario se pinta siempre con `textContent`, nunca como HTML.
+ * - Sin prefijo: busca en Google, en tus apps y en el resto de destinos web.
+ * - Con prefijo ("yt ", "nota ", "rec "...): el prefijo se convierte en una
+ *   etiqueta y solo queda el texto. Retroceso con el campo vacío la quita.
+ * - Las filas las calcula el proceso principal; aquí solo se pintan y se
+ *   indica cuál se eligió. El texto se pinta siempre con `textContent`.
  */
 import { animate } from 'motion'
-import { COMMANDS, parseInput, sanitizeQuery, type CommandModule } from '../../commands'
 import { formatAccelerator } from '../../shared/accelerator'
+import type { CommandMeta, ExecuteResponse, IconSpec, ResultView } from '../../shared/ipc'
 import './bar.css'
 
-type Item = { kind: 'run'; command: CommandModule; query: string } | { kind: 'pick'; command: CommandModule }
-
 const ROW_HEIGHT = 52
-const DEFAULT_PLACEHOLDER = 'Busca en Google, o usa yt, maps, gh, trad…'
+const MAX_VISIBLE_ROWS = 6
+const LIST_PADDING = 8
+const DEFAULT_PLACEHOLDER = 'Busca en Google, abre apps o usa yt, nota, rec, pomo…'
 
 // Muelles de motion: `visualDuration` es lo que dura a la vista y `bounce` el rebote.
 const SPRING_OPEN = { type: 'spring', visualDuration: 0.38, bounce: 0.28 } as const
@@ -34,24 +33,43 @@ const list = el<HTMLUListElement>('results')
 const highlight = el<HTMLDivElement>('highlight')
 const message = el<HTMLParagraphElement>('message')
 const shortcutHint = el<HTMLSpanElement>('shortcut-hint')
+const secondaryHint = el<HTMLSpanElement>('secondary-hint')
 
-let active: CommandModule | null = null
-let items: Item[] = []
+let commands: CommandMeta[] = []
+let active: CommandMeta | null = null
+let items: ResultView[] = []
 let selected = 0
-let running = false
+let seq = 0
+let shownSeq = -1
+let busy = false
 /** Cambia con cada apertura: invalida cierres que ya estaban en curso. */
 let session = 0
 
-// --- Iconos (los trazados son estáticos y vienen del código, no del usuario) ---
+// --- Iconos ---------------------------------------------------------------------
 const SVG_NS = 'http://www.w3.org/2000/svg'
-function icon(command: CommandModule): SVGSVGElement {
+function glyph(path: string): SVGSVGElement {
   const svg = document.createElementNS(SVG_NS, 'svg')
   svg.setAttribute('viewBox', '0 0 24 24')
   svg.setAttribute('aria-hidden', 'true')
-  const path = document.createElementNS(SVG_NS, 'path')
-  path.setAttribute('d', command.iconPath)
-  svg.append(path)
+  const p = document.createElementNS(SVG_NS, 'path')
+  p.setAttribute('d', path)
+  svg.append(p)
   return svg
+}
+
+function iconBox(icon: IconSpec): HTMLElement {
+  const box = h('span', 'row-icon')
+  if (icon.kind === 'image' && icon.src.startsWith('data:image/')) {
+    box.classList.add('is-image')
+    const img = document.createElement('img')
+    img.src = icon.src
+    img.alt = ''
+    box.append(img)
+  } else if (icon.kind === 'glyph') {
+    box.style.setProperty('--row-color', icon.accent)
+    box.append(glyph(icon.path))
+  }
+  return box
 }
 
 function h<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text?: string) {
@@ -61,49 +79,34 @@ function h<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, tex
   return node
 }
 
-// --- Modelo -------------------------------------------------------------------
-function computeItems(): Item[] {
-  const text = input.value
-  if (active) {
-    return sanitizeQuery(text) ? [{ kind: 'run', command: active, query: text }] : []
-  }
-  if (!sanitizeQuery(text)) return COMMANDS.map((command) => ({ kind: 'pick', command }))
-  return COMMANDS.map((command) => ({ kind: 'run', command, query: text }))
-}
-
-function rowTitle(item: Item): string {
-  if (item.kind === 'pick') return item.command.name
-  return sanitizeQuery(item.query)
-}
-
-function rowSubtitle(item: Item): string {
-  if (item.kind === 'pick') return item.command.hint
-  return `${item.command.name} · ${item.command.hint}`
-}
-
-// --- Pintado ------------------------------------------------------------------
-function render(): void {
-  items = computeItems()
+// --- Consultas al proceso principal ----------------------------------------------
+async function refreshResults(): Promise<void> {
+  const mySeq = ++seq
+  const res = await api.query({ seq: mySeq, commandId: active?.id ?? null, text: input.value })
+  // Si mientras tanto se escribió algo más, esta respuesta ya no sirve.
+  if (res.seq !== seq) return
+  shownSeq = res.seq
+  items = res.items
   selected = Math.min(selected, Math.max(0, items.length - 1))
+  render()
+}
 
+// --- Pintado ----------------------------------------------------------------------
+function render(): void {
   list.replaceChildren(
+    highlight,
     ...items.map((item, i) => {
-      const li = h('li', 'row')
+      const li = h('li', item.disabled ? 'row is-disabled' : 'row')
       li.setAttribute('role', 'option')
       li.id = `opt-${i}`
-      li.style.setProperty('--row-color', item.command.accent)
-
-      const iconBox = h('span', 'row-icon')
-      iconBox.append(icon(item.command))
       const text = h('span', 'row-text')
-      text.append(h('span', 'row-title', rowTitle(item)), h('span', 'row-subtitle', rowSubtitle(item)))
-      const kbd = h('kbd', 'row-kbd', i === selected ? '↵' : item.command.prefixes[0])
-
-      li.append(iconBox, text, kbd)
+      text.append(h('span', 'row-title', item.title))
+      if (item.subtitle) text.append(h('span', 'row-subtitle', item.subtitle))
+      li.append(iconBox(item.icon), text, h('kbd', 'row-kbd'))
       li.addEventListener('mousemove', () => select(i))
       li.addEventListener('click', () => {
         select(i)
-        void execute()
+        void execute(false)
       })
       return li
     })
@@ -118,22 +121,28 @@ function select(i: number): void {
   updateSelection(true)
 }
 
-/** Mueve la pastilla de selección (con muelle) y actualiza la tecla ↵. */
+/** Mueve la pastilla de selección (con muelle), actualiza las teclas y las pistas. */
 function updateSelection(animated: boolean): void {
   list.querySelectorAll<HTMLElement>('.row').forEach((row, i) => {
     row.setAttribute('aria-selected', String(i === selected))
     const kbd = row.querySelector('.row-kbd')
-    if (kbd) kbd.textContent = i === selected ? '↵' : items[i].command.prefixes[0]
+    if (kbd) kbd.textContent = i === selected && !items[i].disabled ? '↵' : (items[i].badge ?? '')
   })
   input.setAttribute('aria-activedescendant', items.length ? `opt-${selected}` : '')
-  const target = { y: selected * ROW_HEIGHT, opacity: items.length ? 1 : 0 }
-  animate(highlight, target, animated ? SPRING_UI : { duration: 0 })
+  animate(highlight, { y: selected * ROW_HEIGHT, opacity: items.length ? 1 : 0 }, animated ? SPRING_UI : { duration: 0 })
+  list.querySelector<HTMLElement>(`#opt-${selected}`)?.scrollIntoView({ block: 'nearest' })
+
+  const secondary = items[selected]?.secondaryLabel
+  secondaryHint.hidden = !secondary
+  if (secondary) secondaryHint.lastChild!.textContent = ` ${secondary}`
 }
 
 /** Ajusta la altura de la lista con un muelle. */
 function resize(): void {
-  const hasMessage = message.textContent !== ''
-  const height = (items.length ? list.scrollHeight : 0) + (hasMessage ? message.scrollHeight : 0)
+  const rows = Math.min(items.length, MAX_VISIBLE_ROWS)
+  const listHeight = rows ? rows * ROW_HEIGHT + LIST_PADDING * 2 : 0
+  const height = listHeight + (message.textContent ? message.scrollHeight : 0)
+  list.style.height = `${listHeight}px`
   wrap.classList.toggle('has-content', height > 0)
   animate(wrap, { height }, SPRING_UI)
 }
@@ -143,17 +152,17 @@ function setMessage(text: string): void {
   resize()
 }
 
-// --- Etiqueta de comando --------------------------------------------------------
-function activate(command: CommandModule, rest: string): void {
+// --- Etiqueta de comando ----------------------------------------------------------
+function activate(command: CommandMeta, rest: string): void {
   active = command
-  chip.replaceChildren(icon(command), document.createTextNode(command.name))
+  chip.replaceChildren(glyph(command.iconPath), document.createTextNode(command.name))
   chip.style.setProperty('--chip-color', command.accent)
   chip.hidden = false
   input.value = rest
   input.placeholder = command.placeholder
   selected = 0
   animate(chip, { scale: [0.6, 1], opacity: [0, 1] }, { type: 'spring', visualDuration: 0.3, bounce: 0.4 })
-  render()
+  void refreshResults()
 }
 
 function deactivate(): void {
@@ -161,52 +170,70 @@ function deactivate(): void {
   chip.hidden = true
   input.placeholder = DEFAULT_PLACEHOLDER
   selected = 0
-  render()
+  void refreshResults()
 }
 
-// --- Acciones -----------------------------------------------------------------
+/** "yt gatos" -> etiqueta YouTube + "gatos" (solo con espacio tras el prefijo). */
+function detectPrefix(): boolean {
+  const match = /^(\S+)\s+([\s\S]*)$/.exec(input.value.trimStart())
+  if (!match) return false
+  const prefix = match[1].toLowerCase()
+  const command = commands.find((c) => c.prefixes.includes(prefix))
+  if (!command) return false
+  activate(command, match[2])
+  return true
+}
+
+// --- Acciones -----------------------------------------------------------------------
 function shake(): void {
   animate(panel, { x: [0, -10, 9, -6, 4, 0] }, { duration: 0.4, ease: 'easeOut' })
 }
 
-async function execute(): Promise<void> {
-  if (running) return
-  const item = items[selected]
-
-  if (!item) {
-    setMessage('Escribe algo para buscar')
+async function execute(secondary: boolean): Promise<void> {
+  if (busy) return
+  if (!items[selected]) {
+    setMessage(active ? 'Escribe algo primero' : 'Escribe algo para buscar')
     shake()
     api.reportError()
     return
   }
-  if (item.kind === 'pick') {
-    activate(item.command, input.value)
-    return
-  }
+  if (secondary && !items[selected].secondaryLabel) return
 
-  running = true
+  busy = true
+  let res: ExecuteResponse
   try {
-    const result = await api.run(item.command.id, item.query)
-    if (!result.ok) {
-      setMessage(result.error)
-      shake()
-    }
+    res = await api.execute({ seq: shownSeq, index: selected, secondary })
   } finally {
-    running = false
+    busy = false
+  }
+  handle(res)
+}
+
+function handle(res: ExecuteResponse): void {
+  switch (res.kind) {
+    case 'error':
+      setMessage(res.message)
+      shake()
+      break
+    case 'activate': {
+      const command = commands.find((c) => c.id === res.commandId)
+      if (command) activate(command, input.value)
+      break
+    }
+    case 'refresh':
+    case 'stale':
+      void refreshResults()
+      break
+    case 'close':
+      break // el proceso principal cierra la barra
   }
 }
 
 input.addEventListener('input', () => {
   if (message.textContent) message.textContent = ''
-  if (!active) {
-    const parsed = parseInput(input.value)
-    if (parsed.command) {
-      activate(parsed.command, parsed.query)
-      return
-    }
-  }
+  if (!active && detectPrefix()) return
   selected = 0
-  render()
+  void refreshResults()
 })
 
 input.addEventListener('keydown', (e) => {
@@ -219,15 +246,30 @@ input.addEventListener('keydown', (e) => {
       e.preventDefault()
       select(Math.max(0, selected - 1))
       break
+    case 'PageDown':
+      e.preventDefault()
+      select(Math.min(items.length - 1, selected + MAX_VISIBLE_ROWS))
+      break
+    case 'PageUp':
+      e.preventDefault()
+      select(Math.max(0, selected - MAX_VISIBLE_ROWS))
+      break
     case 'Enter':
       e.preventDefault()
-      void execute()
+      void execute(false)
+      break
+    case 'Delete':
+      // Supr: acción secundaria (borrar nota, cancelar recordatorio...) si la fila la tiene.
+      if (items[selected]?.secondaryLabel) {
+        e.preventDefault()
+        void execute(true)
+      }
       break
     case 'Tab': {
       // Tab fija el comando de la fila elegida, conservando el texto.
       e.preventDefault()
-      const item = items[selected]
-      if (item && !active) activate(item.command, input.value)
+      const command = commands.find((c) => c.id === items[selected]?.commandId)
+      if (command && !active) activate(command, input.value)
       break
     }
     case 'Backspace':
@@ -253,13 +295,12 @@ api.onOpen(() => {
   session++
   message.textContent = ''
   void api.getInfo().then((info) => {
-    if (info) shortcutHint.textContent = `${formatAccelerator(info.shortcut)} para abrir`
+    if (!info) return
+    commands = info.commands
+    shortcutHint.textContent = `${formatAccelerator(info.shortcut)} para abrir`
   })
-  render()
-  animate(panel, { opacity: [0, 1], scale: [0.94, 1], y: [-14, 0] }, {
-    ...SPRING_OPEN,
-    opacity: { duration: 0.16, ease: 'easeOut' }
-  })
+  void refreshResults() // los datos pueden haber cambiado (notas, pomodoro...)
+  animate(panel, { opacity: [0, 1], scale: [0.94, 1], y: [-14, 0] }, { ...SPRING_OPEN, opacity: { duration: 0.16, ease: 'easeOut' } })
   input.focus()
   input.select()
 })
@@ -273,4 +314,6 @@ api.onClose(() => {
 })
 
 input.placeholder = DEFAULT_PLACEHOLDER
-render()
+void api.getInfo().then((info) => {
+  if (info) commands = info.commands
+})
