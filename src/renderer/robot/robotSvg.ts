@@ -164,6 +164,12 @@ export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" ar
           <circle cx="118" cy="100" r="15" class="acc-lens" />
           <path d="M96.5 97 Q100 93.5 103.5 97" class="acc-frame" />
         </g>
+        <!-- Accesorio: parche pirata sobre el ojo derecho -->
+        <g id="acc-parche" class="acc">
+          <path d="M50 76 L150 116" stroke="#121317" stroke-width="3.2" />
+          <ellipse cx="118" cy="100" rx="13.5" ry="14.5" fill="#121317" />
+          <ellipse cx="114" cy="94" rx="5" ry="3" fill="#fff" opacity="0.12" />
+        </g>
         <!-- Accesorio: gafas pixeladas -->
         <g id="acc-gafas-pixel" class="acc">${PIXEL_GLASSES}</g>
         <ellipse id="cheek-l" cx="70" cy="117" rx="6" ry="3.5" class="cheek" opacity="0" />
@@ -236,6 +242,64 @@ export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" ar
       <circle cx="17.5" cy="0.5" r="2.6" fill="#3ba0ff" />
       <circle cx="6.5" cy="0.5" r="2.6" fill="#34c759" />
       <circle cx="12" cy="5" r="2.6" fill="#ffd23f" />
+    </g>
+
+    <!-- Accesorio: sombrero de paja (tapa la antena) -->
+    <g id="acc-sombrero-paja" class="acc">
+      <ellipse cx="100" cy="58" rx="68" ry="12" fill="#e2bd5f" />
+      <ellipse cx="100" cy="56.5" rx="62" ry="9" fill="#efcf78" />
+      <path d="M66 57 C66 22, 134 22, 134 57 Z" fill="#f2d683" />
+      <path d="M67 50 C80 54, 120 54, 133 50 L134 57 C120 61, 80 61, 66 57 Z" class="acc-main" />
+      <path d="M78 40 C86 30, 114 30, 122 40 M72 64 H128 M58 61 H142" fill="none" stroke="#c99d3d" stroke-width="1.3" stroke-linecap="round" opacity="0.7" />
+      <path d="M74 46 C76 34, 86 28, 96 27" fill="none" stroke="#fff" stroke-opacity="0.4" stroke-width="2.4" stroke-linecap="round" />
+    </g>
+
+    <!-- Accesorio: libreta negra en la mano (sin nada escrito) -->
+    <g id="acc-libreta" class="acc" transform="translate(40 150) rotate(-12)">
+      <rect x="-15" y="-20" width="31" height="39" rx="2.5" fill="#15161b" />
+      <rect x="14.5" y="-18" width="2.2" height="35" fill="#e9e5d8" />
+      <rect x="-15" y="-20" width="5" height="39" rx="2" fill="#000" />
+      <rect x="-7" y="-15" width="18" height="2" rx="1" fill="#fff" opacity="0.1" />
+    </g>
+
+    <!-- Accesorio: manzana roja en la mano -->
+    <g id="acc-manzana" class="acc" transform="translate(38 152) rotate(-8)">
+      <path d="M0 -9 C-6 -15, -17 -12, -17 0 C-17 11, -8 17, 0 13 C8 17, 17 11, 17 0 C17 -12, 6 -15, 0 -9 Z" fill="#e0243a" />
+      <path d="M-10 -5 C-12 -1, -12 4, -9 8" fill="none" stroke="#fff" stroke-opacity="0.45" stroke-width="2.6" stroke-linecap="round" />
+      <path d="M0 -9 C0 -14, 2 -17, 4 -19" fill="none" stroke="#5b3a1e" stroke-width="2.4" stroke-linecap="round" />
+      <path d="M3 -15 C8 -21, 14 -19, 15 -16 C10 -12, 6 -12, 3 -15 Z" fill="#3fbf5a" />
+    </g>
+
+    <!-- Accesorio: linterna encendida en la mano -->
+    <g id="acc-linterna" class="acc" transform="translate(40 156) rotate(20)">
+      <path d="M-7 -24 L-22 -58 L22 -58 L7 -24 Z" fill="#fff3b0" opacity="0.2" />
+      <rect x="-5.5" y="-14" width="11" height="28" rx="3" fill="#2f3540" />
+      <rect x="-5.5" y="-6" width="11" height="2.4" fill="#4a5160" />
+      <rect x="-8" y="-24" width="16" height="11" rx="2.5" fill="#4a5160" />
+      <ellipse cx="0" cy="-24" rx="6.5" ry="2" fill="#fff6c2" />
+      <rect x="-1.6" y="0" width="3.2" height="5" rx="1" fill="#ff4d6d" />
+    </g>
+
+    <!-- Accesorio: vial con líquido que brilla -->
+    <g id="acc-vial" class="acc" transform="translate(37 152) rotate(-16)">
+      <rect x="-7" y="-18" width="14" height="34" rx="6" fill="#dfe9f2" opacity="0.5" />
+      <rect x="-5.5" y="-3" width="11" height="17.5" rx="5" fill="#4ff08a" />
+      <rect x="-5.5" y="-3" width="11" height="3" rx="1.5" fill="#b6ffd0" />
+      <circle cx="-1.5" cy="6" r="1.2" fill="#fff" opacity="0.8" />
+      <circle cx="2" cy="10" r="0.9" fill="#fff" opacity="0.7" />
+      <rect x="-7" y="-18" width="14" height="34" rx="6" fill="none" stroke="#fff" stroke-opacity="0.8" stroke-width="1.2" />
+      <rect x="-8" y="-23" width="16" height="7" rx="2" fill="#3b3f48" />
+      <rect x="-4.6" y="-14" width="2.2" height="24" rx="1.1" fill="#fff" opacity="0.5" />
+    </g>
+
+    <!-- Accesorio: gancho colgando de una cadena, al lado -->
+    <g id="acc-gancho" class="acc">
+      <path d="M181 14 V58" stroke="#6b7078" stroke-width="3" stroke-dasharray="5 2.5" />
+      <path d="M181 58 V80 C181 100, 158 100, 158 84" fill="none" stroke="#8b9099" stroke-width="5" stroke-linecap="round" />
+      <path d="M158 84 L154 77" stroke="#8b9099" stroke-width="5" stroke-linecap="round" />
+      <path d="M179 66 V80 C179 94, 164 96, 161 88" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="1.4" stroke-linecap="round" />
+      <circle cx="176" cy="93" r="2.2" fill="#8a3b1f" opacity="0.75" />
+      <circle cx="181" cy="72" r="1.6" fill="#8a3b1f" opacity="0.75" />
     </g>
 
     <!-- Burbujas de estado -->

@@ -135,15 +135,17 @@ robot te sigue con la mirada; haz clic en él) y en el escritorio.
 - **Color:** Clásico, Medianoche, Menta, Coral, Lavanda y Grafito.
 - **Accesorios**, uno por zona (si eliges otro de la misma zona, sustituye al
   anterior):
-  - *Cabeza:* gorro, corona pixel, gorra de hélice o bandana. Los tres primeros
-    sustituyen a la antena.
-  - *Cara:* gafas o gafas pixel. Se mueven con la mirada.
+  - *Cabeza:* gorro, corona pixel, gorra de hélice, sombrero de paja o bandana.
+    Todos menos la bandana sustituyen a la antena.
+  - *Cara:* gafas, gafas pixel o parche pirata. Se mueven con la mirada.
+  - *Manos:* mando, libreta negra, manzana, linterna o vial.
   - *Encima:* vidas, tres corazones de 8 bits (uno ya gastado).
-  - *Orejas:* auriculares. *Cuello:* pajarita. *Espalda:* espada.
-    *Manos:* mando.
+  - *Al lado / espalda:* espada o gancho colgando de una cadena.
+  - *Orejas:* auriculares. *Cuello:* pajarita.
 
-  Los de videojuegos son guiños genéricos en pixel art, no de ningún juego
-  concreto. Se dibujan desde un mapa de caracteres (`pixels()` en
+  Los temáticos (videojuegos, anime, terror) son objetos genéricos que
+  recuerdan a esos mundos, sin logos, personajes ni diseños de ninguna obra
+  concreta. Se dibujan desde un mapa de caracteres (`pixels()` en
   `robotSvg.ts`), así que añadir uno nuevo es dibujarlo con letras.
 - **Nombre:** cómo se llama el robot. Lo usa la IA ("Te llamas…") y aparece al
   saludar.

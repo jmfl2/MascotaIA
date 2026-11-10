@@ -59,7 +59,8 @@ export const SKINS: readonly Skin[] = [
 /**
  * Accesorios. Cada uno ocupa una zona del robot y solo cabe uno por zona (una
  * corona y un gorro a la vez se pisarían): al ponerte uno, se quita el otro.
- * Los de videojuegos son guiños genéricos en pixel art, no de ningún juego concreto.
+ * Los temáticos (videojuegos, anime, terror) son objetos genéricos que recuerdan
+ * a esos mundos, sin logos ni diseños de ninguna obra concreta.
  */
 export const ACCESSORIES = [
   { id: 'auriculares', name: 'Auriculares', slot: 'orejas' },
@@ -72,7 +73,14 @@ export const ACCESSORIES = [
   { id: 'gafas-pixel', name: 'Gafas pixel', slot: 'cara' },
   { id: 'vidas', name: 'Vidas', slot: 'encima' },
   { id: 'espada', name: 'Espada', slot: 'espalda' },
-  { id: 'mando', name: 'Mando', slot: 'manos' }
+  { id: 'mando', name: 'Mando', slot: 'manos' },
+  { id: 'sombrero-paja', name: 'Sombrero de paja', slot: 'cabeza' },
+  { id: 'parche', name: 'Parche pirata', slot: 'cara' },
+  { id: 'libreta', name: 'Libreta negra', slot: 'manos' },
+  { id: 'manzana', name: 'Manzana', slot: 'manos' },
+  { id: 'linterna', name: 'Linterna', slot: 'manos' },
+  { id: 'vial', name: 'Vial', slot: 'manos' },
+  { id: 'gancho', name: 'Gancho', slot: 'espalda' }
 ] as const
 export type AccessoryId = (typeof ACCESSORIES)[number]['id']
 export type AccessorySlot = (typeof ACCESSORIES)[number]['slot']

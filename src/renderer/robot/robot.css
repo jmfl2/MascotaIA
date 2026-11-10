@@ -30,11 +30,19 @@
 .with-gafas-pixel #acc-gafas-pixel,
 .with-vidas #acc-vidas,
 .with-espada #acc-espada,
-.with-mando #acc-mando { display: inline; }
+.with-mando #acc-mando,
+.with-sombrero-paja #acc-sombrero-paja,
+.with-parche #acc-parche,
+.with-libreta #acc-libreta,
+.with-manzana #acc-manzana,
+.with-linterna #acc-linterna,
+.with-vial #acc-vial,
+.with-gancho #acc-gancho { display: inline; }
 /* Lo que va en la cabeza tapa la antena (en el gorro, el pompón hace de antena). */
 .with-gorro #antenna,
 .with-corona #antenna,
-.with-helice #antenna { display: none; }
+.with-helice #antenna,
+.with-sombrero-paja #antenna { display: none; }
 
 .acc-main { fill: var(--accessory); }
 .acc-dark { fill: var(--accessory-dark); }
