@@ -20,7 +20,8 @@ win:
   icon: assets/icon.png
 
 nsis:
-  artifactName: Mascota-Setup-${version}.${ext}
+  # Nombre fijo: el enlace de descarga del README (releases/latest/download/Mascota-Setup.exe) no cambia entre versiones.
+  artifactName: Mascota-Setup.${ext}
   # Instalador con pasos (elegir carpeta), para el usuario actual: no pide permisos de administrador.
   oneClick: false
   perMachine: false
