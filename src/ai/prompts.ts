@@ -7,6 +7,7 @@
  */
 import type { AiTask } from '../commands/types'
 import type { AiTone, Personality } from '../shared/appearance'
+import { getLang, t, type Lang, type Text } from '../shared/i18n'
 
 export type { AiTask }
 
@@ -35,14 +36,26 @@ export const INTERPRET_SCHEMA = {
   required: ['command', 'query']
 } as const
 
-const WEEKDAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
+const WEEKDAYS: Record<Lang, string[]> = {
+  es: ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'],
+  en: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+}
 
 function describeNow(now: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0')
-  return `${WEEKDAYS[now.getDay()]} ${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}, ${now.getHours()}:${pad(now.getMinutes())}`
+  const day = WEEKDAYS[getLang()][now.getDay()]
+  const date = t(
+    `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`,
+    `${now.getMonth() + 1}/${now.getDate()}/${now.getFullYear()}`
+  )
+  return `${day} ${date}, ${now.getHours()}:${pad(now.getMinutes())}`
 }
 
 export function interpretSystemPrompt(now: Date): string {
+  return getLang() === 'en' ? interpretPromptEn(now) : interpretPromptEs(now)
+}
+
+function interpretPromptEs(now: Date): string {
   return `Eres el intérprete de órdenes de una app de escritorio. Conviertes lo que pide el usuario en UNO de estos comandos y respondes solo con JSON {"command": ..., "query": ...}.
 
 Comandos:
@@ -75,6 +88,39 @@ Ejemplos:
 "busca información sobre la Revolución Francesa" -> {"command":"google","query":"Revolución Francesa"}`
 }
 
+function interpretPromptEn(now: Date): string {
+  return `You are the command interpreter of a desktop app. You turn what the user asks for into ONE of these commands and reply only with JSON {"command": ..., "query": ...}.
+
+Commands:
+- google: search the web for things that change or need looking up: the weather, news, prices, opening hours, results, a specific website, or when the user says "search". query = a short, well-phrased search, without filler words.
+- youtube: search for videos. query = the video search.
+- maps: places, addresses or directions. query = the place, or "from A to B" for directions.
+- github: repositories or code. query = "user/repo" if known, or a search.
+- translate: translate. query = "<target language code>: <text>" (en, es, fr, de, it, pt, ja, zh...).
+- launcher: open an app or folder on the computer. query = just the name (e.g. "spotify", "downloads").
+- notes: jot down or save a note. query = the text of the note.
+- reminders: remind about something later. query = "<when> <what>". <when> MUST use one of these formats: 10m, 45s, 2h, 1h30m, 18:30, tomorrow 9:00.
+- pomodoro: focus timer. query = "<minutes>/<break>" (e.g. "25/5") or "" for the default.
+- none: general knowledge questions that can be answered directly ("what is", "why", "how does it work", "explain"), advice, writing or chatting, or anything that doesn't fit. query = the request as is.
+
+It is now ${describeNow(now)}.
+
+Examples:
+"videos to learn how to make bread" -> {"command":"youtube","query":"how to make homemade bread"}
+"remind me in half an hour to take out the laundry" -> {"command":"reminders","query":"30m take out the laundry"}
+"tell me tomorrow at 8 to call the bank" -> {"command":"reminders","query":"tomorrow 8:00 call the bank"}
+"how do I get from Times Square to Central Park" -> {"command":"maps","query":"from Times Square to Central Park, New York"}
+"how do you say good morning in Japanese" -> {"command":"translate","query":"ja: good morning"}
+"open spotify" -> {"command":"launcher","query":"spotify"}
+"note that I need to buy batteries" -> {"command":"notes","query":"buy batteries"}
+"I want to focus for 50 minutes" -> {"command":"pomodoro","query":"50/10"}
+"the electron repo" -> {"command":"github","query":"electron/electron"}
+"what will the weather be like on Saturday in London" -> {"command":"google","query":"London weather Saturday"}
+"explain what a black hole is" -> {"command":"none","query":"explain what a black hole is"}
+"why is the sky blue" -> {"command":"none","query":"why is the sky blue"}
+"look up information about the French Revolution" -> {"command":"google","query":"French Revolution"}`
+}
+
 export type Interpretation = { command: InterpretableCommand; query: string }
 
 /** Valida la respuesta del modelo (puede venir con basura alrededor o con un comando inventado). */
@@ -98,15 +144,31 @@ export function parseInterpretation(raw: string): Interpretation | null {
 
 // --- Chat, resumen y explicación ---------------------------------------------------
 
-const TONES: Record<AiTone, string> = {
-  cercano: 'Hablas de forma cercana y amable, tuteando, clara y breve: ve al grano y usa listas cortas cuando ayuden.',
-  formal: 'Hablas de forma formal y profesional, tratando de usted, con precisión y sin coloquialismos. Sé conciso y usa listas cuando ayuden.',
-  divertido: 'Hablas con humor y desparpajo, tuteando, con algún emoji o broma ligera de vez en cuando, pero sin dejar de ser útil y breve.'
+const TONES: Record<AiTone, Text> = {
+  cercano: {
+    es: 'Hablas de forma cercana y amable, tuteando, clara y breve: ve al grano y usa listas cortas cuando ayuden.',
+    en: 'You speak in a warm, friendly and casual way, clear and brief: get to the point and use short lists when they help.'
+  },
+  formal: {
+    es: 'Hablas de forma formal y profesional, tratando de usted, con precisión y sin coloquialismos. Sé conciso y usa listas cuando ayuden.',
+    en: 'You speak in a formal, professional way, precise and without slang. Be concise and use lists when they help.'
+  },
+  divertido: {
+    es: 'Hablas con humor y desparpajo, tuteando, con algún emoji o broma ligera de vez en cuando, pero sin dejar de ser útil y breve.',
+    en: 'You speak with humor and confidence, with the odd emoji or light joke now and then, while staying useful and brief.'
+  }
 }
 
 export function chatSystemPrompt(now: Date, personality: Pick<Personality, 'name' | 'aiTone'> = { name: 'Mascota', aiTone: 'cercano' }): string {
+  if (getLang() === 'en') {
+    return `Your name is ${personality.name} and you are a small assistant robot living on the user's Windows desktop.
+You reply in English (unless they write to you in another language). ${TONES[personality.aiTone].en}
+You can use simple Markdown (bold, lists, code blocks).
+You run locally on a small model: if you don't know something or it may have changed, say so honestly instead of making it up.
+It is now ${describeNow(now)}.`
+  }
   return `Te llamas ${personality.name} y eres un pequeño robot asistente que vive en el escritorio de Windows del usuario.
-Respondes en español (salvo que te escriban en otro idioma). ${TONES[personality.aiTone]}
+Respondes en español (salvo que te escriban en otro idioma). ${TONES[personality.aiTone].es}
 Puedes usar Markdown sencillo (negritas, listas, bloques de código).
 Funcionas en local con un modelo pequeño: si no sabes algo o puede haber cambiado, dilo con honestidad en vez de inventar.
 Ahora es ${describeNow(now)}.`
@@ -116,9 +178,15 @@ Ahora es ${describeNow(now)}.`
 export function taskPrompt(task: AiTask, text: string): string {
   switch (task) {
     case 'summarize':
-      return `Resume el siguiente texto en español en 3-5 puntos clave, cortos y claros. Si es muy breve, resúmelo en una frase.\n\n"""\n${text}\n"""`
+      return t(
+        `Resume el siguiente texto en español en 3-5 puntos clave, cortos y claros. Si es muy breve, resúmelo en una frase.\n\n"""\n${text}\n"""`,
+        `Summarize the following text in English in 3-5 short, clear key points. If it is very short, summarize it in one sentence.\n\n"""\n${text}\n"""`
+      )
     case 'explain':
-      return `Explica de forma sencilla qué significa el siguiente texto (si es código, qué hace; si es un término, qué es). Responde en español y de forma breve.\n\n"""\n${text}\n"""`
+      return t(
+        `Explica de forma sencilla qué significa el siguiente texto (si es código, qué hace; si es un término, qué es). Responde en español y de forma breve.\n\n"""\n${text}\n"""`,
+        `Explain simply what the following text means (if it is code, what it does; if it is a term, what it is). Answer in English and briefly.\n\n"""\n${text}\n"""`
+      )
     case 'chat':
       return text
   }
@@ -130,9 +198,9 @@ export function taskDisplay(task: AiTask, text: string): string {
   const snippet = short.length > 90 ? `${short.slice(0, 89)}…` : short
   switch (task) {
     case 'summarize':
-      return `Resume: «${snippet}»`
+      return t(`Resume: «${snippet}»`, `Summarize: "${snippet}"`)
     case 'explain':
-      return `Explica: «${snippet}»`
+      return t(`Explica: «${snippet}»`, `Explain: "${snippet}"`)
     case 'chat':
       return text
   }

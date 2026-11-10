@@ -5,6 +5,7 @@
 import { BrowserWindow, screen } from 'electron'
 import { loadPage, PRELOAD_PATH } from './paths'
 import { hardenWebContents, secureWebPreferences } from './security'
+import { t } from '../shared/i18n'
 
 const SIZE = { width: 520, height: 720 }
 
@@ -36,7 +37,7 @@ export function openSettings(): void {
     minimizable: false,
     fullscreenable: false,
     thickFrame: false,
-    title: 'Ajustes de Mascota',
+    title: t('Ajustes de Mascota', 'Mascota settings'),
     webPreferences: secureWebPreferences(PRELOAD_PATH)
   })
   hardenWebContents(win.webContents)

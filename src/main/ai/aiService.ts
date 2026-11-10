@@ -3,6 +3,7 @@
  * de lenguaje natural. Todo es opcional: si Ollama no está, la app funciona
  * igual y las filas de la barra explican qué falta.
  */
+import { t } from '../../shared/i18n'
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { delimiter, dirname, join } from 'node:path'
@@ -99,7 +100,7 @@ const LOW_MEMORY_ENV = {
  */
 export async function startOllama(): Promise<Outcome> {
   const exe = findOllamaExe()
-  if (!exe) return { kind: 'error', message: 'Ollama no está instalado' }
+  if (!exe) return { kind: 'error', message: t('Ollama no está instalado', 'Ollama is not installed') }
   try {
     const child = spawn(exe, ['serve'], {
       cwd: dirname(exe),
@@ -115,22 +116,22 @@ export async function startOllama(): Promise<Outcome> {
     child.unref()
     ownServer = child
   } catch {
-    return { kind: 'error', message: 'No se pudo arrancar Ollama' }
+    return { kind: 'error', message: t('No se pudo arrancar Ollama', 'Could not start Ollama') }
   }
   for (let i = 0; i < 20; i++) {
     await wait(750)
     const s = await refreshAiStatus()
     if (s.state !== 'not-running') return { kind: 'refresh' }
   }
-  return { kind: 'error', message: 'Ollama no responde. Prueba a abrirlo desde el menú Inicio.' }
+  return { kind: 'error', message: t('Ollama no responde. Prueba a abrirlo desde el menú Inicio.', 'Ollama is not responding. Try opening it from the Start menu.') }
 }
 
 /** Descarga el modelo elegido mostrando el progreso en el bocadillo. */
 export async function pullModel(): Promise<Outcome> {
-  if (status.state === 'pulling') return { kind: 'close', toast: 'Ya lo estoy descargando' }
+  if (status.state === 'pulling') return { kind: 'close', toast: t('Ya lo estoy descargando', "I'm already downloading it") }
   const model = getConfig().aiModel
   setStatus({ ...status, state: 'pulling', model, progress: 0 })
-  const bubbleId = showBubble({ kind: 'info', title: `Descargando ${model}…`, text: 'Preparando', timeoutMs: null })
+  const bubbleId = showBubble({ kind: 'info', title: `${t('Descargando', 'Downloading')} ${model}…`, text: t('Preparando', 'Preparing'), timeoutMs: null })
 
   let lastShown = -1
   void client
@@ -147,13 +148,13 @@ export async function pullModel(): Promise<Outcome> {
       setStatus({ ...status, state: 'checking' })
       await refreshAiStatus()
       robotMood.flash('happy')
-      toast(`✨ ${model} listo para usar`)
+      toast(t(`✨ ${model} listo para usar`, `✨ ${model} is ready to use`))
     })
     .catch(async (err) => {
       setStatus({ ...status, state: 'checking' })
       await refreshAiStatus()
       robotMood.flash('confused')
-      toast(err instanceof OllamaError ? `No se pudo descargar: ${err.userMessage}` : 'No se pudo descargar el modelo')
+      toast(err instanceof OllamaError ? `${t('No se pudo descargar', 'Download failed')}: ${err.userMessage}` : t('No se pudo descargar el modelo', 'Could not download the model'))
     })
   return { kind: 'close' }
 }
@@ -193,9 +194,9 @@ export async function freeAiMemory(): Promise<void> {
   warmedAt = 0
   try {
     await client.unload(status.model)
-    toast('🧹 Memoria de la IA liberada')
+    toast(t('🧹 Memoria de la IA liberada', '🧹 AI memory freed'))
   } catch {
-    toast('Ollama no está en marcha: no hay nada que liberar')
+    toast(t('Ollama no está en marcha: no hay nada que liberar', 'Ollama is not running: nothing to free'))
   }
 }
 
@@ -218,15 +219,15 @@ export function shutdownAi(): void {
 export function unavailableMessage(s: AiStatus = status): string {
   switch (s.state) {
     case 'not-installed':
-      return 'La IA local necesita Ollama (ollama.com)'
+      return t('La IA local necesita Ollama (ollama.com)', 'The local AI needs Ollama (ollama.com)')
     case 'not-running':
-      return 'Ollama está parado: arráncalo desde la barra («ia») o la bandeja'
+      return t('Ollama está parado: arráncalo desde la barra («ia») o la bandeja', 'Ollama is stopped: start it from the bar ("ai") or the tray')
     case 'no-model':
-      return `Falta el modelo ${s.model}: descárgalo desde la barra («ia»)`
+      return t(`Falta el modelo ${s.model}: descárgalo desde la barra («ia»)`, `The ${s.model} model is missing: download it from the bar ("ai")`)
     case 'pulling':
-      return 'Espera a que termine la descarga del modelo'
+      return t('Espera a que termine la descarga del modelo', 'Wait for the model download to finish')
     default:
-      return 'La IA no está disponible'
+      return t('La IA no está disponible', 'The AI is not available')
   }
 }
 
@@ -253,11 +254,11 @@ export async function interpret(text: string): Promise<Outcome> {
     })
     markModelUsed()
     const result = parseInterpretation(raw)
-    if (!result) return { kind: 'error', message: 'No supe interpretarlo. Prueba a decirlo de otra forma.' }
+    if (!result) return { kind: 'error', message: t('No supe interpretarlo. Prueba a decirlo de otra forma.', "I couldn't interpret that. Try saying it another way.") }
     if (result.command === 'none') return { kind: 'chat', task: 'chat', text }
     return { kind: 'activate', commandId: result.command, text: result.query }
   } catch (err) {
-    return { kind: 'error', message: err instanceof OllamaError ? err.userMessage : 'La IA falló' }
+    return { kind: 'error', message: err instanceof OllamaError ? err.userMessage : t('La IA falló', 'The AI failed') }
   } finally {
     robotMood.setThinking(false)
   }

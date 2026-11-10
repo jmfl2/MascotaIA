@@ -13,6 +13,7 @@
  * Solo se abre lo que está en el índice o en favoritos: el texto que escribe
  * el usuario nunca se usa como ruta ni como comando.
  */
+import { t } from '../../shared/i18n'
 import { app, shell } from 'electron'
 import { execFile, spawn } from 'node:child_process'
 import { existsSync, readdirSync, statSync } from 'node:fs'
@@ -306,7 +307,9 @@ async function iconFor(e: Entry): Promise<string | undefined> {
 }
 
 async function toTarget(e: Entry, score: number): Promise<LaunchTarget> {
-  return { id: e.id, name: e.name, detail: e.detail, favorite: e.favorite, score, icon: await iconFor(e) }
+  // Las apps guardan "Aplicación" como detalle; los favoritos, su ruta.
+  const detail = e.favorite ? e.detail : t('Aplicación', 'Application')
+  return { id: e.id, name: e.name, detail, favorite: e.favorite, score, icon: await iconFor(e) }
 }
 
 // --- API para los comandos ---------------------------------------------------------
@@ -333,11 +336,11 @@ export const launcherService = {
 
   async open(id: string): Promise<Outcome> {
     const entry = allEntries().find((e) => e.id === id)
-    if (!entry) return { kind: 'error', message: 'Ya no está disponible' }
+    if (!entry) return { kind: 'error', message: t('Ya no está disponible', 'No longer available') }
     if (entry.path) {
-      if (!existsSync(entry.path)) return { kind: 'error', message: 'No se encuentra: ¿se movió o se borró?' }
+      if (!existsSync(entry.path)) return { kind: 'error', message: t('No se encuentra: ¿se movió o se borró?', 'Not found: was it moved or deleted?') }
       const error = await shell.openPath(entry.path)
-      return error ? { kind: 'error', message: `No se pudo abrir: ${error}` } : { kind: 'close', mood: 'happy' }
+      return error ? { kind: 'error', message: `${t('No se pudo abrir', 'Could not open')}: ${error}` } : { kind: 'close', mood: 'happy' }
     }
     if (entry.appId && SAFE_APP_ID.test(entry.appId)) {
       // Argumentos como array y sin shell: no hay interpretación de comandos.
@@ -346,7 +349,7 @@ export const launcherService = {
       child.unref()
       return { kind: 'close', mood: 'happy' }
     }
-    return { kind: 'error', message: 'No se puede abrir' }
+    return { kind: 'error', message: t('No se puede abrir', "Can't be opened") }
   },
 
   removeFavorite(id: string): boolean {

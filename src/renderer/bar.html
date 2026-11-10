@@ -6,11 +6,11 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' ws://localhost:*; object-src 'none'; base-uri 'none'; form-action 'none'"
     />
-    <title>Barra de comandos</title>
+    <title data-en="Command bar">Barra de comandos</title>
   </head>
   <body>
     <div id="backdrop" class="backdrop">
-      <div id="panel" class="panel" role="dialog" aria-label="Barra de comandos">
+      <div id="panel" class="panel" role="dialog" aria-label="Barra de comandos" data-en-aria-label="Command bar">
         <div class="search-row">
           <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M10.5 4a6.5 6.5 0 1 0 0 13a6.5 6.5 0 0 0 0-13z M15.3 15.3L20 20" />
@@ -23,6 +23,7 @@
             spellcheck="false"
             autocomplete="off"
             aria-label="Buscar"
+            data-en-aria-label="Search"
             aria-controls="results"
             aria-autocomplete="list"
             maxlength="500"
@@ -35,14 +36,14 @@
           <p id="message" class="message" role="status" aria-live="polite"></p>
         </div>
         <footer class="footer">
-          <span class="only-list"><kbd>↑</kbd><kbd>↓</kbd> elegir</span>
-          <span class="only-list"><kbd>↵</kbd> abrir</span>
-          <span class="only-list"><kbd>Tab</kbd> comando</span>
-          <span id="secondary-hint" hidden><kbd>Supr</kbd> borrar</span>
-          <span class="only-chat"><kbd>↵</kbd> enviar</span>
-          <span class="only-chat"><kbd>Ctrl</kbd><kbd>N</kbd> nueva</span>
-          <span class="only-chat"><kbd>Esc</kbd> parar · cerrar</span>
-          <span class="only-list"><kbd>Esc</kbd> cerrar</span>
+          <span class="only-list"><kbd>↑</kbd><kbd>↓</kbd> <span data-en="choose">elegir</span></span>
+          <span class="only-list"><kbd>↵</kbd> <span data-en="open">abrir</span></span>
+          <span class="only-list"><kbd>Tab</kbd> <span data-en="command">comando</span></span>
+          <span id="secondary-hint" hidden><kbd data-en="Del">Supr</kbd><span> borrar</span></span>
+          <span class="only-chat"><kbd>↵</kbd> <span data-en="send">enviar</span></span>
+          <span class="only-chat"><kbd>Ctrl</kbd><kbd>N</kbd> <span data-en="new">nueva</span></span>
+          <span class="only-chat"><kbd>Esc</kbd> <span data-en="stop · close">parar · cerrar</span></span>
+          <span class="only-list"><kbd>Esc</kbd> <span data-en="close">cerrar</span></span>
           <span id="shortcut-hint" class="footer-right"></span>
         </footer>
       </div>

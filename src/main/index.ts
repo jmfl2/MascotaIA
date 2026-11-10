@@ -45,6 +45,7 @@ import { pomodoroService } from './services/pomodoro'
 import { registerShortcut } from './shortcut'
 import { getConfig } from './store'
 import { createTray } from './tray'
+import { setLang, t } from '../shared/i18n'
 
 // Una sola instancia: si se lanza otra vez, abrimos la barra de la que ya corre.
 if (!app.requestSingleInstanceLock()) {
@@ -69,6 +70,7 @@ app.on('will-quit', () => {
 })
 
 function start(): void {
+  setLang(getConfig().language)
   denyAllPermissions()
   registerIpc()
 
@@ -155,6 +157,12 @@ function registerIpc(): void {
   const bar = () => getBarWindow()?.webContents
   const bubble = () => getBubbleWebContents()
 
+  // Idioma: lo pide el preload de cada página al cargar (solo nuestras ventanas).
+  ipcMain.on(IPC.appLang, (event) => {
+    const ours = [robot(), bar(), bubble(), getTabWindow()?.webContents, getSettingsWindow()?.webContents]
+    event.returnValue = ours.some((wc) => isFrom(event, wc)) ? getConfig().language : 'es'
+  })
+
   // --- Robot ---
   ipcMain.on(IPC.robotDragStart, (event) => {
     if (isFrom(event, robot())) dragStart()
@@ -173,12 +181,12 @@ function registerIpc(): void {
     const win = getRobotWindow()
     if (!isFrom(event, robot()) || !win) return
     Menu.buildFromTemplate([
-      { label: 'Abrir barra', click: () => openBar() },
-      { label: 'Ajustes…', click: () => openSettings() },
+      { label: t('Abrir barra', 'Open bar'), click: () => openBar() },
+      { label: t('Ajustes…', 'Settings…'), click: () => openSettings() },
       { type: 'separator' },
-      { label: 'Esconder en una pestaña arriba', type: 'checkbox', checked: isDocked(), click: (item) => toggleDock(item.checked) },
+      { label: t('Esconder en una pestaña arriba', 'Hide in a tab at the top'), type: 'checkbox', checked: isDocked(), click: (item) => toggleDock(item.checked) },
       { type: 'separator' },
-      { label: isDocked() ? 'Ocultar pestaña' : 'Ocultar robot', click: () => setMascotVisible(false) }
+      { label: isDocked() ? t('Ocultar pestaña', 'Hide tab') : t('Ocultar robot', 'Hide robot'), click: () => setMascotVisible(false) }
     ]).popup({ window: win })
   })
 
@@ -191,11 +199,11 @@ function registerIpc(): void {
     const win = getTabWindow()
     if (!isFrom(event, tab()) || !win) return
     Menu.buildFromTemplate([
-      { label: 'Abrir barra', click: () => openBar() },
-      { label: 'Ajustes…', click: () => openSettings() },
+      { label: t('Abrir barra', 'Open bar'), click: () => openBar() },
+      { label: t('Ajustes…', 'Settings…'), click: () => openSettings() },
       { type: 'separator' },
-      { label: 'Robot siempre en pantalla', click: () => toggleDock(false) },
-      { label: 'Ocultar pestaña', click: () => setMascotVisible(false) }
+      { label: t('Robot siempre en pantalla', 'Robot always on screen'), click: () => toggleDock(false) },
+      { label: t('Ocultar pestaña', 'Hide tab'), click: () => setMascotVisible(false) }
     ]).popup({ window: win })
   })
 

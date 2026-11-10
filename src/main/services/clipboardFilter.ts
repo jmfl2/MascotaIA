@@ -3,6 +3,7 @@
  * Es deliberadamente conservador: ante la duda, el robot no dice nada.
  * (Sin dependencias de Electron, para poder probarlo.)
  */
+import { getLang, type Lang } from '../../shared/i18n'
 import { looksLikeUrl } from '../../security'
 
 /** Hasta aquí, texto "corto": se ofrece buscar, traducir o guardar. */
@@ -81,8 +82,13 @@ export function shouldOffer(raw: string): OfferDecision {
 
 const SPANISH_WORDS = new Set(['el', 'la', 'los', 'las', 'de', 'que', 'y', 'en', 'un', 'una', 'es', 'por', 'para', 'con', 'no', 'del', 'se', 'lo', 'como', 'más', 'pero', 'muy', 'está', 'hola', 'gracias'])
 
-/** Idioma al que traducir: si parece español, al inglés; si no, al español. */
-export function translateTarget(text: string): 'en' | 'es' {
+/**
+ * Idioma al que traducir lo copiado.
+ * - Interfaz en español: si parece español, al inglés; si no, al español.
+ * - Interfaz en inglés: siempre al inglés.
+ */
+export function translateTarget(text: string, lang: Lang = getLang()): 'en' | 'es' {
+  if (lang === 'en') return 'en'
   if (/[ñ¿¡áéíóú]/i.test(text)) return 'en'
   const words = text.toLowerCase().match(/\p{L}+/gu) ?? []
   const hits = words.filter((w) => SPANISH_WORDS.has(w)).length

@@ -22,6 +22,7 @@ import { pomodoroService } from './services/pomodoro'
 import { remindersService } from './services/reminders'
 import { getConfig, setConfig } from './store'
 import { IPC } from '../shared/ipc'
+import { t } from '../shared/i18n'
 
 const SNOOZE_MS = 10 * 60_000
 const LATE_THRESHOLD_MS = 60_000
@@ -31,22 +32,22 @@ const LATE_THRESHOLD_MS = 60_000
 function startReminders(): void {
   remindersService.start((reminder, lateMs) => {
     robotMood.setAlert(true)
-    const late = lateMs > LATE_THRESHOLD_MS ? ` (hace ${formatDuration(lateMs)})` : ''
+    const late = lateMs > LATE_THRESHOLD_MS ? t(` (hace ${formatDuration(lateMs)})`, ` (${formatDuration(lateMs)} ago)`) : ''
     showBubble({
       kind: 'reminder',
-      title: `⏰ Recordatorio${late}`,
+      title: `⏰ ${t('Recordatorio', 'Reminder')}${late}`,
       text: reminder.text,
       timeoutMs: null,
       chime: true,
       notifyIfHidden: true,
       actions: [
-        { id: 'done', label: 'Hecho', primary: true, run: () => {} },
+        { id: 'done', label: t('Hecho', 'Done'), primary: true, run: () => {} },
         {
           id: 'snooze',
-          label: 'En 10 min',
+          label: t('En 10 min', 'In 10 min'),
           run: () => {
             remindersService.add(reminder.text, Date.now() + SNOOZE_MS)
-            toast('Te lo vuelvo a recordar en 10 min')
+            toast(t('Te lo vuelvo a recordar en 10 min', "I'll remind you again in 10 min"))
           }
         }
       ],
@@ -76,27 +77,27 @@ function startPomodoro(): void {
       if (ended === 'focus' && status) {
         showBubble({
           kind: 'pomodoro',
-          title: '🍅 ¡Bien hecho! Toca descansar',
-          text: `Descanso de ${status.breakMin} min. Estira las piernas.`,
+          title: t('🍅 ¡Bien hecho! Toca descansar', '🍅 Well done! Time for a break'),
+          text: t(`Descanso de ${status.breakMin} min. Estira las piernas.`, `${status.breakMin} min break. Stretch your legs.`),
           timeoutMs: 15_000,
           chime: true,
           notifyIfHidden: true,
           actions: [
-            { id: 'skip', label: 'Saltar descanso', run: () => pomodoroService.skip() },
-            { id: 'stop', label: 'Terminar', run: () => pomodoroService.stop() }
+            { id: 'skip', label: t('Saltar descanso', 'Skip break'), run: () => pomodoroService.skip() },
+            { id: 'stop', label: t('Terminar', 'Finish'), run: () => pomodoroService.stop() }
           ]
         })
       } else {
         showBubble({
           kind: 'pomodoro',
-          title: '☕ Fin del descanso',
-          text: '¿Otro bloque de concentración?',
+          title: t('☕ Fin del descanso', '☕ Break is over'),
+          text: t('¿Otro bloque de concentración?', 'Another focus block?'),
           timeoutMs: 30_000,
           chime: true,
           notifyIfHidden: true,
           actions: [
-            { id: 'again', label: 'Otro pomodoro', primary: true, run: () => pomodoroService.restart() },
-            { id: 'no', label: 'Ahora no', run: () => {} }
+            { id: 'again', label: t('Otro pomodoro', 'Another pomodoro'), primary: true, run: () => pomodoroService.restart() },
+            { id: 'no', label: t('Ahora no', 'Not now'), run: () => {} }
           ]
         })
       }
@@ -125,11 +126,11 @@ export function askAiAbout(task: AiTask, text: string): void {
 
 const saveNote = (text: string) => ({
   id: 'note',
-  label: 'Guardar nota',
+  label: t('Guardar nota', 'Save note'),
   run: () => {
     notesService.add(text)
     robotMood.flash('happy')
-    toast('Nota guardada')
+    toast(t('Nota guardada', 'Note saved'))
   }
 })
 
@@ -143,8 +144,8 @@ async function offerLink(text: string): Promise<void> {
   // (para decir adónde lleva); en "discreto", nunca.
   if (report.verdict === 'ok' && (chattiness === 'discreto' || (chattiness === 'normal' && !report.shortUrl))) return
 
-  const open = { id: 'open', label: report.verdict === 'ok' ? 'Abrir' : 'Abrir igualmente', primary: report.verdict === 'ok', run: () => void openLink(report.url) }
-  const dontOpen = { id: 'no', label: 'No abrir', primary: true, run: () => {} }
+  const open = { id: 'open', label: report.verdict === 'ok' ? t('Abrir', 'Open') : t('Abrir igualmente', 'Open anyway'), primary: report.verdict === 'ok', run: () => void openLink(report.url) }
+  const dontOpen = { id: 'no', label: t('No abrir', "Don't open"), primary: true, run: () => {} }
 
   if (report.verdict === 'danger') {
     robotMood.setAlert(true)
@@ -171,7 +172,7 @@ async function offerLink(text: string): Promise<void> {
     showBubble({
       kind: 'link',
       title: verdictTitle(report),
-      text: report.shortUrl ? `Lleva a ${report.host}` : report.host,
+      text: report.shortUrl ? t(`Lleva a ${report.host}`, `Goes to ${report.host}`) : report.host,
       timeoutMs: 6000,
       actions: [open]
     })
@@ -196,12 +197,12 @@ function offerClipboard(decision: Extract<OfferDecision, { offer: true }>): void
     const words = text.split(/\s+/).length
     showBubble({
       kind: 'clipboard',
-      title: '¿Te resumo esto?',
-      text: `${words} palabras · «${snippet(text, 60)}»`,
+      title: t('¿Te resumo esto?', 'Want me to summarize this?'),
+      text: `${words} ${t('palabras', 'words')} · «${snippet(text, 60)}»`,
       timeoutMs: 6000,
       actions: [
-        { id: 'summarize', label: '✨ Resumir', primary: true, run: () => askAiAbout('summarize', text) },
-        { id: 'explain', label: 'Explicar', run: () => askAiAbout('explain', text) },
+        { id: 'summarize', label: t('✨ Resumir', '✨ Summarize'), primary: true, run: () => askAiAbout('summarize', text) },
+        { id: 'explain', label: t('Explicar', 'Explain'), run: () => askAiAbout('explain', text) },
         saveNote(text)
       ]
     })
@@ -211,18 +212,18 @@ function offerClipboard(decision: Extract<OfferDecision, { offer: true }>): void
   const target = translateTarget(text)
   showBubble({
     kind: 'clipboard',
-    title: '¿Te ayudo con esto?',
+    title: t('¿Te ayudo con esto?', 'Can I help with this?'),
     text: `«${snippet(text)}»`,
     timeoutMs: 6000,
     actions: [
-      { id: 'search', label: 'Buscar', primary: true, run: () => void openOrComplain('google', text) },
+      { id: 'search', label: t('Buscar', 'Search'), primary: true, run: () => void openOrComplain('google', text) },
       {
         id: 'translate',
-        label: target === 'en' ? 'Traducir al inglés' : 'Traducir',
+        label: target === 'en' ? t('Traducir al inglés', 'Translate to English') : t('Traducir', 'Translate'),
         run: () => void openOrComplain('translate', `${target}: ${text}`)
       },
       saveNote(text),
-      ...(aiReady ? [{ id: 'explain', label: '✨ Explicar', run: () => askAiAbout('explain', text) }] : [])
+      ...(aiReady ? [{ id: 'explain', label: t('✨ Explicar', '✨ Explain'), run: () => askAiAbout('explain', text) }] : [])
     ]
   })
 }
@@ -258,13 +259,13 @@ export function handleDroppedPaths(paths: unknown): void {
     robotMood.flash('happy')
     showBubble({
       kind: 'favorite',
-      title: added.length === 1 ? '⭐ Añadido a favoritos' : `⭐ ${added.length} favoritos nuevos`,
-      text: `${snippet(added.join(', '), 90)}\nÁbrelo con «abrir ${snippet(added[0], 20)}».`,
+      title: added.length === 1 ? t('⭐ Añadido a favoritos', '⭐ Added to favorites') : t(`⭐ ${added.length} favoritos nuevos`, `⭐ ${added.length} new favorites`),
+      text: `${snippet(added.join(', '), 90)}\n${t(`Ábrelo con «abrir ${snippet(added[0], 20)}».`, `Open it with "open ${snippet(added[0], 20)}".`)}`,
       timeoutMs: 4000
     })
   } else {
     robotMood.flash('confused')
-    toast('Ya estaba en favoritos')
+    toast(t('Ya estaba en favoritos', 'Already in favorites'))
   }
 }
 

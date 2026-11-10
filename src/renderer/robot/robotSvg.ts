@@ -8,6 +8,7 @@
  *
  * Es una cadena estática del propio código (no contiene nada del usuario).
  */
+import { t } from '../../shared/i18n'
 
 /**
  * Pixel art a partir de un dibujo con caracteres: cada carácter es un color
@@ -66,7 +67,7 @@ const PIXEL_GLASSES = pixels(
   { f: 'acc-main', k: '#06070b', w: '#ffffff' }
 )
 
-export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" aria-label="Robot mascota" role="img">
+export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" aria-label="${t('Robot mascota', 'Mascot robot')}" role="img">
   <defs>
     <linearGradient id="g-body" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" class="stop-body-top" />

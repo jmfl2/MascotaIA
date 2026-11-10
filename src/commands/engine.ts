@@ -7,6 +7,7 @@
  *   Si es una frase y la IA está lista, se ofrece "Interpretar con IA"
  *   justo debajo de Google (solo consulta al modelo si se elige).
  */
+import { t } from '../shared/i18n'
 import { looksLikeUrl } from '../security'
 import { ai } from './ai'
 import { link } from './link'
@@ -61,7 +62,7 @@ export async function suggestFor(commandId: string | null, text: string, ctx: Co
         {
           command: link,
           suggestion: {
-            title: '🛡️ Comprobar el enlace antes de abrirlo',
+            title: t('🛡️ Comprobar el enlace antes de abrirlo', '🛡️ Check the link before opening it'),
             subtitle: text.trim().slice(0, 120),
             run: () => ({ kind: 'activate', commandId: 'link', text: text.trim() })
           }
@@ -87,8 +88,8 @@ export async function suggestFor(commandId: string | null, text: string, ctx: Co
           {
             command: ai,
             suggestion: {
-              title: '✨ Interpretar con IA',
-              subtitle: 'La IA elige el comando adecuado y tú lo confirmas',
+              title: t('✨ Interpretar con IA', '✨ Interpret with AI'),
+              subtitle: t('La IA elige el comando adecuado y tú lo confirmas', 'The AI picks the right command and you confirm it'),
               run: () => ctx.ai.interpret(text)
             }
           }

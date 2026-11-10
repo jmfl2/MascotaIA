@@ -1,4 +1,8 @@
+import { t } from '../../shared/i18n'
+import { localizeDocument } from '../shared/i18nDom'
 import './tab.css'
+
+localizeDocument()
 
 const POMODORO_COLORS = { focus: '#ff6b5a', break: '#34c759' }
 
@@ -15,7 +19,7 @@ api.onNear((near) => {
 api.onInfo(({ name, shortcut }) => {
   nameEl.textContent = name
   shortcutEl.textContent = shortcut
-  pill.setAttribute('aria-label', `Abrir ${name}`)
+  pill.setAttribute('aria-label', t(`Abrir ${name}`, `Open ${name}`))
 })
 
 api.onPomodoro((view) => {

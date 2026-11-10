@@ -9,11 +9,18 @@
  *   mañana 9:00 dentista       -> mañana a las 9:00
  *   mañana a las 8 correr      -> mañana a las 8:00
  *
- * Un número suelto ("rec 5 llamar") no vale: sería ambiguo.
+ * También entiende inglés, sea cual sea el idioma de la interfaz:
+ *
+ *   in 20 minutes coffee       -> dentro de 20 minutos
+ *   1 hour and 30 minutes call -> dentro de 1 h 30 min
+ *   at 9 gym · 6:30pm call     -> a las 9:00 · a las 18:30
+ *   tomorrow at 8am run        -> mañana a las 8:00
+ *
+ * Un número suelto ("rec 5 llamar") no vale: sería ambiguo ("5pm" sí).
  */
+import { t } from '../shared/i18n'
 
 export const MAX_REMINDER_MS = 30 * 24 * 60 * 60 * 1000 // 30 días
-const DEFAULT_TEXT = 'Recordatorio'
 
 const UNIT_MS: Record<string, number> = { h: 3_600_000, m: 60_000, s: 1_000 }
 
@@ -25,14 +32,15 @@ function unitOf(raw: string): 'h' | 'm' | 's' {
   return 's'
 }
 
-const UNIT = '(?:horas|hora|hrs|hr|h|minutos|minuto|mins|min|m|segundos|segundo|segs|seg|s)'
+const UNIT = '(?:horas|hora|hours|hour|hrs|hr|h|minutos|minuto|minutes|minute|mins|min|m|segundos|segundo|seconds|second|segs|secs|seg|sec|s)'
 const AMOUNT = `\\d{1,4}\\s*${UNIT}`
-// Una o más cantidades ("1h30m", "1 hora y 30 minutos") seguidas del texto.
-const RELATIVE = new RegExp(`^(?:en\\s+)?((?:${AMOUNT}\\s*(?:y\\s+)?)+)(?=\\s|$)\\s*([\\s\\S]*)$`, 'i')
+// Una o más cantidades ("1h30m", "1 hora y 30 minutos", "1 hour and 30 minutes") seguidas del texto.
+const RELATIVE = new RegExp(`^(?:(?:en|in)\\s+)?((?:${AMOUNT}\\s*(?:(?:y|and)\\s+)?)+)(?=\\s|$)\\s*([\\s\\S]*)$`, 'i')
 const PART = new RegExp(`(\\d{1,4})\\s*(${UNIT})`, 'gi')
 
-// [hoy|mañana] [a la(s)] HH[:MM][h]
-const ABSOLUTE = /^(?:(hoy|mañana|manana)\s+)?(a\s+las?\s+)?(\d{1,2})(?::(\d{2}))?(?:\s*h\b)?(?=\s|$)\s*([\s\S]*)$/i
+// [hoy|mañana|today|tomorrow] [a la(s)|at] HH[:MM][h|am|pm]
+const ABSOLUTE =
+  /^(?:(hoy|mañana|manana|today|tomorrow)\s+)?(a\s+las?\s+|at\s+)?(\d{1,2})(?::(\d{2}))?(?:\s*(am|pm|a\.m\.|p\.m\.)|\s*h)?(?=\s|$)\s*([\s\S]*)$/i
 
 export interface ParsedReminder {
   dueAt: number
@@ -57,17 +65,22 @@ function parseRelative(s: string, now: Date): ParsedReminder | null {
 function parseAbsolute(s: string, now: Date): ParsedReminder | null {
   const match = ABSOLUTE.exec(s)
   if (!match) return null
-  const [, day, aLas, hh, mm, rest] = match
-  // Sin "a las", sin día y sin minutos sería un número suelto: no lo aceptamos.
-  if (!aLas && !day && mm === undefined) return null
+  const [, day, aLas, hh, mm, meridiem, rest] = match
+  // Sin "a las", sin día, sin minutos y sin am/pm sería un número suelto: no lo aceptamos.
+  if (!aLas && !day && mm === undefined && !meridiem) return null
 
-  const hours = Number(hh)
+  let hours = Number(hh)
   const minutes = mm === undefined ? 0 : Number(mm)
+  if (meridiem) {
+    if (hours < 1 || hours > 12) return null
+    const pm = meridiem.toLowerCase().startsWith('p')
+    hours = (hours % 12) + (pm ? 12 : 0)
+  }
   if (hours > 23 || minutes > 59) return null
 
   const due = new Date(now)
   due.setHours(hours, minutes, 0, 0)
-  const tomorrow = day !== undefined && day.toLowerCase() !== 'hoy'
+  const tomorrow = day !== undefined && !['hoy', 'today'].includes(day.toLowerCase())
   if (tomorrow) {
     due.setDate(due.getDate() + 1)
   } else if (due.getTime() <= now.getTime()) {
@@ -78,6 +91,6 @@ function parseAbsolute(s: string, now: Date): ParsedReminder | null {
 }
 
 function cleanText(raw: string | undefined): string {
-  const text = (raw ?? '').trim().replace(/^(?:que|de|para)\s+/i, '')
-  return text || DEFAULT_TEXT
+  const text = (raw ?? '').trim().replace(/^(?:que|de|para|to|that|about)\s+/i, '')
+  return text || t('Recordatorio', 'Reminder')
 }

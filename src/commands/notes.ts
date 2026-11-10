@@ -1,3 +1,4 @@
+import { t } from '../shared/i18n'
 import { formatAgo } from './format'
 import { rank } from './match'
 import { sanitizeQuery } from './sanitize'
@@ -15,10 +16,16 @@ const MAX_LISTED = 50
  */
 export const notes: CommandModule = {
   id: 'notes',
-  name: 'Notas',
-  prefixes: ['nota', 'notas', 'n'],
-  hint: 'Guardar y buscar notas rápidas',
-  placeholder: 'Escribe una nota o busca entre las tuyas…',
+  get name() {
+    return t('Notas', 'Notes')
+  },
+  prefixes: ['nota', 'notas', 'n', 'note', 'notes'],
+  get hint() {
+    return t('Guardar y buscar notas rápidas', 'Save and search quick notes')
+  },
+  get placeholder() {
+    return t('Escribe una nota o busca entre las tuyas…', 'Write a note or search your notes…')
+  },
   accent: ACCENT,
   iconPath: NOTE_ICON,
   suggest(query, ctx) {
@@ -29,11 +36,11 @@ export const notes: CommandModule = {
     if (q) {
       rows.push({
         title: q,
-        subtitle: 'Guardar como nota nueva',
+        subtitle: t('Guardar como nota nueva', 'Save as a new note'),
         icon: { kind: 'glyph', path: PLUS_ICON, accent: ACCENT },
         run: () => {
           ctx.notes.add(q)
-          return { kind: 'close', mood: 'happy', toast: 'Nota guardada' }
+          return { kind: 'close', mood: 'happy', toast: t('Nota guardada', 'Note saved') }
         }
       })
     }
@@ -43,13 +50,13 @@ export const notes: CommandModule = {
     for (const note of found.slice(0, MAX_LISTED)) {
       rows.push({
         title: note.text,
-        subtitle: `${formatAgo(note.createdAt, now)} · Intro copia`,
+        subtitle: `${formatAgo(note.createdAt, now)} · ${t('Intro copia', 'Enter copies')}`,
         run: () => {
           ctx.copyText(note.text)
-          return { kind: 'close', mood: 'happy', toast: 'Nota copiada al portapapeles' }
+          return { kind: 'close', mood: 'happy', toast: t('Nota copiada al portapapeles', 'Note copied to the clipboard') }
         },
         secondary: {
-          label: 'borrar',
+          label: t('borrar', 'delete'),
           run: () => {
             ctx.notes.remove(note.id)
             return { kind: 'refresh' }
@@ -60,10 +67,10 @@ export const notes: CommandModule = {
 
     if (!q && all.length === 0) {
       rows.push({
-        title: 'Aún no tienes notas',
-        subtitle: 'Escribe algo y pulsa Intro para guardarlo',
+        title: t('Aún no tienes notas', 'No notes yet'),
+        subtitle: t('Escribe algo y pulsa Intro para guardarlo', 'Type something and press Enter to save it'),
         disabled: true,
-        run: () => ({ kind: 'error', message: 'Escribe la nota primero' })
+        run: () => ({ kind: 'error', message: t('Escribe la nota primero', 'Write the note first') })
       })
     }
     return rows

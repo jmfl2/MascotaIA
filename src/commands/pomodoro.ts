@@ -1,3 +1,4 @@
+import { t } from '../shared/i18n'
 import { formatCountdown } from './format'
 import type { CommandModule, Suggestion } from './types'
 
@@ -24,8 +25,12 @@ export const pomodoro: CommandModule = {
   id: 'pomodoro',
   name: 'Pomodoro',
   prefixes: ['pomo', 'pomodoro'],
-  hint: 'Temporizador de concentración',
-  placeholder: '25/5 por defecto · prueba 50/10',
+  get hint() {
+    return t('Temporizador de concentración', 'Focus timer')
+  },
+  get placeholder() {
+    return t('25/5 por defecto · prueba 50/10', '25/5 by default · try 50/10')
+  },
   accent: ACCENT,
   iconPath: TOMATO_ICON,
   suggest(query, ctx) {
@@ -37,17 +42,21 @@ export const pomodoro: CommandModule = {
       const focus = status.phase === 'focus'
       return [
         {
-          title: `${focus ? 'Concentración' : 'Descanso'} · quedan ${left}`,
-          subtitle: `Pomodoro ${status.focusMin}/${status.breakMin} · Intro lo detiene`,
+          title: focus
+            ? t(`Concentración · quedan ${left}`, `Focus · ${left} left`)
+            : t(`Descanso · quedan ${left}`, `Break · ${left} left`),
+          subtitle: `Pomodoro ${status.focusMin}/${status.breakMin} · ${t('Intro lo detiene', 'Enter stops it')}`,
           icon: { kind: 'glyph', path: STOP_ICON, accent: '#64748b' },
           run: () => {
             ctx.pomodoro.stop()
-            return { kind: 'close', toast: 'Pomodoro detenido' }
+            return { kind: 'close', toast: t('Pomodoro detenido', 'Pomodoro stopped') }
           }
         },
         {
-          title: focus ? 'Saltar al descanso' : 'Volver a concentrarse',
-          subtitle: focus ? `Empieza ya el descanso de ${status.breakMin} min` : `Empieza otro bloque de ${status.focusMin} min`,
+          title: focus ? t('Saltar al descanso', 'Skip to the break') : t('Volver a concentrarse', 'Back to focus'),
+          subtitle: focus
+            ? t(`Empieza ya el descanso de ${status.breakMin} min`, `Start the ${status.breakMin} min break now`)
+            : t(`Empieza otro bloque de ${status.focusMin} min`, `Start another ${status.focusMin} min block`),
           icon: { kind: 'glyph', path: SKIP_ICON, accent: '#64748b' },
           run: () => {
             ctx.pomodoro.skip()
@@ -61,20 +70,20 @@ export const pomodoro: CommandModule = {
     if (!parsed) {
       return [
         {
-          title: 'Formato: minutos de concentración / descanso',
+          title: t('Formato: minutos de concentración / descanso', 'Format: focus minutes / break minutes'),
           subtitle: 'pomo · pomo 50/10 · pomo 40',
           disabled: true,
-          run: () => ({ kind: 'error', message: 'Usa minutos: 25/5, 50/10…' })
+          run: () => ({ kind: 'error', message: t('Usa minutos: 25/5, 50/10…', 'Use minutes: 25/5, 50/10…') })
         }
       ]
     }
     return [
       {
-        title: `Empezar pomodoro de ${parsed.focusMin} min`,
-        subtitle: `Luego, descanso de ${parsed.breakMin} min${q ? '' : ' · prueba "pomo 50/10"'}`,
+        title: t(`Empezar pomodoro de ${parsed.focusMin} min`, `Start a ${parsed.focusMin} min pomodoro`),
+        subtitle: t(`Luego, descanso de ${parsed.breakMin} min`, `Then a ${parsed.breakMin} min break`) + (q ? '' : ` · ${t('prueba', 'try')} "pomo 50/10"`),
         run: () => {
           ctx.pomodoro.start(parsed.focusMin, parsed.breakMin)
-          return { kind: 'close', mood: 'happy', toast: `¡A concentrarse! ${parsed.focusMin} min` }
+          return { kind: 'close', mood: 'happy', toast: t(`¡A concentrarse! ${parsed.focusMin} min`, `Focus time! ${parsed.focusMin} min`) }
         }
       }
     ]

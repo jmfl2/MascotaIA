@@ -3,6 +3,7 @@
  * Las respuestas se pintan con el Markdown seguro de src/ai/markdown.ts:
  * todo son nodos creados a mano con `textContent`, nunca `innerHTML`.
  */
+import { t } from '../../shared/i18n'
 import { parseMarkdown, type Inline } from '../../ai/markdown'
 import type { ChatSnapshot } from '../../shared/ipc'
 
@@ -72,9 +73,9 @@ export function createChatView(root: HTMLElement, onCopy: (index: number) => voi
       empty.className = 'chat-empty'
       const title = document.createElement('p')
       title.className = 'chat-empty-title'
-      title.textContent = 'Pregúntame lo que quieras'
+      title.textContent = t('Pregúntame lo que quieras', 'Ask me anything')
       const sub = document.createElement('p')
-      sub.textContent = 'Funciono en tu PC con Ollama: lo que escribas no sale de aquí.'
+      sub.textContent = t('Funciono en tu PC con Ollama: lo que escribas no sale de aquí.', 'I run on your PC with Ollama: what you type never leaves it.')
       empty.append(title, sub)
       root.append(empty)
     }
@@ -101,7 +102,7 @@ export function createChatView(root: HTMLElement, onCopy: (index: number) => voi
         const copy = document.createElement('button')
         copy.type = 'button'
         copy.className = 'msg-copy'
-        copy.textContent = 'Copiar'
+        copy.textContent = t('Copiar', 'Copy')
         copy.addEventListener('click', () => onCopy(index))
         row.append(copy)
       }

@@ -2,6 +2,7 @@
  * Comprobación completa de un enlace: análisis local y, si es un acortador,
  * análisis de su destino real (preguntando solo al acortador).
  */
+import { t } from '../shared/i18n'
 import { expandShortLink } from './expand'
 import { analyzeLink, type LinkReport } from './linkCheck'
 
@@ -21,14 +22,14 @@ export async function checkLink(text: string, fetchFn: typeof fetch = fetch): Pr
     return {
       ...first,
       verdict: first.verdict === 'danger' ? 'danger' : 'caution',
-      reasons: [{ severity: 'warn', text: `${expanded.error}: no sé adónde lleva` }, ...first.reasons]
+      reasons: [{ severity: 'warn', text: t(`${expanded.error}: no sé adónde lleva`, `${expanded.error}: I don't know where it goes`) }, ...first.reasons]
     }
   }
   const final = analyzeLink(expanded.finalUrl)
   return {
     ...final,
     shortUrl: first.url,
-    reasons: [...final.reasons, { severity: 'info', text: `Enlace acortado: en realidad lleva a ${final.host}` }]
+    reasons: [...final.reasons, { severity: 'info', text: t(`Enlace acortado: en realidad lleva a ${final.host}`, `Shortened link: it actually goes to ${final.host}`) }]
   }
 }
 

@@ -2,6 +2,7 @@
  * Comprobar un enlace antes de abrirlo: "link https://..." o "link" (usa el
  * portapapeles). Muestra el veredicto y los motivos; abrir es una fila aparte.
  */
+import { t } from '../shared/i18n'
 import { analyzeLink, looksLikeUrl, verdictTitle, type Reason } from '../security'
 import type { CommandModule, Suggestion } from './types'
 
@@ -16,10 +17,16 @@ const SEVERITY_COLORS: Record<Reason['severity'], string> = { danger: '#ef4444',
 
 export const link: CommandModule = {
   id: 'link',
-  name: 'Enlace',
+  get name() {
+    return t('Enlace', 'Link')
+  },
   prefixes: ['link', 'enlace', 'url'],
-  hint: 'Comprobar si un enlace es de fiar',
-  placeholder: 'Pega un enlace (o deja vacío para el del portapapeles)…',
+  get hint() {
+    return t('Comprobar si un enlace es de fiar', 'Check whether a link can be trusted')
+  },
+  get placeholder() {
+    return t('Pega un enlace (o deja vacío para el del portapapeles)…', 'Paste a link (or leave empty for the one in the clipboard)…')
+  },
   accent: '#22c55e',
   iconPath: SHIELD_ICON,
   async suggest(query, ctx) {
@@ -31,23 +38,33 @@ export const link: CommandModule = {
     if (!text) {
       return [
         {
-          title: 'Pega un enlace para comprobarlo',
-          subtitle: 'Miro si imita a una marca, si esconde el destino y otras trampas típicas',
+          title: t('Pega un enlace para comprobarlo', 'Paste a link to check it'),
+          subtitle: t(
+            'Miro si imita a una marca, si esconde el destino y otras trampas típicas',
+            'I check whether it imitates a brand, hides where it goes and other common tricks'
+          ),
           disabled: true,
-          run: () => ({ kind: 'error', message: 'Pega un enlace primero' })
+          run: () => ({ kind: 'error', message: t('Pega un enlace primero', 'Paste a link first') })
         }
       ]
     }
 
     const report = analyzeLink(text)
     if (report.verdict === 'invalid') {
-      return [{ title: 'No parece un enlace', subtitle: text.slice(0, 120), disabled: true, run: () => ({ kind: 'error', message: 'No es un enlace válido' }) }]
+      return [
+        {
+          title: t('No parece un enlace', 'That does not look like a link'),
+          subtitle: text.slice(0, 120),
+          disabled: true,
+          run: () => ({ kind: 'error', message: t('No es un enlace válido', 'Not a valid link') })
+        }
+      ]
     }
 
     const rows: Suggestion[] = [
       {
         title: verdictTitle(report),
-        subtitle: `Sitio real: ${report.site || report.host}`,
+        subtitle: `${t('Sitio real', 'Real site')}: ${report.site || report.host}`,
         icon: { kind: 'glyph', path: SHIELD_ICON, accent: COLORS[report.verdict] },
         disabled: true,
         run: () => ({ kind: 'refresh' })
@@ -62,8 +79,8 @@ export const link: CommandModule = {
 
     if (report.isShortener) {
       rows.push({
-        title: 'Ver adónde lleva',
-        subtitle: `Pregunto solo a ${report.host}, sin abrir el destino`,
+        title: t('Ver adónde lleva', 'See where it goes'),
+        subtitle: t(`Pregunto solo a ${report.host}, sin abrir el destino`, `I only ask ${report.host}, without opening the destination`),
         icon: { kind: 'glyph', path: EXPAND_ICON, accent: '#3b82f6' },
         run: () => ctx.links.expand(report.url)
       })
@@ -72,15 +89,15 @@ export const link: CommandModule = {
     // elegir, y la que coge Intro) es NO abrirlo.
     if (report.verdict !== 'ok') {
       rows.push({
-        title: 'No abrir',
-        subtitle: 'Cerrar sin abrir el enlace',
+        title: t('No abrir', "Don't open"),
+        subtitle: t('Cerrar sin abrir el enlace', 'Close without opening the link'),
         icon: { kind: 'glyph', path: SHIELD_ICON, accent: '#22c55e' },
-        run: () => ({ kind: 'close', mood: 'happy', toast: 'Mejor no abrirlo 👍' })
+        run: () => ({ kind: 'close', mood: 'happy', toast: t('Mejor no abrirlo 👍', 'Better not to open it 👍') })
       })
     }
     rows.push({
-      title: report.verdict === 'ok' ? `Abrir ${report.host}` : 'Abrir igualmente',
-      subtitle: report.verdict === 'ok' ? 'En tu navegador' : 'Solo si estás seguro de que es de fiar',
+      title: report.verdict === 'ok' ? `${t('Abrir', 'Open')} ${report.host}` : t('Abrir igualmente', 'Open anyway'),
+      subtitle: report.verdict === 'ok' ? t('En tu navegador', 'In your browser') : t('Solo si estás seguro de que es de fiar', 'Only if you are sure it can be trusted'),
       icon: { kind: 'glyph', path: OPEN_ICON, accent: report.verdict === 'ok' ? '#3b82f6' : '#64748b' },
       run: () => ctx.links.open(report.url)
     })

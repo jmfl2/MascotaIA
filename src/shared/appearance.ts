@@ -2,6 +2,7 @@
  * Skins, accesorios y personalidad del robot. Única fuente de verdad: la usan
  * el robot, la ventana de ajustes y el proceso principal (para validar).
  */
+import type { Lang, Text } from './i18n'
 
 export interface SkinColors {
   bodyTop: string
@@ -19,39 +20,39 @@ export interface SkinColors {
 
 export interface Skin {
   id: string
-  name: string
+  name: Text
   colors: SkinColors
 }
 
 export const SKINS: readonly Skin[] = [
   {
     id: 'clasico',
-    name: 'Clásico',
+    name: { es: 'Clásico', en: 'Classic' },
     colors: { bodyTop: '#ffffff', bodyBottom: '#d7dce6', bodyEdge: '#c3c9d6', screenTop: '#222839', screenBottom: '#0c0f18', eye: '#7ef0ff', cheek: '#ff8fb1', accessory: '#5b8cff', accessoryDark: '#2b2f3a' }
   },
   {
     id: 'medianoche',
-    name: 'Medianoche',
+    name: { es: 'Medianoche', en: 'Midnight' },
     colors: { bodyTop: '#4a5578', bodyBottom: '#1f2640', bodyEdge: '#151a2e', screenTop: '#0d1020', screenBottom: '#05060c', eye: '#ff7ad9', cheek: '#ff9ec7', accessory: '#ffd166', accessoryDark: '#0b0e1a' }
   },
   {
     id: 'menta',
-    name: 'Menta',
+    name: { es: 'Menta', en: 'Mint' },
     colors: { bodyTop: '#f2fffa', bodyBottom: '#a7e8d0', bodyEdge: '#86d3b8', screenTop: '#1d3a34', screenBottom: '#0b1a17', eye: '#b6ffe0', cheek: '#ff9aa2', accessory: '#ff8a5c', accessoryDark: '#24463f' }
   },
   {
     id: 'coral',
-    name: 'Coral',
+    name: { es: 'Coral', en: 'Coral' },
     colors: { bodyTop: '#fff4ef', bodyBottom: '#ffb4a2', bodyEdge: '#f29a85', screenTop: '#3a1f2b', screenBottom: '#1a0c12', eye: '#ffe066', cheek: '#ff6b81', accessory: '#3aa7a3', accessoryDark: '#4a2531' }
   },
   {
     id: 'lavanda',
-    name: 'Lavanda',
+    name: { es: 'Lavanda', en: 'Lavender' },
     colors: { bodyTop: '#fbf8ff', bodyBottom: '#cdbdf5', bodyEdge: '#b6a3ea', screenTop: '#2a2142', screenBottom: '#120d20', eye: '#a6f4ff', cheek: '#ff9ad5', accessory: '#7c5cff', accessoryDark: '#30264d' }
   },
   {
     id: 'grafito',
-    name: 'Grafito',
+    name: { es: 'Grafito', en: 'Graphite' },
     colors: { bodyTop: '#6b7280', bodyBottom: '#2f343d', bodyEdge: '#23272e', screenTop: '#111318', screenBottom: '#050607', eye: '#7dff9a', cheek: '#ff8f8f', accessory: '#f97316', accessoryDark: '#16181c' }
   }
 ]
@@ -63,24 +64,24 @@ export const SKINS: readonly Skin[] = [
  * a esos mundos, sin logos ni diseños de ninguna obra concreta.
  */
 export const ACCESSORIES = [
-  { id: 'auriculares', name: 'Auriculares', slot: 'orejas' },
-  { id: 'gorro', name: 'Gorro', slot: 'cabeza' },
-  { id: 'gafas', name: 'Gafas', slot: 'cara' },
-  { id: 'pajarita', name: 'Pajarita', slot: 'cuello' },
-  { id: 'corona', name: 'Corona pixel', slot: 'cabeza' },
-  { id: 'helice', name: 'Gorra de hélice', slot: 'cabeza' },
-  { id: 'bandana', name: 'Bandana', slot: 'cabeza' },
-  { id: 'gafas-pixel', name: 'Gafas pixel', slot: 'cara' },
-  { id: 'vidas', name: 'Vidas', slot: 'encima' },
-  { id: 'espada', name: 'Espada', slot: 'espalda' },
-  { id: 'mando', name: 'Mando', slot: 'manos' },
-  { id: 'sombrero-paja', name: 'Sombrero de paja', slot: 'cabeza' },
-  { id: 'parche', name: 'Parche pirata', slot: 'cara' },
-  { id: 'libreta', name: 'Libreta negra', slot: 'manos' },
-  { id: 'manzana', name: 'Manzana', slot: 'manos' },
-  { id: 'linterna', name: 'Linterna', slot: 'manos' },
-  { id: 'vial', name: 'Vial', slot: 'manos' },
-  { id: 'gancho', name: 'Gancho', slot: 'espalda' }
+  { id: 'auriculares', name: { es: 'Auriculares', en: 'Headphones' }, slot: 'orejas' },
+  { id: 'gorro', name: { es: 'Gorro', en: 'Beanie' }, slot: 'cabeza' },
+  { id: 'gafas', name: { es: 'Gafas', en: 'Glasses' }, slot: 'cara' },
+  { id: 'pajarita', name: { es: 'Pajarita', en: 'Bow tie' }, slot: 'cuello' },
+  { id: 'corona', name: { es: 'Corona pixel', en: 'Pixel crown' }, slot: 'cabeza' },
+  { id: 'helice', name: { es: 'Gorra de hélice', en: 'Propeller cap' }, slot: 'cabeza' },
+  { id: 'bandana', name: { es: 'Bandana', en: 'Bandana' }, slot: 'cabeza' },
+  { id: 'gafas-pixel', name: { es: 'Gafas pixel', en: 'Pixel shades' }, slot: 'cara' },
+  { id: 'vidas', name: { es: 'Vidas', en: 'Lives' }, slot: 'encima' },
+  { id: 'espada', name: { es: 'Espada', en: 'Sword' }, slot: 'espalda' },
+  { id: 'mando', name: { es: 'Mando', en: 'Controller' }, slot: 'manos' },
+  { id: 'sombrero-paja', name: { es: 'Sombrero de paja', en: 'Straw hat' }, slot: 'cabeza' },
+  { id: 'parche', name: { es: 'Parche pirata', en: 'Eye patch' }, slot: 'cara' },
+  { id: 'libreta', name: { es: 'Libreta negra', en: 'Black notebook' }, slot: 'manos' },
+  { id: 'manzana', name: { es: 'Manzana', en: 'Apple' }, slot: 'manos' },
+  { id: 'linterna', name: { es: 'Linterna', en: 'Flashlight' }, slot: 'manos' },
+  { id: 'vial', name: { es: 'Vial', en: 'Vial' }, slot: 'manos' },
+  { id: 'gancho', name: { es: 'Gancho', en: 'Hook' }, slot: 'espalda' }
 ] as const
 export type AccessoryId = (typeof ACCESSORIES)[number]['id']
 export type AccessorySlot = (typeof ACCESSORIES)[number]['slot']
@@ -96,16 +97,31 @@ export function toggleAccessory(current: readonly AccessoryId[], id: AccessoryId
 }
 
 export const CHATTINESS = [
-  { id: 'discreto', name: 'Discreto', hint: 'Solo avisos importantes: recordatorios, pomodoro y enlaces peligrosos' },
-  { id: 'normal', name: 'Normal', hint: 'Además te ofrece ayuda cuando copias algo' },
-  { id: 'hablador', name: 'Hablador', hint: 'Además saluda, te anima y te recuerda descansar' }
+  {
+    id: 'discreto',
+    name: { es: 'Discreto', en: 'Quiet' },
+    hint: {
+      es: 'Solo avisos importantes: recordatorios, pomodoro y enlaces peligrosos',
+      en: 'Only important alerts: reminders, pomodoro and dangerous links'
+    }
+  },
+  {
+    id: 'normal',
+    name: { es: 'Normal', en: 'Normal' },
+    hint: { es: 'Además te ofrece ayuda cuando copias algo', en: 'Also offers help when you copy something' }
+  },
+  {
+    id: 'hablador',
+    name: { es: 'Hablador', en: 'Chatty' },
+    hint: { es: 'Además saluda, te anima y te recuerda descansar', en: 'Also says hello, cheers you on and reminds you to take breaks' }
+  }
 ] as const
 export type Chattiness = (typeof CHATTINESS)[number]['id']
 
 export const AI_TONES = [
-  { id: 'cercano', name: 'Cercano' },
-  { id: 'formal', name: 'Formal' },
-  { id: 'divertido', name: 'Divertido' }
+  { id: 'cercano', name: { es: 'Cercano', en: 'Friendly' } },
+  { id: 'formal', name: { es: 'Formal', en: 'Formal' } },
+  { id: 'divertido', name: { es: 'Divertido', en: 'Playful' } }
 ] as const
 export type AiTone = (typeof AI_TONES)[number]['id']
 
@@ -184,6 +200,7 @@ export interface SettingsView {
   startWithWindows: boolean
   /** Modo pestaña: el robot se esconde en una pestaña arriba de la pantalla. */
   dockTop: boolean
+  language: Lang
 }
 
 export type SettingsPatch = Partial<SettingsView>

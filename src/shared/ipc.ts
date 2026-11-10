@@ -5,6 +5,7 @@
  */
 import type { IconSpec } from '../commands/types'
 import type { Appearance, SettingsPatch, SettingsView } from './appearance'
+import type { Lang } from './i18n'
 
 export type { IconSpec }
 
@@ -171,7 +172,9 @@ export const IPC = {
   aiSnapshot: 'ai:snapshot',
   aiUpdate: 'ai:update',
   aiDelta: 'ai:delta',
-  barEnterChat: 'bar:enter-chat'
+  barEnterChat: 'bar:enter-chat',
+  // Idioma (síncrono, lo lee el preload al cargar la página)
+  appLang: 'app:lang'
 } as const
 
 /** Función que, al llamarla, deja de escuchar el evento. */
@@ -179,6 +182,8 @@ export type Unsubscribe = () => void
 
 /** API que el preload expone en `window.mascota`. */
 export interface MascotaApi {
+  /** Idioma de la interfaz al cargar la página. */
+  lang: Lang
   robot: {
     dragStart(): void
     /** Termina el arrastre; `moved` es false si fue un simple clic. */

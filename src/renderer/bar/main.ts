@@ -10,14 +10,16 @@
  */
 import { animate } from 'motion'
 import { formatAccelerator } from '../../shared/accelerator'
+import { t } from '../../shared/i18n'
 import type { CommandMeta, ExecuteResponse, IconSpec, ResultView } from '../../shared/ipc'
+import { localizeDocument } from '../shared/i18nDom'
 import './bar.css'
 import { createChatView } from './chat'
 
 const ROW_HEIGHT = 52
 const MAX_VISIBLE_ROWS = 6
 const LIST_PADDING = 8
-const DEFAULT_PLACEHOLDER = 'Busca, abre apps o pídeselo a la IA: yt, nota, rec, pomo, ia…'
+const DEFAULT_PLACEHOLDER = t('Busca, abre apps o pídeselo a la IA: yt, nota, rec, pomo, ia…', 'Search, open apps or ask the AI: yt, note, rec, pomo, ai…')
 const AI_COMMAND = 'ai'
 /** Si una acción tarda más que esto, la fila muestra que está trabajando. */
 const LOADING_DELAY_MS = 150
@@ -244,7 +246,7 @@ function shake(): void {
 async function execute(secondary: boolean): Promise<void> {
   if (busy) return
   if (!items[selected]) {
-    setMessage(active ? 'Escribe algo primero' : 'Escribe algo para buscar')
+    setMessage(active ? t('Escribe algo primero', 'Type something first') : t('Escribe algo para buscar', 'Type something to search'))
     shake()
     api.reportError()
     return
@@ -385,7 +387,7 @@ api.onOpen(() => {
   void api.getInfo().then((info) => {
     if (!info) return
     commands = info.commands
-    shortcutHint.textContent = `${formatAccelerator(info.shortcut)} para abrir`
+    shortcutHint.textContent = t(`${formatAccelerator(info.shortcut)} para abrir`, `${formatAccelerator(info.shortcut)} to open`)
   })
   void refreshResults() // los datos pueden haber cambiado (notas, pomodoro...)
   animate(panel, { opacity: [0, 1], scale: [0.94, 1], y: [-14, 0] }, { ...SPRING_OPEN, opacity: { duration: 0.16, ease: 'easeOut' } })
@@ -401,6 +403,7 @@ api.onClose(() => {
   })
 })
 
+localizeDocument()
 input.placeholder = DEFAULT_PLACEHOLDER
 void api.getInfo().then((info) => {
   if (info) commands = info.commands

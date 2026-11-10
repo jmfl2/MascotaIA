@@ -6,11 +6,11 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' ws://localhost:*; object-src 'none'; base-uri 'none'; form-action 'none'"
     />
-    <title>Pestaña</title>
+    <title data-en="Tab">Pestaña</title>
   </head>
   <body>
     <!-- Tamaño de la píldora abierta: OPEN_PILL en src/main/tabWindow.ts -->
-    <button id="pill" class="pill" type="button" aria-label="Abrir la mascota">
+    <button id="pill" class="pill" type="button" aria-label="Abrir la mascota" data-en-aria-label="Open the mascot">
       <span class="content">
         <span class="face" aria-hidden="true"><i></i><i></i></span>
         <span id="name" class="name">Mascota</span>

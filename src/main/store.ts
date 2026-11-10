@@ -1,4 +1,5 @@
 /** Configuración persistente en %APPDATA%/mascota/config.json. */
+import { app } from 'electron'
 import { MODEL_NAME } from '../ai/ollama'
 import {
   DEFAULT_APPEARANCE,
@@ -8,6 +9,7 @@ import {
   type Appearance,
   type Personality
 } from '../shared/appearance'
+import { isLang, langFromLocale, type Lang } from '../shared/i18n'
 import { readJson, writeJson } from './services/jsonFile'
 
 export interface Config {
@@ -32,6 +34,8 @@ export interface Config {
   appearance: Appearance
   /** Nombre, cuánto habla y tono de la IA. */
   personality: Personality
+  /** Idioma de la interfaz (la primera vez, el del sistema). */
+  language: Lang
 }
 
 export const DEFAULT_SHORTCUT = 'Control+Space'
@@ -47,7 +51,8 @@ const DEFAULTS: Config = {
   aiModel: DEFAULT_AI_MODEL,
   linkGuard: true,
   appearance: DEFAULT_APPEARANCE,
-  personality: DEFAULT_PERSONALITY
+  personality: DEFAULT_PERSONALITY,
+  language: 'es'
 }
 
 let cache: Config | null = null
@@ -56,7 +61,7 @@ const isFiniteNumber = (v: unknown): v is number => typeof v === 'number' && Num
 
 /** Acepta solo los campos conocidos y con el tipo correcto. */
 function validate(raw: unknown): Config {
-  const cfg: Config = { ...DEFAULTS }
+  const cfg: Config = { ...DEFAULTS, language: systemLang() }
   if (!raw || typeof raw !== 'object') return cfg
   const r = raw as Record<string, unknown>
 
@@ -72,11 +77,21 @@ function validate(raw: unknown): Config {
   if (typeof r.linkGuard === 'boolean') cfg.linkGuard = r.linkGuard
   if (r.appearance !== undefined) cfg.appearance = validateAppearance(r.appearance)
   if (r.personality !== undefined) cfg.personality = validatePersonality(r.personality)
+  if (isLang(r.language)) cfg.language = r.language
   return cfg
 }
 
+/** Idioma del sistema, para la primera vez que se abre la app. */
+function systemLang(): Lang {
+  try {
+    return langFromLocale(app.getPreferredSystemLanguages()[0] ?? app.getLocale())
+  } catch {
+    return 'es'
+  }
+}
+
 export function getConfig(): Config {
-  cache ??= readJson(FILE, validate, () => ({ ...DEFAULTS }))
+  cache ??= readJson(FILE, validate, () => ({ ...DEFAULTS, language: systemLang() }))
   return cache
 }
 

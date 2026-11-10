@@ -3,12 +3,16 @@
  * se valida aquí (aunque la ventana sea nuestra, por principio).
  */
 import { validateAppearance, validatePersonality, type SettingsView } from '../shared/appearance'
+import { isLang, setLang } from '../shared/i18n'
 import { IPC } from '../shared/ipc'
+import { closeBar, getBarWindow } from './barWindow'
+import { closeBubble, getBubbleWebContents } from './bubbleWindow'
 import { isDocked, setDocked } from './dock'
 import { isClipboardEnabled, setClipboardEnabled, setLinkGuard } from './features'
 import { sendAppearance } from './robotWindow'
 import { getSettingsWindow } from './settingsWindow'
 import { setStartsWithWindows, startsWithWindows } from './startup'
+import { getTabWindow } from './tabWindow'
 import { getConfig, setConfig } from './store'
 
 const listeners = new Set<() => void>()
@@ -26,7 +30,8 @@ export function getSettingsView(): SettingsView {
     clipboardEnabled: isClipboardEnabled(),
     linkGuard: cfg.linkGuard,
     startWithWindows: startsWithWindows(),
-    dockTop: isDocked()
+    dockTop: isDocked(),
+    language: cfg.language
   }
 }
 
@@ -47,8 +52,24 @@ export function applySettingsPatch(raw: unknown): void {
   if (typeof patch.linkGuard === 'boolean') setLinkGuard(patch.linkGuard)
   if (typeof patch.startWithWindows === 'boolean') setStartsWithWindows(patch.startWithWindows)
   if (typeof patch.dockTop === 'boolean') setDocked(patch.dockTop)
+  if (isLang(patch.language) && patch.language !== cfg.language) {
+    setConfig({ language: patch.language })
+    setLang(patch.language)
+    reloadPages()
+  }
 
   notifySettingsChanged()
+}
+
+/**
+ * Las páginas leen el idioma al cargar: se recargan para que cambien sus textos.
+ * El robot no tiene textos visibles y se deja tal cual (así no parpadea).
+ */
+function reloadPages(): void {
+  closeBar()
+  closeBubble()
+  const pages = [getBarWindow()?.webContents, getBubbleWebContents(), getTabWindow()?.webContents, getSettingsWindow()?.webContents]
+  for (const wc of pages) if (wc && !wc.isDestroyed()) wc.reload()
 }
 
 /** Avisa a la ventana de ajustes y a quien escuche (p. ej. si se cambió algo desde la bandeja). */

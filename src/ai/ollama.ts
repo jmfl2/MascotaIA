@@ -6,6 +6,7 @@
  * - Todos los errores se convierten en `OllamaError` con un `code` y un mensaje
  *   en español pensado para enseñárselo al usuario.
  */
+import { tx, type Text } from '../shared/i18n'
 import { NdjsonSplitter } from './ndjson'
 
 export const OLLAMA_URL = 'http://127.0.0.1:11434'
@@ -25,12 +26,12 @@ export const KEEP_ALIVE = '3m'
 
 export type OllamaErrorCode = 'unreachable' | 'timeout' | 'model-missing' | 'aborted' | 'bad-response'
 
-const MESSAGES: Record<OllamaErrorCode, string> = {
-  unreachable: 'Ollama no está en marcha',
-  timeout: 'La IA tardó demasiado en responder',
-  'model-missing': 'El modelo no está descargado',
-  aborted: 'Cancelado',
-  'bad-response': 'Respuesta inesperada de Ollama'
+const MESSAGES: Record<OllamaErrorCode, Text> = {
+  unreachable: { es: 'Ollama no está en marcha', en: 'Ollama is not running' },
+  timeout: { es: 'La IA tardó demasiado en responder', en: 'The AI took too long to answer' },
+  'model-missing': { es: 'El modelo no está descargado', en: 'The model is not downloaded' },
+  aborted: { es: 'Cancelado', en: 'Cancelled' },
+  'bad-response': { es: 'Respuesta inesperada de Ollama', en: 'Unexpected response from Ollama' }
 }
 
 export class OllamaError extends Error {
@@ -38,10 +39,10 @@ export class OllamaError extends Error {
     readonly code: OllamaErrorCode,
     detail?: string
   ) {
-    super(detail ? `${MESSAGES[code]}: ${detail}` : MESSAGES[code])
+    super(detail ? `${MESSAGES[code].es}: ${detail}` : MESSAGES[code].es)
   }
   get userMessage(): string {
-    return MESSAGES[this.code]
+    return tx(MESSAGES[this.code])
   }
 }
 

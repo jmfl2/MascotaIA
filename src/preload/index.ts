@@ -27,7 +27,14 @@ function listen<T>(channel: string, cb: (payload: T) => void) {
   }
 }
 
+/** Idioma de la interfaz: se pide una vez, al cargar (al cambiarlo, la página se recarga). */
+function readLang(): MascotaApi['lang'] {
+  const lang: unknown = ipcRenderer.sendSync(IPC.appLang)
+  return lang === 'en' ? 'en' : 'es'
+}
+
 const api: MascotaApi = {
+  lang: readLang(),
   robot: {
     dragStart: () => ipcRenderer.send(IPC.robotDragStart),
     dragEnd: () => ipcRenderer.invoke(IPC.robotDragEnd),

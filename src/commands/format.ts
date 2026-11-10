@@ -1,4 +1,5 @@
-/** Formatos de fecha y tiempo en español, para subtítulos y avisos. */
+/** Formatos de fecha y tiempo (en el idioma de la interfaz), para subtítulos y avisos. */
+import { t } from '../shared/i18n'
 
 const MINUTE = 60_000
 const HOUR = 60 * MINUTE
@@ -6,9 +7,11 @@ const DAY = 24 * HOUR
 
 const pad = (n: number) => String(n).padStart(2, '0')
 const clock = (d: Date) => `${d.getHours()}:${pad(d.getMinutes())}`
+/** Día/mes en español, mes/día en inglés. */
+const dayMonth = (d: Date) => t(`${d.getDate()}/${d.getMonth() + 1}`, `${d.getMonth() + 1}/${d.getDate()}`)
 
-function startOfDay(t: number): number {
-  const d = new Date(t)
+function startOfDay(ms: number): number {
+  const d = new Date(ms)
   d.setHours(0, 0, 0, 0)
   return d.getTime()
 }
@@ -36,20 +39,25 @@ export function formatWhen(at: number, now: number): string {
   const d = new Date(at)
   const diff = at - now
   const days = Math.round((startOfDay(at) - startOfDay(now)) / DAY)
-  if (diff < HOUR && days === 0) return `en ${formatDuration(Math.max(diff, 1000))} (${clock(d)})`
-  if (days === 0) return `hoy a las ${clock(d)}`
-  if (days === 1) return `mañana a las ${clock(d)}`
-  return `el ${d.getDate()}/${d.getMonth() + 1} a las ${clock(d)}`
+  if (diff < HOUR && days === 0) {
+    const inTime = formatDuration(Math.max(diff, 1000))
+    return t(`en ${inTime} (${clock(d)})`, `in ${inTime} (${clock(d)})`)
+  }
+  if (days === 0) return t(`hoy a las ${clock(d)}`, `today at ${clock(d)}`)
+  if (days === 1) return t(`mañana a las ${clock(d)}`, `tomorrow at ${clock(d)}`)
+  return t(`el ${dayMonth(d)} a las ${clock(d)}`, `on ${dayMonth(d)} at ${clock(d)}`)
 }
 
 /** Cuándo ocurrió algo: "ahora", "hace 5 min", "hoy 9:12", "ayer", "12/11". */
 export function formatAgo(at: number, now: number): string {
   const diff = now - at
-  if (diff < MINUTE) return 'ahora'
-  if (diff < HOUR) return `hace ${Math.floor(diff / MINUTE)} min`
+  if (diff < MINUTE) return t('ahora', 'now')
+  if (diff < HOUR) {
+    const min = Math.floor(diff / MINUTE)
+    return t(`hace ${min} min`, `${min} min ago`)
+  }
   const days = Math.round((startOfDay(now) - startOfDay(at)) / DAY)
-  if (days === 0) return `hoy ${clock(new Date(at))}`
-  if (days === 1) return 'ayer'
-  const d = new Date(at)
-  return `${d.getDate()}/${d.getMonth() + 1}`
+  if (days === 0) return t(`hoy ${clock(new Date(at))}`, `today ${clock(new Date(at))}`)
+  if (days === 1) return t('ayer', 'yesterday')
+  return dayMonth(new Date(at))
 }

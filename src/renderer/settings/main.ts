@@ -14,6 +14,8 @@ import {
   toggleAccessory,
   type SettingsView
 } from '../../shared/appearance'
+import { LANGUAGES, tx, type Localized } from '../../shared/i18n'
+import { localizeDocument } from '../shared/i18nDom'
 import { applyAppearance } from '../robot/appearance'
 import { createRobot } from '../robot/robot'
 import { mountRobot } from '../robot/robotSvg'
@@ -24,6 +26,8 @@ const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as
 const SPRING = { type: 'spring', visualDuration: 0.32, bounce: 0.22 } as const
 
 let view: SettingsView | null = null
+
+localizeDocument()
 
 // --- Vista previa: el mismo robot del escritorio, que sigue al ratón ------------------
 const preview = el<HTMLDivElement>('preview')
@@ -59,7 +63,7 @@ for (const skin of SKINS) {
   dot.style.background = `linear-gradient(180deg, ${skin.colors.bodyTop}, ${skin.colors.bodyBottom})`
   dot.style.setProperty('--dot-screen', skin.colors.screenBottom)
   dot.style.setProperty('--dot-eye', skin.colors.eye)
-  button.append(dot, document.createTextNode(skin.name))
+  button.append(dot, document.createTextNode(tx(skin.name)))
   button.addEventListener('click', () => {
     if (!view) return
     updateAppearance({ ...view.appearance, skin: skin.id })
@@ -70,7 +74,7 @@ for (const skin of SKINS) {
 
 const accessoriesEl = el<HTMLDivElement>('accessories')
 for (const acc of ACCESSORIES) {
-  const chip = h('button', 'chip', acc.name)
+  const chip = h('button', 'chip', tx(acc.name))
   chip.type = 'button'
   chip.dataset.id = acc.id
   chip.addEventListener('click', () => {
@@ -82,11 +86,11 @@ for (const acc of ACCESSORIES) {
 }
 
 /** Control segmentado con una pastilla que se desliza con muelle. */
-function segmented<T extends string>(root: HTMLElement, options: readonly { id: T; name: string }[], onPick: (id: T) => void) {
+function segmented<T extends string>(root: HTMLElement, options: readonly { id: T; name: Localized }[], onPick: (id: T) => void) {
   const pill = h('span', 'segmented-pill')
   root.append(pill)
   const buttons = options.map((o) => {
-    const b = h('button', 'segment', o.name)
+    const b = h('button', 'segment', tx(o.name))
     b.type = 'button'
     b.setAttribute('role', 'radio')
     b.addEventListener('click', () => onPick(o.id))
@@ -107,6 +111,10 @@ function segmented<T extends string>(root: HTMLElement, options: readonly { id: 
 const hint = el<HTMLParagraphElement>('chattiness-hint')
 const setChattiness = segmented(el('chattiness'), CHATTINESS, (id) => updatePersonality({ chattiness: id }))
 const setTone = segmented(el('tone'), AI_TONES, (id) => updatePersonality({ aiTone: id }))
+// Al cambiar de idioma, el proceso principal recarga esta ventana con los textos nuevos.
+const setLanguage = segmented(el('language'), LANGUAGES, (id) => {
+  if (view && view.language !== id) api.update({ language: id })
+})
 
 const nameInput = el<HTMLInputElement>('name')
 const heroName = el<HTMLParagraphElement>('hero-name')
@@ -147,8 +155,10 @@ function render(): void {
   if (document.activeElement !== nameInput) nameInput.value = view.personality.name
   heroName.textContent = view.personality.name
   setChattiness(view.personality.chattiness)
-  hint.textContent = CHATTINESS.find((c) => c.id === view!.personality.chattiness)?.hint ?? ''
+  const chattiness = CHATTINESS.find((c) => c.id === view!.personality.chattiness)
+  hint.textContent = chattiness ? tx(chattiness.hint) : ''
   setTone(view.personality.aiTone)
+  setLanguage(view.language)
 
   el<HTMLInputElement>('dockTop').checked = view.dockTop
   el<HTMLInputElement>('linkGuard').checked = view.linkGuard

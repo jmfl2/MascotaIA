@@ -2,15 +2,16 @@
  * Fábrica de comandos web: buscan el texto en un sitio y abren el navegador.
  * Cada comando web (google.ts, youtube.ts...) solo declara su URL y sus dominios.
  */
+import { t, tx, type Localized } from '../shared/i18n'
 import { sanitizeQuery } from './sanitize'
 import type { CommandModule } from './types'
 
 export interface WebCommandDef {
   id: string
-  name: string
+  name: Localized
   prefixes: readonly string[]
-  hint: string
-  placeholder: string
+  hint: Localized
+  placeholder: Localized
   accent: string
   iconPath: string
   /** Únicos dominios a los que puede llevar este comando. */
@@ -30,19 +31,19 @@ export type BuildResult = { ok: true; url: string } | { ok: false; error: string
  */
 export function buildWebUrl(def: WebCommandDef, rawQuery: string): BuildResult {
   const query = sanitizeQuery(rawQuery)
-  if (!query) return { ok: false, error: 'Escribe algo para buscar' }
+  if (!query) return { ok: false, error: t('Escribe algo para buscar', 'Type something to search') }
 
   let url: URL
   try {
     url = def.buildUrl(query)
   } catch {
-    return { ok: false, error: 'No se pudo construir la dirección' }
+    return { ok: false, error: t('No se pudo construir la dirección', 'Could not build the address') }
   }
   if (url.protocol !== 'https:' || url.username || url.password || url.port) {
-    return { ok: false, error: 'Dirección no permitida' }
+    return { ok: false, error: t('Dirección no permitida', 'Address not allowed') }
   }
   if (!def.allowedHosts.includes(url.hostname)) {
-    return { ok: false, error: 'Dominio no permitido' }
+    return { ok: false, error: t('Dominio no permitido', 'Domain not allowed') }
   }
   return { ok: true, url: url.href }
 }
@@ -50,12 +51,18 @@ export function buildWebUrl(def: WebCommandDef, rawQuery: string): BuildResult {
 export type WebCommand = CommandModule & { readonly web: WebCommandDef }
 
 export function webCommand(def: WebCommandDef): WebCommand {
-  return {
+  const command: WebCommand = {
     id: def.id,
-    name: def.name,
+    get name() {
+      return tx(def.name)
+    },
     prefixes: def.prefixes,
-    hint: def.hint,
-    placeholder: def.placeholder,
+    get hint() {
+      return tx(def.hint)
+    },
+    get placeholder() {
+      return tx(def.placeholder)
+    },
     accent: def.accent,
     iconPath: def.iconPath,
     global: 'web',
@@ -66,7 +73,7 @@ export function webCommand(def: WebCommandDef): WebCommand {
       return [
         {
           title: q,
-          subtitle: `${def.name} · ${def.hint}`,
+          subtitle: `${command.name} · ${command.hint}`,
           run: async () => {
             const result = buildWebUrl(def, q)
             return result.ok ? ctx.openUrl(result.url) : { kind: 'error', message: result.error }
@@ -75,4 +82,5 @@ export function webCommand(def: WebCommandDef): WebCommand {
       ]
     }
   }
+  return command
 }

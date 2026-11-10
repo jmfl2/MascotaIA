@@ -2,6 +2,7 @@
 import { Menu, nativeImage, Tray, type MenuItemConstructorOptions } from 'electron'
 import type { AiStatus } from '../commands'
 import { formatAccelerator } from '../shared/accelerator'
+import { t } from '../shared/i18n'
 import { assetPath } from './paths'
 import { currentShortcut, SHORTCUT_PRESETS } from './shortcut'
 import { setStartsWithWindows, startsWithWindows } from './startup'
@@ -29,29 +30,30 @@ export interface TrayActions {
   quit(): void
 }
 
-const AI_STATE_LABEL: Record<AiStatus['state'], string> = {
-  checking: 'Comprobando…',
-  ready: 'Lista',
-  'not-installed': 'Ollama no está instalado',
-  'not-running': 'Ollama está parado',
-  'no-model': 'Falta el modelo',
-  pulling: 'Descargando el modelo…'
-}
+const aiStateLabel = (state: AiStatus['state']): string =>
+  ({
+    checking: t('Comprobando…', 'Checking…'),
+    ready: t('Lista', 'Ready'),
+    'not-installed': t('Ollama no está instalado', 'Ollama is not installed'),
+    'not-running': t('Ollama está parado', 'Ollama is stopped'),
+    'no-model': t('Falta el modelo', 'Model missing'),
+    pulling: t('Descargando el modelo…', 'Downloading the model…')
+  })[state]
 
 /** Submenú "IA local": estado, modelo y acciones para arreglarlo. */
 function aiMenu(actions: TrayActions): MenuItemConstructorOptions[] {
   const s = actions.aiStatus()
   const items: MenuItemConstructorOptions[] = [
-    { label: `Estado: ${AI_STATE_LABEL[s.state]}${s.state === 'pulling' ? ` ${Math.round((s.progress ?? 0) * 100)} %` : ''}`, enabled: false },
-    { label: `Modelo: ${s.model}`, enabled: false }
+    { label: `${t('Estado', 'Status')}: ${aiStateLabel(s.state)}${s.state === 'pulling' ? ` ${Math.round((s.progress ?? 0) * 100)} %` : ''}`, enabled: false },
+    { label: `${t('Modelo', 'Model')}: ${s.model}`, enabled: false }
   ]
-  if (s.state === 'not-running') items.push({ label: 'Iniciar Ollama', click: () => actions.startOllama() })
-  if (s.state === 'no-model') items.push({ label: `Descargar ${s.model}`, click: () => actions.pullModel() })
-  if (s.state === 'ready') items.push({ label: 'Liberar memoria', click: () => actions.freeAiMemory() })
+  if (s.state === 'not-running') items.push({ label: t('Iniciar Ollama', 'Start Ollama'), click: () => actions.startOllama() })
+  if (s.state === 'no-model') items.push({ label: `${t('Descargar', 'Download')} ${s.model}`, click: () => actions.pullModel() })
+  if (s.state === 'ready') items.push({ label: t('Liberar memoria', 'Free memory'), click: () => actions.freeAiMemory() })
   if (s.models.length > 1 || (s.models.length === 1 && !s.models.includes(s.model))) {
     items.push(
       { type: 'separator' },
-      { label: 'Usar modelo', enabled: false },
+      { label: t('Usar modelo', 'Use model'), enabled: false },
       ...s.models.map((m) => ({
         label: m,
         type: 'radio' as const,
@@ -76,14 +78,16 @@ export function createTray(actions: TrayActions): { tray: Tray; rebuild: () => v
     const shortcut = currentShortcut()
     const menu = Menu.buildFromTemplate([
       {
-        label: `${actions.isRobotVisible() ? 'Ocultar' : 'Mostrar'} ${actions.isDocked() ? 'pestaña' : 'robot'}`,
+        label: actions.isDocked()
+          ? actions.isRobotVisible() ? t('Ocultar pestaña', 'Hide tab') : t('Mostrar pestaña', 'Show tab')
+          : actions.isRobotVisible() ? t('Ocultar robot', 'Hide robot') : t('Mostrar robot', 'Show robot'),
         click: () => {
           actions.toggleRobot()
           rebuild()
         }
       },
       {
-        label: 'Esconder en una pestaña arriba',
+        label: t('Esconder en una pestaña arriba', 'Hide in a tab at the top'),
         type: 'checkbox',
         checked: actions.isDocked(),
         click: (item) => {
@@ -93,13 +97,13 @@ export function createTray(actions: TrayActions): { tray: Tray; rebuild: () => v
         }
       },
       {
-        label: 'Abrir barra de comandos',
+        label: t('Abrir barra de comandos', 'Open command bar'),
         accelerator: shortcut,
         registerAccelerator: false, // ya es global; aquí solo se muestra
         click: () => actions.openBar()
       },
       {
-        label: 'Atajo de teclado',
+        label: t('Atajo de teclado', 'Keyboard shortcut'),
         submenu: [
           ...SHORTCUT_PRESETS.map((preset) => ({
             label: formatAccelerator(preset),
@@ -108,8 +112,8 @@ export function createTray(actions: TrayActions): { tray: Tray; rebuild: () => v
             click: () => {
               if (!actions.changeShortcut(preset)) {
                 tray?.displayBalloon({
-                  title: 'Atajo no disponible',
-                  content: `${formatAccelerator(preset)} lo está usando otra aplicación.`,
+                  title: t('Atajo no disponible', 'Shortcut unavailable'),
+                  content: t(`${formatAccelerator(preset)} lo está usando otra aplicación.`, `${formatAccelerator(preset)} is being used by another app.`),
                   iconType: 'warning'
                 })
               }
@@ -118,12 +122,12 @@ export function createTray(actions: TrayActions): { tray: Tray; rebuild: () => v
           })),
           ...(SHORTCUT_PRESETS.includes(shortcut as (typeof SHORTCUT_PRESETS)[number])
             ? []
-            : [{ label: `${formatAccelerator(shortcut)} (personalizado)`, type: 'radio' as const, checked: true }])
+            : [{ label: `${formatAccelerator(shortcut)} ${t('(personalizado)', '(custom)')}`, type: 'radio' as const, checked: true }])
         ]
       },
       { type: 'separator' },
       {
-        label: 'Portapapeles inteligente',
+        label: t('Portapapeles inteligente', 'Smart clipboard'),
         type: 'checkbox',
         checked: actions.isClipboardEnabled(),
         click: (item) => {
@@ -131,12 +135,12 @@ export function createTray(actions: TrayActions): { tray: Tray; rebuild: () => v
           actions.changed()
         }
       },
-      { label: 'IA local', submenu: aiMenu(actions) },
+      { label: t('IA local', 'Local AI'), submenu: aiMenu(actions) },
       ...(actions.isPomodoroRunning()
-        ? [{ label: 'Detener pomodoro', click: () => actions.stopPomodoro() }]
+        ? [{ label: t('Detener pomodoro', 'Stop pomodoro'), click: () => actions.stopPomodoro() }]
         : []),
       {
-        label: 'Iniciar con Windows',
+        label: t('Iniciar con Windows', 'Start with Windows'),
         type: 'checkbox',
         checked: startsWithWindows(),
         click: (item) => {
@@ -145,9 +149,9 @@ export function createTray(actions: TrayActions): { tray: Tray; rebuild: () => v
         }
       },
       { type: 'separator' },
-      { label: 'Ajustes…', click: () => actions.openSettings() },
+      { label: t('Ajustes…', 'Settings…'), click: () => actions.openSettings() },
       { type: 'separator' },
-      { label: 'Salir', click: () => actions.quit() }
+      { label: t('Salir', 'Quit'), click: () => actions.quit() }
     ])
     tray?.setContextMenu(menu)
     tray?.setToolTip(actions.robotName())

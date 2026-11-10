@@ -8,6 +8,7 @@
  */
 import { clipboard, shell } from 'electron'
 import { COMMANDS, type CommandContext, type Outcome } from '../commands'
+import { t } from '../shared/i18n'
 import { suggestFor, type Ranked } from '../commands/engine'
 import type { AppInfo, CommandMeta, ExecuteRequest, ExecuteResponse, QueryRequest, QueryResponse, ResultView } from '../shared/ipc'
 import { sendToAi } from './ai/aiChat'
@@ -30,15 +31,15 @@ export async function openExternalUrl(url: string): Promise<Outcome> {
   try {
     parsed = new URL(url)
   } catch {
-    return { kind: 'error', message: 'Dirección no válida' }
+    return { kind: 'error', message: t('Dirección no válida', 'Invalid address') }
   }
-  if (parsed.protocol !== 'https:') return { kind: 'error', message: 'Dirección no permitida' }
+  if (parsed.protocol !== 'https:') return { kind: 'error', message: t('Dirección no permitida', 'Address not allowed') }
   try {
     await shell.openExternal(parsed.href)
     return { kind: 'close', mood: 'happy' }
   } catch (err) {
     console.error('[comandos] No se pudo abrir el navegador:', err)
-    return { kind: 'error', message: 'No se pudo abrir el navegador' }
+    return { kind: 'error', message: t('No se pudo abrir el navegador', 'Could not open the browser') }
   }
 }
 
@@ -48,14 +49,14 @@ export async function openLink(url: string): Promise<Outcome> {
   try {
     parsed = new URL(url)
   } catch {
-    return { kind: 'error', message: 'Enlace no válido' }
+    return { kind: 'error', message: t('Enlace no válido', 'Invalid link') }
   }
-  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return { kind: 'error', message: 'Ese tipo de enlace no se abre' }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return { kind: 'error', message: t('Ese tipo de enlace no se abre', "That kind of link can't be opened") }
   try {
     await shell.openExternal(parsed.href)
     return { kind: 'close' }
   } catch {
-    return { kind: 'error', message: 'No se pudo abrir el navegador' }
+    return { kind: 'error', message: t('No se pudo abrir el navegador', 'Could not open the browser') }
   }
 }
 
@@ -142,7 +143,7 @@ export async function execute(req: ExecuteRequest, closeBar: () => void): Promis
     outcome = await action.run()
   } catch (err) {
     console.error(`[comandos] "${row.command.id}" falló:`, err)
-    outcome = { kind: 'error', message: 'Algo salió mal' }
+    outcome = { kind: 'error', message: t('Algo salió mal', 'Something went wrong') }
   }
 
   switch (outcome.kind) {

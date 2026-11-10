@@ -6,87 +6,100 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' ws://localhost:*; object-src 'none'; base-uri 'none'; form-action 'none'"
     />
-    <title>Ajustes de Mascota</title>
+    <title data-en="Mascota settings">Ajustes de Mascota</title>
   </head>
   <body>
     <div id="window" class="window">
       <header class="titlebar">
-        <h1>Ajustes</h1>
-        <button id="close" class="close" type="button" aria-label="Cerrar">
+        <h1 data-en="Settings">Ajustes</h1>
+        <button id="close" class="close" type="button" aria-label="Cerrar" data-en-aria-label="Close">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10 M17 7L7 17" /></svg>
         </button>
       </header>
 
       <main class="scroll">
         <section class="hero">
-          <div id="preview" class="preview" title="Haz clic en él"></div>
+          <div id="preview" class="preview" title="Haz clic en él" data-en-title="Click it"></div>
           <p id="hero-name" class="hero-name">Mascota</p>
-          <p class="hero-sub">Así se verá en tu escritorio</p>
+          <p class="hero-sub" data-en="This is how it will look on your desktop">Así se verá en tu escritorio</p>
         </section>
 
-        <h2>Apariencia</h2>
+        <h2 data-en="Appearance">Apariencia</h2>
         <div class="group">
           <div class="row column">
-            <span class="label">Color</span>
-            <div id="skins" class="swatches" role="radiogroup" aria-label="Color"></div>
+            <span class="label" data-en="Color">Color</span>
+            <div id="skins" class="swatches" role="radiogroup" aria-label="Color" data-en-aria-label="Color"></div>
           </div>
           <div class="row column">
-            <span class="label">Accesorios</span>
-            <div id="accessories" class="chips" role="group" aria-label="Accesorios"></div>
+            <span class="label" data-en="Accessories">Accesorios</span>
+            <div id="accessories" class="chips" role="group" aria-label="Accesorios" data-en-aria-label="Accessories"></div>
           </div>
         </div>
 
-        <h2>Personalidad</h2>
+        <h2 data-en="Personality">Personalidad</h2>
         <div class="group">
           <label class="row">
-            <span class="label">Nombre</span>
+            <span class="label" data-en="Name">Nombre</span>
             <input id="name" class="text-input" type="text" maxlength="20" spellcheck="false" autocomplete="off" />
           </label>
           <div class="row column">
-            <span class="label">Cuánto habla</span>
-            <div id="chattiness" class="segmented" role="radiogroup" aria-label="Cuánto habla"></div>
+            <span class="label" data-en="How much it talks">Cuánto habla</span>
+            <div id="chattiness" class="segmented" role="radiogroup" aria-label="Cuánto habla" data-en-aria-label="How much it talks"></div>
             <p id="chattiness-hint" class="hint"></p>
           </div>
           <div class="row column">
-            <span class="label">Tono de la IA</span>
-            <div id="tone" class="segmented" role="radiogroup" aria-label="Tono de la IA"></div>
+            <span class="label" data-en="AI tone">Tono de la IA</span>
+            <div id="tone" class="segmented" role="radiogroup" aria-label="Tono de la IA" data-en-aria-label="AI tone"></div>
           </div>
         </div>
 
-        <h2>En pantalla</h2>
+        <h2 data-en="Language">Idioma</h2>
+        <div class="group">
+          <div class="row column">
+            <span class="label" data-en="Interface language">Idioma de la interfaz</span>
+            <div id="language" class="segmented" role="radiogroup" aria-label="Idioma" data-en-aria-label="Language"></div>
+            <p class="hint" data-en="The robot, the bar, the menus and the AI replies change too">También cambian el robot, la barra, los menús y las respuestas de la IA</p>
+          </div>
+        </div>
+
+        <h2 data-en="On screen">En pantalla</h2>
         <div class="group">
           <label class="row">
             <span class="label-block">
-              <span class="label">Esconder en una pestaña arriba</span>
-              <span class="hint">El robot baja de la pestaña al hacerle clic o cuando tiene algo que decirte</span>
+              <span class="label" data-en="Hide in a tab at the top">Esconder en una pestaña arriba</span>
+              <span class="hint" data-en="The robot comes down from the tab when you click it or when it has something to tell you"
+                >El robot baja de la pestaña al hacerle clic o cuando tiene algo que decirte</span
+              >
             </span>
             <input id="dockTop" class="switch" type="checkbox" />
           </label>
         </div>
 
-        <h2>Ayuda y seguridad</h2>
+        <h2 data-en="Help and security">Ayuda y seguridad</h2>
         <div class="group">
           <label class="row">
             <span class="label-block">
-              <span class="label">Avisar de enlaces sospechosos</span>
-              <span class="hint">Al copiar un enlace, comprueba si imita a una marca o esconde el destino</span>
+              <span class="label" data-en="Warn about suspicious links">Avisar de enlaces sospechosos</span>
+              <span class="hint" data-en="When you copy a link, it checks whether it imitates a brand or hides where it goes"
+                >Al copiar un enlace, comprueba si imita a una marca o esconde el destino</span
+              >
             </span>
             <input id="linkGuard" class="switch" type="checkbox" />
           </label>
           <label class="row">
             <span class="label-block">
-              <span class="label">Portapapeles inteligente</span>
-              <span class="hint">Ofrece buscar, traducir o resumir lo que copias</span>
+              <span class="label" data-en="Smart clipboard">Portapapeles inteligente</span>
+              <span class="hint" data-en="Offers to search, translate or summarize what you copy">Ofrece buscar, traducir o resumir lo que copias</span>
             </span>
             <input id="clipboardEnabled" class="switch" type="checkbox" />
           </label>
           <label class="row">
-            <span class="label">Iniciar con Windows</span>
+            <span class="label" data-en="Start with Windows">Iniciar con Windows</span>
             <input id="startWithWindows" class="switch" type="checkbox" />
           </label>
         </div>
 
-        <p class="footnote">Todo se guarda en tu PC, en %APPDATA%\mascota</p>
+        <p class="footnote" data-en="Everything is stored on your PC, in %APPDATA%\mascota">Todo se guarda en tu PC, en %APPDATA%\mascota</p>
       </main>
     </div>
     <script type="module" src="./settings/main.ts"></script>

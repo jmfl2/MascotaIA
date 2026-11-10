@@ -4,6 +4,7 @@
  * El proceso principal es la fuente de verdad: la barra recibe una foto de la
  * conversación (IPC.aiUpdate) y los trozos de texto según llegan (IPC.aiDelta).
  */
+import { t } from '../../shared/i18n'
 import type { AiTask } from '../../commands'
 import { chatSystemPrompt, taskDisplay, taskPrompt } from '../../ai/prompts'
 import { OllamaError, type ChatMessage } from '../../ai/ollama'
@@ -99,7 +100,7 @@ export async function sendToAi(task: AiTask, rawText: string): Promise<void> {
     if (err instanceof OllamaError && err.code === 'aborted') {
       answer.display = answer.content ? `${answer.content} …` : 'Detenido.'
     } else {
-      answer.display = err instanceof OllamaError ? err.userMessage : 'La IA falló'
+      answer.display = err instanceof OllamaError ? err.userMessage : t('La IA falló', 'The AI failed')
       answer.error = true
       robotMood.flash('confused')
     }
@@ -125,5 +126,5 @@ export function copyAnswer(index: number): void {
   const m = messages[index]
   if (m?.role !== 'assistant' || !m.content) return
   clipboardWatcher.copy(m.content)
-  toast('Respuesta copiada')
+  toast(t('Respuesta copiada', 'Answer copied'))
 }

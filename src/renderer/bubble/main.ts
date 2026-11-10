@@ -5,7 +5,10 @@
  */
 import { animate } from 'motion'
 import type { BubbleView } from '../../shared/ipc'
+import { localizeDocument } from '../shared/i18nDom'
 import './bubble.css'
+
+localizeDocument()
 
 const api = window.mascota.bubble
 const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T

@@ -5,6 +5,7 @@
  * Nunca dice "seguro": como mucho, "no veo señales de alarma".
  */
 import { domainToUnicode } from 'node:url'
+import { t } from '../shared/i18n'
 import { BRANDS, EXECUTABLE_EXT, MULTI_PART_SUFFIXES, PHISHING_WORDS, RISKY_TLDS, SHORTENERS, type Brand } from './brands'
 
 export type Severity = 'info' | 'warn' | 'danger'
@@ -120,10 +121,14 @@ function officialBrand(site: string, hostname: string): Brand | undefined {
 
 /** Explica en palabras qué truco visual se usó. */
 function describeTrick(label: string, brand: Brand): string {
-  if (/[^\x00-\x7f]/.test(label)) return `usa letras de otro alfabeto que parecen las de «${brand.label}»`
-  if (/\d/.test(label)) return `cambia letras por números («${label}» en vez de «${brand.label}»)`
-  if (label.includes('rn') && brand.label.includes('m')) return `«rn» imita una «m» («${label}»)`
-  return `«${label}» en vez de «${brand.label}»`
+  if (/[^\x00-\x7f]/.test(label)) {
+    return t(`usa letras de otro alfabeto que parecen las de «${brand.label}»`, `uses letters from another alphabet that look like "${brand.label}"`)
+  }
+  if (/\d/.test(label)) {
+    return t(`cambia letras por números («${label}» en vez de «${brand.label}»)`, `swaps letters for numbers ("${label}" instead of "${brand.label}")`)
+  }
+  if (label.includes('rn') && brand.label.includes('m')) return t(`«rn» imita una «m» («${label}»)`, `"rn" imitates an "m" ("${label}")`)
+  return t(`«${label}» en vez de «${brand.label}»`, `"${label}" instead of "${brand.label}"`)
 }
 
 // --- Análisis --------------------------------------------------------------------
@@ -131,11 +136,11 @@ function describeTrick(label: string, brand: Brand): string {
 export function analyzeLink(text: string): LinkReport {
   const url = parseUrl(text)
   if (!url) {
-    return { verdict: 'invalid', url: text, host: '', site: '', reasons: [{ severity: 'warn', text: 'No es un enlace válido' }], isShortener: false }
+    return { verdict: 'invalid', url: text, host: '', site: '', reasons: [{ severity: 'warn', text: t('No es un enlace válido', 'Not a valid link') }], isShortener: false }
   }
 
   const reasons: Reason[] = []
-  const add = (severity: Severity, t: string) => reasons.push({ severity, text: t })
+  const add = (severity: Severity, text: string) => reasons.push({ severity, text })
   const hostname = url.hostname.toLowerCase().replace(/\.$/, '')
   const unicodeHost = domainToUnicode(hostname) || hostname
   const site = isIpHost(hostname) ? hostname : registrableDomain(hostname)
@@ -144,21 +149,23 @@ export function analyzeLink(text: string): LinkReport {
 
   // 1. Tipo de enlace
   if (url.protocol !== 'https:' && url.protocol !== 'http:') {
-    add('danger', `Es un enlace de tipo «${url.protocol.replace(':', '')}», que puede ejecutar código o abrir archivos`)
+    const scheme = url.protocol.replace(':', '')
+    add('danger', t(`Es un enlace de tipo «${scheme}», que puede ejecutar código o abrir archivos`, `It is a "${scheme}" link, which can run code or open files`))
     return finish()
   }
-  if (url.protocol === 'http:') add('warn', 'No usa conexión cifrada (http en vez de https)')
+  if (url.protocol === 'http:') add('warn', t('No usa conexión cifrada (http en vez de https)', 'It does not use an encrypted connection (http instead of https)'))
 
   // 2. Usuario escondido antes de @: "https://paypal.com@evil.net"
   if (url.username || url.password) {
-    add('danger', `Esconde «${decodeURIComponent(url.username)}» antes de una @: el sitio real es ${unicodeHost}`)
+    const hidden = decodeURIComponent(url.username)
+    add('danger', t(`Esconde «${hidden}» antes de una @: el sitio real es ${unicodeHost}`, `It hides "${hidden}" before an @: the real site is ${unicodeHost}`))
   }
 
   // 3. IP en vez de nombre
-  if (isIpHost(hostname)) add('danger', 'Usa una dirección IP en lugar de un nombre de dominio')
+  if (isIpHost(hostname)) add('danger', t('Usa una dirección IP en lugar de un nombre de dominio', 'It uses an IP address instead of a domain name'))
 
   // 4. Puerto raro
-  if (url.port && !['80', '443'].includes(url.port)) add('warn', `Usa un puerto poco habitual (${url.port})`)
+  if (url.port && !['80', '443'].includes(url.port)) add('warn', t(`Usa un puerto poco habitual (${url.port})`, `It uses an unusual port (${url.port})`))
 
   const official = isIpHost(hostname) ? undefined : officialBrand(site, hostname)
 
@@ -168,7 +175,7 @@ export function analyzeLink(text: string): LinkReport {
 
     // 5. Punycode / alfabetos mezclados
     if (hostname.split('.').some((l) => l.startsWith('xn--'))) {
-      add('warn', `El dominio tiene caracteres especiales: se ve como «${unicodeHost}»`)
+      add('warn', t(`El dominio tiene caracteres especiales: se ve como «${unicodeHost}»`, `The domain has special characters: it looks like "${unicodeHost}"`))
     }
 
     // 6. Suplantación de marcas
@@ -176,29 +183,29 @@ export function analyzeLink(text: string): LinkReport {
     for (const brand of BRANDS) {
       const b = brand.label
       if (label === b) {
-        add('danger', `Usa el nombre de ${brand.name}, pero no es su dominio oficial (${brand.domains[0]})`)
+        add('danger', t(`Usa el nombre de ${brand.name}, pero no es su dominio oficial (${brand.domains[0]})`, `It uses the ${brand.name} name, but it is not its official domain (${brand.domains[0]})`))
         impersonated = true
         break
       }
       if (sk === skeleton(b)) {
-        add('danger', `Imita a ${brand.name}: ${describeTrick(label, brand)}`)
+        add('danger', t(`Imita a ${brand.name}: ${describeTrick(label, brand)}`, `It imitates ${brand.name}: ${describeTrick(label, brand)}`))
         impersonated = true
         break
       }
       const tokens = label.split(/[-_.]/)
-      if (b.length >= 4 && tokens.length > 1 && tokens.some((t) => t === b || skeleton(t) === skeleton(b))) {
-        add('danger', `Mete el nombre de ${brand.name} en un dominio que no es suyo (${site})`)
+      if (b.length >= 4 && tokens.length > 1 && tokens.some((tok) => tok === b || skeleton(tok) === skeleton(b))) {
+        add('danger', t(`Mete el nombre de ${brand.name} en un dominio que no es suyo (${site})`, `It puts the ${brand.name} name in a domain that is not theirs (${site})`))
         impersonated = true
         break
       }
       if (b.length >= 5 && sk.includes(skeleton(b)) && PHISHING_WORDS.some((w) => sk.includes(skeleton(w)))) {
-        add('danger', `Combina el nombre de ${brand.name} con palabras de acceso o pago en un dominio ajeno`)
+        add('danger', t(`Combina el nombre de ${brand.name} con palabras de acceso o pago en un dominio ajeno`, `It combines the ${brand.name} name with login or payment words on someone else's domain`))
         impersonated = true
         break
       }
       const dist = editDistance(label, b)
       if (b.length >= 5 && dist > 0 && dist <= (b.length >= 9 ? 2 : 1)) {
-        add('warn', `Se parece mucho a ${brand.name} (${brand.domains[0]}): comprueba que es el sitio que buscas`)
+        add('warn', t(`Se parece mucho a ${brand.name} (${brand.domains[0]}): comprueba que es el sitio que buscas`, `It looks a lot like ${brand.name} (${brand.domains[0]}): make sure it is the site you want`))
         impersonated = true
         break
       }
@@ -208,31 +215,36 @@ export function analyzeLink(text: string): LinkReport {
     if (!impersonated) {
       const sub = hostname.slice(0, Math.max(0, hostname.length - site.length - 1))
       const brandInSub = BRANDS.find((b) => sub.split(/[.-]/).some((part) => part === b.label || skeleton(part) === skeleton(b.label)))
-      if (brandInSub) add('danger', `Parece de ${brandInSub.name}, pero el sitio real es ${site}`)
+      if (brandInSub) add('danger', t(`Parece de ${brandInSub.name}, pero el sitio real es ${site}`, `It looks like ${brandInSub.name}, but the real site is ${site}`))
     }
 
     // 8. TLD de riesgo
-    if (RISKY_TLDS.has(tld)) add('warn', `Termina en «.${tld}», un dominio muy usado en estafas`)
+    if (RISKY_TLDS.has(tld)) add('warn', t(`Termina en «.${tld}», un dominio muy usado en estafas`, `It ends in ".${tld}", a domain often used in scams`))
 
     // 9. Dominio rebuscado
     const depth = hostname.split('.').length
-    if (depth >= 5) add('warn', 'Tiene muchos subdominios encadenados')
-    if (hostname.length > 45) add('warn', 'El dominio es inusualmente largo')
-    if ((siteLabel(site).match(/-/g) ?? []).length >= 3) add('warn', 'El dominio tiene muchos guiones')
+    if (depth >= 5) add('warn', t('Tiene muchos subdominios encadenados', 'It chains many subdomains'))
+    if (hostname.length > 45) add('warn', t('El dominio es inusualmente largo', 'The domain is unusually long'))
+    if ((siteLabel(site).match(/-/g) ?? []).length >= 3) add('warn', t('El dominio tiene muchos guiones', 'The domain has many hyphens'))
 
     // 10. Palabras de phishing en el dominio
     const words = PHISHING_WORDS.filter((w) => hostname.includes(w))
-    if (words.length && !impersonated) add('warn', `El dominio incluye «${words[0]}», típico de páginas que piden datos`)
+    if (words.length && !impersonated) add('warn', t(`El dominio incluye «${words[0]}», típico de páginas que piden datos`, `The domain includes "${words[0]}", typical of pages that ask for your data`))
   }
 
   // 11. Acortador
-  if (isShortener) add('info', `Es un enlace acortado (${hostname}): no se ve adónde lleva`)
+  if (isShortener) add('info', t(`Es un enlace acortado (${hostname}): no se ve adónde lleva`, `It is a shortened link (${hostname}): you can't see where it goes`))
 
   // 12. Descarga de un programa
   const path = decodeURIComponent(url.pathname)
   if (EXECUTABLE_EXT.test(path)) {
     const double = /\.(pdf|docx?|xlsx?|jpe?g|png|txt|zip)\.[a-z0-9]+$/i.test(path)
-    add(double ? 'danger' : 'warn', double ? 'Disfraza un programa de documento (doble extensión)' : 'Descarga un programa ejecutable')
+    add(
+      double ? 'danger' : 'warn',
+      double
+        ? t('Disfraza un programa de documento (doble extensión)', 'It disguises a program as a document (double extension)')
+        : t('Descarga un programa ejecutable', 'It downloads an executable program')
+    )
   }
 
   return finish()
@@ -252,12 +264,12 @@ export function analyzeLink(text: string): LinkReport {
 export function verdictTitle(report: LinkReport): string {
   switch (report.verdict) {
     case 'danger':
-      return '🚨 Este enlace parece una trampa'
+      return t('🚨 Este enlace parece una trampa', '🚨 This link looks like a trap')
     case 'caution':
-      return '⚠️ Ojo con este enlace'
+      return t('⚠️ Ojo con este enlace', '⚠️ Careful with this link')
     case 'invalid':
-      return 'No parece un enlace'
+      return t('No parece un enlace', 'That does not look like a link')
     case 'ok':
-      return report.isShortener ? '🔗 Enlace acortado' : '🔗 No veo señales de alarma'
+      return report.isShortener ? t('🔗 Enlace acortado', '🔗 Shortened link') : t('🔗 No veo señales de alarma', '🔗 No warning signs')
   }
 }

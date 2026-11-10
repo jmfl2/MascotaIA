@@ -7,6 +7,7 @@
  * Si Ollama no está instalado, está parado o falta el modelo, en lugar de
  * fallar se muestran filas que explican qué pasa y cómo arreglarlo.
  */
+import { t, tx, type Text } from '../shared/i18n'
 import { sanitizeQuery } from './sanitize'
 import type { AiStatus, AiTask, CommandContext, CommandModule, Suggestion } from './types'
 
@@ -32,46 +33,65 @@ export function aiStatusRows(status: AiStatus, ctx: CommandContext): Suggestion[
     case 'ready':
       return []
     case 'checking':
-      return [info('Comprobando la IA local…', 'Un momento')]
+      return [info(t('Comprobando la IA local…', 'Checking the local AI…'), t('Un momento', 'One moment'))]
     case 'not-installed':
       return [
         info(
-          'La IA local necesita Ollama',
-          'Instálalo desde ollama.com (o «winget install Ollama.Ollama») y vuelve a abrir la barra'
+          t('La IA local necesita Ollama', 'The local AI needs Ollama'),
+          t(
+            'Instálalo desde ollama.com (o «winget install Ollama.Ollama») y vuelve a abrir la barra',
+            'Install it from ollama.com (or "winget install Ollama.Ollama") and reopen the bar'
+          )
         )
       ]
     case 'not-running':
       return [
-        info('Ollama está instalado, pero parado', 'Arráncalo para usar la IA'),
+        info(t('Ollama está instalado, pero parado', 'Ollama is installed, but stopped'), t('Arráncalo para usar la IA', 'Start it to use the AI')),
         {
-          title: 'Iniciar Ollama',
-          subtitle: 'Lo arranca en segundo plano',
+          title: t('Iniciar Ollama', 'Start Ollama'),
+          subtitle: t('Lo arranca en segundo plano', 'Starts it in the background'),
           icon: { kind: 'glyph', path: PLAY_ICON, accent: ACCENT },
           run: () => ctx.ai.start()
         }
       ]
     case 'no-model':
       return [
-        info(`Falta el modelo ${status.model}`, status.models.length ? `Tienes: ${status.models.join(', ')}` : 'Aún no hay modelos descargados'),
+        info(
+          t(`Falta el modelo ${status.model}`, `The ${status.model} model is missing`),
+          status.models.length
+            ? `${t('Tienes', 'You have')}: ${status.models.join(', ')}`
+            : t('Aún no hay modelos descargados', 'No models downloaded yet')
+        ),
         {
-          title: `Descargar ${status.model}`,
-          subtitle: 'Unos minutos; el robot te avisa al terminar',
+          title: `${t('Descargar', 'Download')} ${status.model}`,
+          subtitle: t('Unos minutos; el robot te avisa al terminar', 'A few minutes; the robot will let you know when it is done'),
           icon: { kind: 'glyph', path: DOWNLOAD_ICON, accent: ACCENT },
           run: () => ctx.ai.pull()
         }
       ]
     case 'pulling':
-      return [info(`Descargando ${status.model}… ${Math.round((status.progress ?? 0) * 100)} %`, 'El robot te avisa al terminar')]
+      return [
+        info(
+          `${t('Descargando', 'Downloading')} ${status.model}… ${Math.round((status.progress ?? 0) * 100)} %`,
+          t('El robot te avisa al terminar', 'The robot will let you know when it is done')
+        )
+      ]
   }
 }
 
 /** Chat con la IA dentro de la barra. Si la IA está lista no hay filas: la barra muestra la conversación. */
 export const ai: CommandModule = {
   id: 'ai',
-  name: 'IA',
-  prefixes: ['ia', 'chat', '?'],
-  hint: 'Pregúntale a la IA local',
-  placeholder: 'Pregunta lo que quieras…',
+  get name() {
+    return t('IA', 'AI')
+  },
+  prefixes: ['ia', 'ai', 'chat', '?'],
+  get hint() {
+    return t('Pregúntale a la IA local', 'Ask the local AI')
+  },
+  get placeholder() {
+    return t('Pregunta lo que quieras…', 'Ask anything…')
+  },
   accent: ACCENT,
   iconPath: SPARKLE_ICON,
   suggest(_query, ctx) {
@@ -80,14 +100,34 @@ export const ai: CommandModule = {
 }
 
 function snippet(text: string, max = 80): string {
-  const t = text.replace(/\s+/g, ' ').trim()
-  return t.length > max ? `${t.slice(0, max - 1)}…` : t
+  const clean = text.replace(/\s+/g, ' ').trim()
+  return clean.length > max ? `${clean.slice(0, max - 1)}…` : clean
 }
 
-function textTask(task: Exclude<AiTask, 'chat'>, meta: Omit<CommandModule, 'suggest'>): CommandModule {
-  const verb = task === 'summarize' ? 'Resumir' : 'Explicar'
+interface TextTaskMeta {
+  id: string
+  name: Text
+  prefixes: readonly string[]
+  hint: Text
+  iconPath: string
+}
+
+function textTask(task: Exclude<AiTask, 'chat'>, meta: TextTaskMeta): CommandModule {
+  const summarizing = task === 'summarize'
   return {
-    ...meta,
+    id: meta.id,
+    get name() {
+      return tx(meta.name)
+    },
+    prefixes: meta.prefixes,
+    get hint() {
+      return tx(meta.hint)
+    },
+    get placeholder() {
+      return t('Pega un texto (o deja vacío para el portapapeles)…', 'Paste some text (or leave empty for the clipboard)…')
+    },
+    accent: ACCENT,
+    iconPath: meta.iconPath,
     async suggest(query, ctx) {
       const status = ctx.ai.status()
       if (status.state !== 'ready') return aiStatusRows(status, ctx)
@@ -97,17 +137,21 @@ function textTask(task: Exclude<AiTask, 'chat'>, meta: Omit<CommandModule, 'sugg
       if (!text) {
         return [
           {
-            title: 'No hay nada que ' + verb.toLowerCase(),
-            subtitle: 'Escribe o pega un texto, o copia algo antes de abrir la barra',
+            title: summarizing ? t('No hay nada que resumir', 'Nothing to summarize') : t('No hay nada que explicar', 'Nothing to explain'),
+            subtitle: t('Escribe o pega un texto, o copia algo antes de abrir la barra', 'Type or paste some text, or copy something before opening the bar'),
             disabled: true,
-            run: () => ({ kind: 'error', message: 'Copia o escribe un texto primero' })
+            run: () => ({ kind: 'error', message: t('Copia o escribe un texto primero', 'Copy or type some text first') })
           }
         ]
       }
       return [
         {
-          title: typed ? `${verb} «${snippet(typed)}»` : `${verb} el portapapeles`,
-          subtitle: typed ? 'Con la IA local' : `«${snippet(text)}»`,
+          title: typed
+            ? `${summarizing ? t('Resumir', 'Summarize') : t('Explicar', 'Explain')} «${snippet(typed)}»`
+            : summarizing
+              ? t('Resumir el portapapeles', 'Summarize the clipboard')
+              : t('Explicar el portapapeles', 'Explain the clipboard'),
+          subtitle: typed ? t('Con la IA local', 'With the local AI') : `«${snippet(text)}»`,
           run: () => ({ kind: 'chat', task, text: text.slice(0, 20_000) })
         }
       ]
@@ -117,20 +161,16 @@ function textTask(task: Exclude<AiTask, 'chat'>, meta: Omit<CommandModule, 'sugg
 
 export const summarize = textTask('summarize', {
   id: 'summarize',
-  name: 'Resumir',
-  prefixes: ['resumir', 'resume'],
-  hint: 'Resumir un texto o el portapapeles',
-  placeholder: 'Pega un texto (o deja vacío para el portapapeles)…',
-  accent: ACCENT,
+  name: { es: 'Resumir', en: 'Summarize' },
+  prefixes: ['resumir', 'resume', 'summarize', 'sum'],
+  hint: { es: 'Resumir un texto o el portapapeles', en: 'Summarize some text or the clipboard' },
   iconPath: SUMMARY_ICON
 })
 
 export const explain = textTask('explain', {
   id: 'explain',
-  name: 'Explicar',
-  prefixes: ['explicar', 'explica'],
-  hint: 'Explicar un texto, término o código',
-  placeholder: 'Pega un texto (o deja vacío para el portapapeles)…',
-  accent: ACCENT,
+  name: { es: 'Explicar', en: 'Explain' },
+  prefixes: ['explicar', 'explica', 'explain'],
+  hint: { es: 'Explicar un texto, término o código', en: 'Explain some text, a term or code' },
   iconPath: EXPLAIN_ICON
 })
