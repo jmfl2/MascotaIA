@@ -11,28 +11,47 @@ un nombre y decidir cuánto habla.
 
 Hecho con **Electron + TypeScript + Vite**, interfaz web y animaciones de muelle.
 
-## Requisitos
+## Instalar
 
-- Windows 10 u 11
-- Node.js 20 o superior (probado con Node 24)
-- *Opcional, para la IA:* [Ollama](https://ollama.com) y un modelo (por defecto
-  `gemma3:4b`, unos 3,3 GB). Sin Ollama todo lo demás funciona igual.
+1. Descarga `Mascota-Setup-<versión>.exe` de la última versión en
+   [**Releases**](../../releases/latest).
+2. Ejecútalo. Como el instalador no está firmado con un certificado de pago,
+   **Windows SmartScreen** dirá que es de un editor desconocido: pulsa
+   *Más información → Ejecutar de todas formas*.
+3. Sigue el asistente. Se instala solo para tu usuario (no pide permisos de
+   administrador), puedes elegir la carpeta y crea accesos directos en el
+   escritorio y en el menú Inicio.
 
-  ```powershell
-  winget install Ollama.Ollama
-  ollama pull gemma3:4b
-  ```
+El robot aparece escondido en una pestaña en el borde de arriba de la pantalla:
+acércate y haz clic, o pulsa **Ctrl+Espacio**. Si quieres que se abra al
+encender el PC, actívalo en *Ajustes → Iniciar con Windows*.
 
-  También puedes descargar el modelo desde la propia app: escribe `ia` en la
-  barra o usa la bandeja (*IA local*).
+**Requisitos:** Windows 10 u 11 (64 bits).
 
-> Si trabajas desde WSL, ejecuta los comandos en **PowerShell o cmd de Windows**,
-> no dentro de WSL. Electron tiene que ser el de Windows para que funcionen la
-> transparencia, la bandeja del sistema y los clics que atraviesan la ventana.
-
-## Puesta en marcha
+**IA local (opcional):** para chatear con el robot y que entienda lenguaje
+natural, instala [Ollama](https://ollama.com) y un modelo (por defecto
+`gemma3:4b`, unos 3,3 GB). Sin Ollama todo lo demás funciona igual.
 
 ```powershell
+winget install Ollama.Ollama
+ollama pull gemma3:4b
+```
+
+También puedes descargar el modelo desde la propia app: escribe `ia` en la barra
+o usa la bandeja (*IA local*). Todo se ejecuta en tu PC, nada se envía a
+internet.
+
+**Desinstalar:** desde *Configuración → Aplicaciones*. Tus notas,
+recordatorios y ajustes se conservan en `%APPDATA%\mascota`; borra esa carpeta
+si no los quieres.
+
+## Para desarrolladores
+
+Necesitas Windows, [Node.js](https://nodejs.org) 20 o superior (probado con
+Node 24) y Git.
+
+```powershell
+git clone <url de este repositorio>
 cd mascota
 npm install
 npm run dev
@@ -43,36 +62,29 @@ npm run dev
 > `npm.cmd run dev` (o abre `cmd`), o permítelo para tu usuario una sola vez con
 > `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
 
-| Script              | Qué hace                                                   |
-| ------------------- | ---------------------------------------------------------- |
-| `npm run dev`       | Arranca la app con recarga en caliente de la interfaz.     |
-| `npm test`          | Ejecuta los tests (vitest). Los de Ollama real se saltan.  |
-| `npm run build`     | Comprueba los tipos, pasa los tests y compila en `out/`.   |
-| `npm run preview`   | Ejecuta la versión compilada.                              |
-| `npm run typecheck` | Solo comprueba los tipos.                                  |
-| `npm run icons`     | Regenera los iconos PNG de `assets/`.                      |
+> Si trabajas desde WSL, ejecuta los comandos en **PowerShell o cmd de Windows**,
+> no dentro de WSL. Electron tiene que ser el de Windows para que funcionen la
+> transparencia, la bandeja del sistema y los clics que atraviesan la ventana.
+
+| Script              | Qué hace                                                     |
+| ------------------- | ------------------------------------------------------------ |
+| `npm run dev`       | Arranca la app con recarga en caliente de la interfaz.       |
+| `npm test`          | Ejecuta los tests (vitest). Los de Ollama real se saltan.    |
+| `npm run build`     | Comprueba los tipos, pasa los tests y compila en `out/`.     |
+| `npm run preview`   | Ejecuta la versión compilada.                                |
+| `npm run typecheck` | Solo comprueba los tipos.                                    |
+| `npm run icons`     | Regenera los iconos PNG de `assets/`.                        |
 | `npm run dist`      | Todo lo de `build` y además genera el instalador en `dist/`. |
 
-## Instalar
+### Publicar una versión
 
-```powershell
-npm run dist
-```
+1. Sube el número en `package.json` (`"version": "1.1.0"`) y haz commit.
+2. `npm run dist` genera `dist\Mascota-Setup-<versión>.exe`.
+3. En GitHub, *Releases → Draft a new release*: crea la etiqueta `v<versión>`,
+   escribe qué cambia y adjunta el `.exe`.
 
-Genera `dist\Mascota-Setup-<versión>.exe`. Al ejecutarlo:
-
-- Se instala solo para tu usuario: no pide permisos de administrador. Puedes
-  elegir la carpeta, y crea accesos directos en el escritorio y en el menú
-  Inicio.
-- Al desinstalar se conservan tus notas, recordatorios y ajustes
-  (`%APPDATA%\mascota`).
-- **Windows SmartScreen** avisará de que el instalador es de un editor
-  desconocido, porque no está firmado con un certificado de pago. Pulsa
-  *Más información → Ejecutar de todas formas*.
-- Si quieres que se abra al encender el PC, actívalo después en *Ajustes →
-  Iniciar con Windows* o desde la bandeja.
-- No puede estar abierta a la vez que `npm run dev`: es la misma app y solo
-  se permite una.
+La versión instalada y `npm run dev` no pueden estar abiertas a la vez: son la
+misma app y solo se permite una.
 
 ## Cómo se usa
 
@@ -499,3 +511,8 @@ npx vitest run src/security/expand.integration.test.ts
 - [x] **Fase 2:** portapapeles inteligente, recordatorios y Pomodoro, lanzador de apps y favoritos, notas rápidas.
 - [x] **Fase 3:** IA local con Ollama (lenguaje natural, resúmenes y chat).
 - [x] **Fase 4:** avisos de enlaces sospechosos, skins y personalidad.
+- [x] **Fase 5:** modo pestaña, rendimiento, iconos nítidos, accesorios temáticos e instalador.
+
+## Licencia
+
+[MIT](LICENSE). Puedes usarlo, modificarlo y compartirlo libremente.
