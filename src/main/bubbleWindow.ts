@@ -22,7 +22,7 @@ const OVERLAP = 34
 const HIDE_TIMEOUT_MS = 400
 
 /** Prioridad: un aviso nunca lo tapa una oferta del portapapeles. */
-const PRIORITY: Record<BubbleView['kind'], number> = { clipboard: 0, info: 1, favorite: 1, pomodoro: 2, reminder: 3 }
+const PRIORITY: Record<BubbleView['kind'], number> = { chatter: 0, clipboard: 0, info: 1, favorite: 1, link: 2, pomodoro: 2, reminder: 3 }
 
 export interface BubbleSpec {
   kind: BubbleView['kind']

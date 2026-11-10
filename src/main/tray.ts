@@ -1,9 +1,10 @@
 /** Icono de la bandeja del sistema: el único control visible de la app. */
-import { app, Menu, nativeImage, Tray, type MenuItemConstructorOptions } from 'electron'
+import { Menu, nativeImage, Tray, type MenuItemConstructorOptions } from 'electron'
 import type { AiStatus } from '../commands'
 import { formatAccelerator } from '../shared/accelerator'
 import { assetPath } from './paths'
 import { currentShortcut, SHORTCUT_PRESETS } from './shortcut'
+import { setStartsWithWindows, startsWithWindows } from './startup'
 
 export interface TrayActions {
   toggleRobot(): void
@@ -18,6 +19,10 @@ export interface TrayActions {
   setAiModel(model: string): void
   startOllama(): void
   pullModel(): void
+  openSettings(): void
+  robotName(): string
+  /** Tras cambiar algo desde el menú (para que la ventana de ajustes se entere). */
+  changed(): void
   quit(): void
 }
 
@@ -56,20 +61,6 @@ function aiMenu(actions: TrayActions): MenuItemConstructorOptions[] {
 
 let tray: Tray | null = null
 
-// --- Iniciar con Windows ------------------------------------------------------
-// En desarrollo el ejecutable es electron.exe y hay que pasarle la ruta del
-// proyecto; empaquetada, la app se lanza a sí misma.
-function loginItemOptions() {
-  return app.isPackaged ? {} : { path: process.execPath, args: [app.getAppPath()] }
-}
-
-function startsWithWindows(): boolean {
-  return app.getLoginItemSettings(loginItemOptions()).openAtLogin
-}
-
-function setStartsWithWindows(enabled: boolean): void {
-  app.setLoginItemSettings({ openAtLogin: enabled, ...loginItemOptions() })
-}
 
 export function createTray(actions: TrayActions): { tray: Tray; rebuild: () => void } {
   // tray.png (16 px) y tray@2x.png (32 px): Electron elige según el escalado.
@@ -121,7 +112,10 @@ export function createTray(actions: TrayActions): { tray: Tray; rebuild: () => v
         label: 'Portapapeles inteligente',
         type: 'checkbox',
         checked: actions.isClipboardEnabled(),
-        click: (item) => actions.setClipboardEnabled(item.checked)
+        click: (item) => {
+          actions.setClipboardEnabled(item.checked)
+          actions.changed()
+        }
       },
       { label: 'IA local', submenu: aiMenu(actions) },
       ...(actions.isPomodoroRunning()
@@ -131,12 +125,18 @@ export function createTray(actions: TrayActions): { tray: Tray; rebuild: () => v
         label: 'Iniciar con Windows',
         type: 'checkbox',
         checked: startsWithWindows(),
-        click: (item) => setStartsWithWindows(item.checked)
+        click: (item) => {
+          setStartsWithWindows(item.checked)
+          actions.changed()
+        }
       },
+      { type: 'separator' },
+      { label: 'Ajustes…', click: () => actions.openSettings() },
       { type: 'separator' },
       { label: 'Salir', click: () => actions.quit() }
     ])
     tray?.setContextMenu(menu)
+    tray?.setToolTip(actions.robotName())
   }
 
   rebuild()

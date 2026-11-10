@@ -8,6 +8,7 @@
  * arrastra un archivo por encima (en ese caso el renderer no recibe eventos).
  */
 import { BrowserWindow, screen, type Rectangle } from 'electron'
+import type { Appearance } from '../shared/appearance'
 import { IPC, type CursorOffset, type PomodoroView, type RobotState } from '../shared/ipc'
 import { loadPage, PRELOAD_PATH } from './paths'
 import { hardenWebContents, secureWebPreferences } from './security'
@@ -121,6 +122,8 @@ export function createRobotWindow(): BrowserWindow {
   win.once('ready-to-show', () => {
     if (getConfig().robotVisible) win?.showInactive()
   })
+  // Al cargar (y en cada recarga en desarrollo) se le envía su skin.
+  win.webContents.on('did-finish-load', () => sendAppearance(getConfig().appearance))
   win.on('show', startCursorTracking)
   win.on('hide', stopCursorTracking)
   win.on('closed', () => {
@@ -138,6 +141,10 @@ export function getRobotBounds(): Rectangle | null {
 
 export function sendRobotState(state: RobotState): void {
   getRobotWindow()?.webContents.send(IPC.robotState, state)
+}
+
+export function sendAppearance(appearance: Appearance): void {
+  getRobotWindow()?.webContents.send(IPC.robotAppearance, appearance)
 }
 
 export function sendPomodoro(view: PomodoroView): void {

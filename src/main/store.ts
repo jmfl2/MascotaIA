@@ -1,5 +1,13 @@
 /** Configuración persistente en %APPDATA%/mascota/config.json. */
 import { MODEL_NAME } from '../ai/ollama'
+import {
+  DEFAULT_APPEARANCE,
+  DEFAULT_PERSONALITY,
+  validateAppearance,
+  validatePersonality,
+  type Appearance,
+  type Personality
+} from '../shared/appearance'
 import { readJson, writeJson } from './services/jsonFile'
 
 export interface Config {
@@ -13,6 +21,12 @@ export interface Config {
   clipboardEnabled: boolean
   /** Modelo de Ollama para la IA local. */
   aiModel: string
+  /** Avisar de enlaces sospechosos al copiarlos. */
+  linkGuard: boolean
+  /** Skin y accesorios del robot. */
+  appearance: Appearance
+  /** Nombre, cuánto habla y tono de la IA. */
+  personality: Personality
 }
 
 export const DEFAULT_SHORTCUT = 'Control+Space'
@@ -24,7 +38,10 @@ const DEFAULTS: Config = {
   shortcut: DEFAULT_SHORTCUT,
   robotVisible: true,
   clipboardEnabled: true,
-  aiModel: DEFAULT_AI_MODEL
+  aiModel: DEFAULT_AI_MODEL,
+  linkGuard: true,
+  appearance: DEFAULT_APPEARANCE,
+  personality: DEFAULT_PERSONALITY
 }
 
 let cache: Config | null = null
@@ -45,6 +62,9 @@ function validate(raw: unknown): Config {
   if (typeof r.robotVisible === 'boolean') cfg.robotVisible = r.robotVisible
   if (typeof r.clipboardEnabled === 'boolean') cfg.clipboardEnabled = r.clipboardEnabled
   if (typeof r.aiModel === 'string' && MODEL_NAME.test(r.aiModel)) cfg.aiModel = r.aiModel
+  if (typeof r.linkGuard === 'boolean') cfg.linkGuard = r.linkGuard
+  if (r.appearance !== undefined) cfg.appearance = validateAppearance(r.appearance)
+  if (r.personality !== undefined) cfg.personality = validatePersonality(r.personality)
   return cfg
 }
 

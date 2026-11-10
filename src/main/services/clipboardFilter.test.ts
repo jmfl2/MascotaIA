@@ -4,8 +4,14 @@ import { shouldOffer, translateTarget, type OfferDecision } from './clipboardFil
 const kind = (d: OfferDecision) => (d.offer ? d.kind : null)
 
 describe('portapapeles: qué se ofrece', () => {
-  it.each(['receta de croquetas', 'Hello world', 'https://example.com/articulo', 'Plaza Mayor, Madrid', 'ñu'])('ofrece "%s"', (text) => {
-    expect(shouldOffer(text).offer).toBe(true)
+  it.each(['receta de croquetas', 'Hello world', 'Plaza Mayor, Madrid', 'ñu'])('ofrece "%s"', (text) => {
+    expect(kind(shouldOffer(text))).toBe('short')
+  })
+
+  it('los enlaces sueltos van al detector de enlaces', () => {
+    expect(kind(shouldOffer('https://example.com/articulo'))).toBe('link')
+    expect(kind(shouldOffer('bit.ly/3abc'))).toBe('link')
+    expect(kind(shouldOffer('mira https://example.com'))).toBe('short')
   })
 
   it.each([

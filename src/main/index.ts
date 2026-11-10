@@ -2,7 +2,7 @@
  * Proceso principal: arranca la app, crea las ventanas y conecta
  * el atajo global, la bandeja, los servicios y los canales IPC.
  */
-import { app, globalShortcut, ipcMain } from 'electron'
+import { app, globalShortcut, ipcMain, Menu } from 'electron'
 import { IPC, type ExecuteRequest, type ExecuteResponse, type QueryRequest, type QueryResponse } from '../shared/ipc'
 import {
   barHidden,
@@ -25,7 +25,8 @@ import {
 import { chatSnapshot, copyAnswer, resetChat, sendToAi, stopAi } from './ai/aiChat'
 import { aiStatus, onAiStatusChange, pullModel, refreshAiStatus, setAiModel, startOllama, warmUpModel } from './ai/aiService'
 import { appInfo, execute, query } from './commandRunner'
-import { handleDroppedPaths, setClipboardEnabled, startFeatures } from './features'
+import { startChatter } from './chatter'
+import { handleDroppedPaths, isClipboardEnabled, setClipboardEnabled, startFeatures } from './features'
 import { robotMood } from './robotMood'
 import {
   createRobotWindow,
@@ -37,7 +38,8 @@ import {
   setRobotVisible
 } from './robotWindow'
 import { denyAllPermissions, isFrom } from './security'
-import { clipboardWatcher } from './services/clipboardWatcher'
+import { applySettingsPatch, getSettingsView, notifySettingsChanged, onSettingsChange } from './settings'
+import { closeSettings, getSettingsWindow, openSettings } from './settingsWindow'
 import { refreshIndex } from './services/launcher'
 import { pomodoroService } from './services/pomodoro'
 import { registerShortcut } from './shortcut'
@@ -85,7 +87,12 @@ function start(): void {
   void Promise.all([
     new Promise((resolve) => robotWin.once('ready-to-show', () => resolve(null))),
     new Promise((resolve) => bubbleWin.webContents.once('did-finish-load', () => resolve(null)))
-  ]).then(() => setTimeout(startFeatures, 600))
+  ]).then(() =>
+    setTimeout(() => {
+      startFeatures()
+      startChatter()
+    }, 600)
+  )
   void refreshIndex(true) // indexa las apps del menú Inicio en segundo plano
   void refreshAiStatus()
   setInterval(() => void refreshAiStatus(), 60_000)
@@ -95,7 +102,7 @@ function start(): void {
     isRobotVisible,
     openBar,
     changeShortcut: (accelerator) => registerShortcut(accelerator, toggleBar),
-    isClipboardEnabled: () => clipboardWatcher.isRunning(),
+    isClipboardEnabled,
     setClipboardEnabled,
     isPomodoroRunning: () => pomodoroService.status() !== null,
     stopPomodoro: () => pomodoroService.stop(),
@@ -103,9 +110,13 @@ function start(): void {
     setAiModel,
     startOllama: () => void startOllama(),
     pullModel: () => void pullModel(),
+    openSettings,
+    robotName: () => getConfig().personality.name,
+    changed: notifySettingsChanged,
     quit: () => app.quit()
   })
   onAiStatusChange(() => tray.rebuild())
+  onSettingsChange(() => tray.rebuild())
 }
 
 /** Valida que algo sea un string de longitud razonable. */
@@ -135,6 +146,26 @@ function registerIpc(): void {
   })
   ipcMain.on(IPC.robotDrop, (event, paths: unknown) => {
     if (isFrom(event, robot())) handleDroppedPaths(paths)
+  })
+  ipcMain.on(IPC.robotContextMenu, (event) => {
+    const win = getRobotWindow()
+    if (!isFrom(event, robot()) || !win) return
+    Menu.buildFromTemplate([
+      { label: 'Abrir barra', click: () => openBar() },
+      { label: 'Ajustes…', click: () => openSettings() },
+      { type: 'separator' },
+      { label: 'Ocultar robot', click: () => setRobotVisible(false) }
+    ]).popup({ window: win })
+  })
+
+  // --- Ajustes ---
+  const settingsWc = () => getSettingsWindow()?.webContents
+  ipcMain.handle(IPC.settingsGet, (event) => (isFrom(event, settingsWc()) ? getSettingsView() : null))
+  ipcMain.on(IPC.settingsUpdate, (event, patch: unknown) => {
+    if (isFrom(event, settingsWc())) applySettingsPatch(patch)
+  })
+  ipcMain.on(IPC.settingsClose, (event) => {
+    if (isFrom(event, settingsWc())) closeSettings()
   })
 
   // --- Barra ---

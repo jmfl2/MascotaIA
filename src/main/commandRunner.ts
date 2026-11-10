@@ -12,7 +12,10 @@ import { suggestFor, type Ranked } from '../commands/engine'
 import type { AppInfo, CommandMeta, ExecuteRequest, ExecuteResponse, QueryRequest, QueryResponse, ResultView } from '../shared/ipc'
 import { sendToAi } from './ai/aiChat'
 import { aiStatus, interpret, pullModel, refreshAiStatus, startOllama } from './ai/aiService'
+import { expandShortLink } from '../security/expand'
 import { toast } from './bubbleWindow'
+import { openSettings } from './settingsWindow'
+import { getConfig } from './store'
 import { robotMood } from './robotMood'
 import { clipboardWatcher } from './services/clipboardWatcher'
 import { launcherService } from './services/launcher'
@@ -39,11 +42,38 @@ export async function openExternalUrl(url: string): Promise<Outcome> {
   }
 }
 
+/** Abre un enlace que ha copiado o pegado el usuario (solo http y https). */
+export async function openLink(url: string): Promise<Outcome> {
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    return { kind: 'error', message: 'Enlace no válido' }
+  }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return { kind: 'error', message: 'Ese tipo de enlace no se abre' }
+  try {
+    await shell.openExternal(parsed.href)
+    return { kind: 'close' }
+  } catch {
+    return { kind: 'error', message: 'No se pudo abrir el navegador' }
+  }
+}
+
 export const commandContext: CommandContext = {
   now: () => Date.now(),
   openUrl: openExternalUrl,
   copyText: (text) => clipboardWatcher.copy(text),
   clipboardText: () => clipboard.readText().catch(() => ''),
+  links: {
+    open: openLink,
+    async expand(url) {
+      const result = await expandShortLink(url)
+      return result.ok
+        ? { kind: 'activate', commandId: 'link', text: result.finalUrl }
+        : { kind: 'error', message: result.error }
+    }
+  },
+  openSettings: () => openSettings(),
   ai: {
     status: aiStatus,
     interpret,
@@ -68,7 +98,7 @@ export function appInfo(): AppInfo {
     accent,
     iconPath
   }))
-  return { shortcut: currentShortcut(), commands }
+  return { shortcut: currentShortcut(), commands, robotName: getConfig().personality.name }
 }
 
 function toView({ command, suggestion: s }: Ranked): ResultView {

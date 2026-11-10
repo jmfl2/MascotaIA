@@ -12,6 +12,7 @@ import { getBarWindow } from '../barWindow'
 import { toast } from '../bubbleWindow'
 import { robotMood } from '../robotMood'
 import { clipboardWatcher } from '../services/clipboardWatcher'
+import { getConfig } from '../store'
 import { client, markModelUsed, refreshAiStatus, unavailableMessage } from './aiService'
 
 interface Message {
@@ -81,7 +82,7 @@ export async function sendToAi(task: AiTask, rawText: string): Promise<void> {
     await client.chat(
       {
         model: status.model,
-        messages: [{ role: 'system', content: chatSystemPrompt(new Date()) }, ...history],
+        messages: [{ role: 'system', content: chatSystemPrompt(new Date(), getConfig().personality) }, ...history],
         options: { temperature: 0.6 },
         signal: myController.signal,
         firstByteTimeoutMs: 120_000

@@ -15,6 +15,7 @@ import {
   type PomodoroView,
   type RobotState
 } from '../shared/ipc'
+import type { Appearance, SettingsView } from '../shared/appearance'
 
 /** Suscribe a un canal fijo y devuelve la función para darse de baja. */
 function listen<T>(channel: string, cb: (payload: T) => void) {
@@ -42,7 +43,15 @@ const api: MascotaApi = {
     onHover: (cb) => listen<boolean>(IPC.robotHover, cb),
     onState: (cb) => listen<RobotState>(IPC.robotState, cb),
     onDragMoving: (cb) => listen<void>(IPC.robotDragMoving, () => cb()),
-    onPomodoro: (cb) => listen<PomodoroView>(IPC.robotPomodoro, cb)
+    onPomodoro: (cb) => listen<PomodoroView>(IPC.robotPomodoro, cb),
+    onAppearance: (cb) => listen<Appearance>(IPC.robotAppearance, cb),
+    contextMenu: () => ipcRenderer.send(IPC.robotContextMenu)
+  },
+  settings: {
+    get: () => ipcRenderer.invoke(IPC.settingsGet),
+    update: (patch) => ipcRenderer.send(IPC.settingsUpdate, patch),
+    close: () => ipcRenderer.send(IPC.settingsClose),
+    onChanged: (cb) => listen<SettingsView>(IPC.settingsChanged, cb)
   },
   bar: {
     query: (req) => ipcRenderer.invoke(IPC.barQuery, req),

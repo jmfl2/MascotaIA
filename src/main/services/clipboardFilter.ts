@@ -3,6 +3,7 @@
  * Es deliberadamente conservador: ante la duda, el robot no dice nada.
  * (Sin dependencias de Electron, para poder probarlo.)
  */
+import { looksLikeUrl } from '../../security'
 
 /** Hasta aquí, texto "corto": se ofrece buscar, traducir o guardar. */
 export const MAX_OFFER_LENGTH = 300
@@ -52,13 +53,15 @@ function looksLikePassword(token: string): boolean {
 }
 
 export type OfferDecision =
-  | { offer: true; kind: 'short' | 'long'; text: string }
+  | { offer: true; kind: 'short' | 'long' | 'link'; text: string }
   | { offer: false; reason: string }
 
 export function shouldOffer(raw: string): OfferDecision {
   const text = raw.trim()
   if (text.length < 2) return { offer: false, reason: 'muy corto' }
   if (text.length > MAX_LONG_LENGTH) return { offer: false, reason: 'demasiado largo' }
+  // Un enlace suelto se analiza (detector de enlaces sospechosos), no se "ofrece".
+  if (looksLikeUrl(text)) return { offer: true, kind: 'link', text }
 
   const isLong = text.length > MAX_OFFER_LENGTH || text.split(/\r?\n/).length > 4
   if (isLong) {

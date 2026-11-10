@@ -6,6 +6,7 @@
  * validaciones) y el usuario confirma con Intro.
  */
 import type { AiTask } from '../commands/types'
+import type { AiTone, Personality } from '../shared/appearance'
 
 export type { AiTask }
 
@@ -97,9 +98,15 @@ export function parseInterpretation(raw: string): Interpretation | null {
 
 // --- Chat, resumen y explicación ---------------------------------------------------
 
-export function chatSystemPrompt(now: Date): string {
-  return `Eres Mascota, un pequeño robot asistente que vive en el escritorio de Windows del usuario.
-Respondes en español (salvo que te escriban en otro idioma), de forma clara, cercana y breve: ve al grano y usa listas cortas cuando ayuden.
+const TONES: Record<AiTone, string> = {
+  cercano: 'Hablas de forma cercana y amable, tuteando, clara y breve: ve al grano y usa listas cortas cuando ayuden.',
+  formal: 'Hablas de forma formal y profesional, tratando de usted, con precisión y sin coloquialismos. Sé conciso y usa listas cuando ayuden.',
+  divertido: 'Hablas con humor y desparpajo, tuteando, con algún emoji o broma ligera de vez en cuando, pero sin dejar de ser útil y breve.'
+}
+
+export function chatSystemPrompt(now: Date, personality: Pick<Personality, 'name' | 'aiTone'> = { name: 'Mascota', aiTone: 'cercano' }): string {
+  return `Te llamas ${personality.name} y eres un pequeño robot asistente que vive en el escritorio de Windows del usuario.
+Respondes en español (salvo que te escriban en otro idioma). ${TONES[personality.aiTone]}
 Puedes usar Markdown sencillo (negritas, listas, bloques de código).
 Funcionas en local con un modelo pequeño: si no sabes algo o puede haber cambiado, dilo con honestidad en vez de inventar.
 Ahora es ${describeNow(now)}.`

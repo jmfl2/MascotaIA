@@ -4,6 +4,7 @@
  * los nombres de canal y los tipos no se desincronicen.
  */
 import type { IconSpec } from '../commands/types'
+import type { Appearance, SettingsPatch, SettingsView } from './appearance'
 
 export type { IconSpec }
 
@@ -34,6 +35,8 @@ export interface AppInfo {
   /** Atajo global en formato de Electron, p. ej. "Control+Space". */
   shortcut: string
   commands: CommandMeta[]
+  /** Nombre que el usuario le ha puesto al robot. */
+  robotName: string
 }
 
 /** Vista serializable de una sugerencia (la acción real se queda en el proceso principal). */
@@ -82,7 +85,7 @@ export interface BubbleAction {
 
 export interface BubbleView {
   id: string
-  kind: 'clipboard' | 'reminder' | 'pomodoro' | 'info' | 'favorite'
+  kind: 'clipboard' | 'reminder' | 'pomodoro' | 'info' | 'favorite' | 'link' | 'chatter'
   title: string
   text?: string
   actions: BubbleAction[]
@@ -121,6 +124,13 @@ export const IPC = {
   robotState: 'robot:state',
   robotDragMoving: 'robot:drag-moving',
   robotPomodoro: 'robot:pomodoro',
+  robotAppearance: 'robot:appearance',
+  robotContextMenu: 'robot:context-menu',
+  // Ajustes
+  settingsGet: 'settings:get',
+  settingsUpdate: 'settings:update',
+  settingsChanged: 'settings:changed',
+  settingsClose: 'settings:close',
   // Barra de comandos
   barQuery: 'bar:query',
   barExecute: 'bar:execute',
@@ -166,6 +176,15 @@ export interface MascotaApi {
     onState(cb: (state: RobotState) => void): Unsubscribe
     onDragMoving(cb: () => void): Unsubscribe
     onPomodoro(cb: (view: PomodoroView) => void): Unsubscribe
+    onAppearance(cb: (appearance: Appearance) => void): Unsubscribe
+    /** Clic derecho sobre el robot: menú nativo. */
+    contextMenu(): void
+  }
+  settings: {
+    get(): Promise<SettingsView | null>
+    update(patch: SettingsPatch): void
+    close(): void
+    onChanged(cb: (view: SettingsView) => void): Unsubscribe
   }
   bar: {
     query(req: QueryRequest): Promise<QueryResponse>
