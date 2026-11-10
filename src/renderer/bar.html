@@ -31,14 +31,18 @@
         <div id="results-wrap" class="results-wrap">
           <div id="highlight" class="highlight" aria-hidden="true"></div>
           <ul id="results" class="results" role="listbox"></ul>
+          <div id="chat" class="chat" role="log" aria-live="polite" hidden></div>
           <p id="message" class="message" role="status" aria-live="polite"></p>
         </div>
         <footer class="footer">
-          <span><kbd>↑</kbd><kbd>↓</kbd> elegir</span>
-          <span><kbd>↵</kbd> abrir</span>
-          <span><kbd>Tab</kbd> comando</span>
+          <span class="only-list"><kbd>↑</kbd><kbd>↓</kbd> elegir</span>
+          <span class="only-list"><kbd>↵</kbd> abrir</span>
+          <span class="only-list"><kbd>Tab</kbd> comando</span>
           <span id="secondary-hint" hidden><kbd>Supr</kbd> borrar</span>
-          <span><kbd>Esc</kbd> cerrar</span>
+          <span class="only-chat"><kbd>↵</kbd> enviar</span>
+          <span class="only-chat"><kbd>Ctrl</kbd><kbd>N</kbd> nueva</span>
+          <span class="only-chat"><kbd>Esc</kbd> parar · cerrar</span>
+          <span class="only-list"><kbd>Esc</kbd> cerrar</span>
           <span id="shortcut-hint" class="footer-right"></span>
         </footer>
       </div>

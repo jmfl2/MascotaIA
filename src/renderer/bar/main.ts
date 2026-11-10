@@ -6,16 +6,21 @@
  *   etiqueta y solo queda el texto. Retroceso con el campo vacío la quita.
  * - Las filas las calcula el proceso principal; aquí solo se pintan y se
  *   indica cuál se eligió. El texto se pinta siempre con `textContent`.
+ * - Con la etiqueta "IA" y la IA lista, la lista se cambia por la conversación.
  */
 import { animate } from 'motion'
 import { formatAccelerator } from '../../shared/accelerator'
 import type { CommandMeta, ExecuteResponse, IconSpec, ResultView } from '../../shared/ipc'
 import './bar.css'
+import { createChatView } from './chat'
 
 const ROW_HEIGHT = 52
 const MAX_VISIBLE_ROWS = 6
 const LIST_PADDING = 8
-const DEFAULT_PLACEHOLDER = 'Busca en Google, abre apps o usa yt, nota, rec, pomo…'
+const DEFAULT_PLACEHOLDER = 'Busca, abre apps o pídeselo a la IA: yt, nota, rec, pomo, ia…'
+const AI_COMMAND = 'ai'
+/** Si una acción tarda más que esto, la fila muestra que está trabajando. */
+const LOADING_DELAY_MS = 150
 
 // Muelles de motion: `visualDuration` es lo que dura a la vista y `bounce` el rebote.
 const SPRING_OPEN = { type: 'spring', visualDuration: 0.38, bounce: 0.28 } as const
@@ -34,6 +39,7 @@ const highlight = el<HTMLDivElement>('highlight')
 const message = el<HTMLParagraphElement>('message')
 const shortcutHint = el<HTMLSpanElement>('shortcut-hint')
 const secondaryHint = el<HTMLSpanElement>('secondary-hint')
+const chatEl = el<HTMLDivElement>('chat')
 
 let commands: CommandMeta[] = []
 let active: CommandMeta | null = null
@@ -42,6 +48,18 @@ let selected = 0
 let seq = 0
 let shownSeq = -1
 let busy = false
+/** Vista de conversación (etiqueta IA con la IA lista). */
+let chatMode = false
+const chat = createChatView(
+  chatEl,
+  (index) => window.mascota.ai.copy(index),
+  () => {
+    if (chatMode) resize()
+  }
+)
+const ai = window.mascota.ai
+ai.onUpdate((snapshot) => chat.render(snapshot))
+ai.onDelta(({ index, delta }) => chat.appendDelta(index, delta))
 /** Cambia con cada apertura: invalida cierres que ya estaban en curso. */
 let session = 0
 
@@ -88,11 +106,30 @@ async function refreshResults(): Promise<void> {
   shownSeq = res.seq
   items = res.items
   selected = Math.min(selected, Math.max(0, items.length - 1))
+  // Si la fila elegida es solo informativa, pasa a la primera que haga algo.
+  if (items[selected]?.disabled) {
+    const firstEnabled = items.findIndex((it) => !it.disabled)
+    if (firstEnabled >= 0) selected = firstEnabled
+  }
+  const wasChat = chatMode
+  chatMode = active?.id === AI_COMMAND && items.length === 0
+  if (chatMode && !wasChat) {
+    const snapshot = await ai.snapshot()
+    if (snapshot) chat.render(snapshot)
+  }
   render()
 }
 
 // --- Pintado ----------------------------------------------------------------------
 function render(): void {
+  panel.classList.toggle('is-chat', chatMode)
+  list.hidden = chatMode
+  chatEl.hidden = !chatMode
+  if (chatMode) {
+    secondaryHint.hidden = true
+    resize()
+    return
+  }
   list.replaceChildren(
     highlight,
     ...items.map((item, i) => {
@@ -103,7 +140,9 @@ function render(): void {
       text.append(h('span', 'row-title', item.title))
       if (item.subtitle) text.append(h('span', 'row-subtitle', item.subtitle))
       li.append(iconBox(item.icon), text, h('kbd', 'row-kbd'))
-      li.addEventListener('mousemove', () => select(i))
+      li.addEventListener('mousemove', (e) => {
+        if (pointerMoved(e)) select(i)
+      })
       li.addEventListener('click', () => {
         select(i)
         void execute(false)
@@ -113,6 +152,19 @@ function render(): void {
   )
   updateSelection(false)
   resize()
+}
+
+/**
+ * Chromium lanza `mousemove` sintéticos cuando la lista se repinta bajo un
+ * cursor quieto; si les hiciéramos caso, la fila bajo el ratón "robaría" la
+ * selección hecha con el teclado. Solo cuenta si el ratón se movió de verdad.
+ */
+let lastPointer = { x: Number.NaN, y: Number.NaN }
+function pointerMoved(e: MouseEvent): boolean {
+  if (e.screenX === lastPointer.x && e.screenY === lastPointer.y) return false
+  const first = Number.isNaN(lastPointer.x)
+  lastPointer = { x: e.screenX, y: e.screenY }
+  return !first
 }
 
 function select(i: number): void {
@@ -140,9 +192,9 @@ function updateSelection(animated: boolean): void {
 /** Ajusta la altura de la lista con un muelle. */
 function resize(): void {
   const rows = Math.min(items.length, MAX_VISIBLE_ROWS)
-  const listHeight = rows ? rows * ROW_HEIGHT + LIST_PADDING * 2 : 0
+  const listHeight = chatMode ? chatEl.offsetHeight : rows ? rows * ROW_HEIGHT + LIST_PADDING * 2 : 0
   const height = listHeight + (message.textContent ? message.scrollHeight : 0)
-  list.style.height = `${listHeight}px`
+  if (!chatMode) list.style.height = `${listHeight}px`
   wrap.classList.toggle('has-content', height > 0)
   animate(wrap, { height }, SPRING_UI)
 }
@@ -200,11 +252,15 @@ async function execute(secondary: boolean): Promise<void> {
   if (secondary && !items[selected].secondaryLabel) return
 
   busy = true
+  const row = list.querySelector<HTMLElement>(`#opt-${selected}`)
+  const loading = window.setTimeout(() => row?.classList.add('is-loading'), LOADING_DELAY_MS)
   let res: ExecuteResponse
   try {
     res = await api.execute({ seq: shownSeq, index: selected, secondary })
   } finally {
     busy = false
+    window.clearTimeout(loading)
+    row?.classList.remove('is-loading')
   }
   handle(res)
 }
@@ -217,7 +273,7 @@ function handle(res: ExecuteResponse): void {
       break
     case 'activate': {
       const command = commands.find((c) => c.id === res.commandId)
-      if (command) activate(command, input.value)
+      if (command) activate(command, res.text ?? input.value)
       break
     }
     case 'refresh':
@@ -236,7 +292,33 @@ input.addEventListener('input', () => {
   void refreshResults()
 })
 
+/** Teclas en la vista de conversación. Devuelve true si la tecla se gestionó. */
+function chatKeydown(e: KeyboardEvent): boolean {
+  const streaming = chat.snapshot().streaming
+  if (e.key === 'Enter') {
+    e.preventDefault()
+    const text = input.value.trim()
+    if (text && !streaming) {
+      ai.send(text)
+      input.value = ''
+    }
+    return true
+  }
+  if (e.key === 'Escape' && streaming) {
+    e.preventDefault()
+    ai.stop()
+    return true
+  }
+  if ((e.key === 'n' || e.key === 'N') && e.ctrlKey) {
+    e.preventDefault()
+    ai.reset()
+    return true
+  }
+  return false
+}
+
 input.addEventListener('keydown', (e) => {
+  if (chatMode && chatKeydown(e)) return
   switch (e.key) {
     case 'ArrowDown':
       e.preventDefault()
@@ -288,6 +370,12 @@ input.addEventListener('keydown', (e) => {
 // Clic en la zona transparente alrededor del panel: cerrar.
 backdrop.addEventListener('mousedown', (e) => {
   if (e.target === backdrop) api.requestClose()
+})
+
+// El proceso principal pide pasar al chat (p. ej. "Resumir" desde el bocadillo).
+api.onEnterChat(() => {
+  const command = commands.find((c) => c.id === AI_COMMAND)
+  if (command && active?.id !== AI_COMMAND) activate(command, '')
 })
 
 // --- Abrir y cerrar (los pide el proceso principal) -------------------------------
