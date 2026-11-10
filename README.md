@@ -23,6 +23,11 @@ npm install
 npm run dev
 ```
 
+> **¿PowerShell dice que «la ejecución de scripts está deshabilitada»?** Es la
+> política de ejecución por defecto de Windows, que bloquea `npm.ps1`. Usa
+> `npm.cmd run dev` (o abre `cmd`), o permítelo para tu usuario una sola vez con
+> `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
+
 | Script              | Qué hace                                                 |
 | ------------------- | -------------------------------------------------------- |
 | `npm run dev`       | Arranca la app con recarga en caliente de la interfaz.   |
