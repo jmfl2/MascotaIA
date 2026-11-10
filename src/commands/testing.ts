@@ -26,6 +26,14 @@ export function fakeContext(now = new Date(2026, 10, 10, 12, 0, 0).getTime()) {
     },
     copyText: (text) => void state.copied.push(text),
     clipboardText: async () => state.clipboard,
+    openSettings: () => void state.opened.push('ajustes'),
+    links: {
+      expand: async (url) => ({ kind: 'activate', commandId: 'link', text: `expandido:${url}` }),
+      open: async (url) => {
+        state.opened.push(url)
+        return { kind: 'close', mood: 'happy' }
+      }
+    },
     ai: {
       status: () => state.ai,
       interpret: async (text) => {

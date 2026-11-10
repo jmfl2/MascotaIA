@@ -210,3 +210,33 @@ describe('IA', () => {
     expect(await typed.suggestion.run()).toEqual({ kind: 'chat', task: 'explain', text: 'git rebase -i' })
   })
 })
+
+describe('enlaces', () => {
+  it('al pegar un enlace, lo primero es comprobarlo', async () => {
+    const { ctx } = fakeContext()
+    const rows = await suggestFor(null, 'https://paypa1.com/login', ctx)
+    expect(rows[0].command.id).toBe('link')
+    expect(await rows[0].suggestion.run()).toEqual({ kind: 'activate', commandId: 'link', text: 'https://paypa1.com/login' })
+  })
+
+  it('muestra veredicto y motivos; abrir es una fila aparte', async () => {
+    const { ctx, state } = fakeContext()
+    const rows = await suggestFor('link', 'https://paypa1.com/login', ctx)
+    expect(rows[0].suggestion.title).toBe('🚨 Este enlace parece una trampa')
+    expect(rows[1].suggestion.title).toContain('Imita a PayPal')
+    // La primera fila que se puede elegir (la que coge Intro) es la segura.
+    expect(rows.find((r) => !r.suggestion.disabled)!.suggestion.title).toBe('No abrir')
+    const open = rows.at(-1)!.suggestion
+    expect(open.title).toBe('Abrir igualmente')
+    await open.run()
+    expect(state.opened).toEqual(['https://paypa1.com/login'])
+  })
+
+  it('ofrece desacortar y usa el portapapeles si no se escribe nada', async () => {
+    const { ctx } = fakeContext()
+    ctx.clipboardText = async () => 'https://bit.ly/abc'
+    const rows = await suggestFor('link', '', ctx)
+    const expand = rows.find((r) => r.suggestion.title === 'Ver adónde lleva')!
+    expect(await expand.suggestion.run()).toMatchObject({ kind: 'activate', commandId: 'link' })
+  })
+})

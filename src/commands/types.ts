@@ -167,6 +167,14 @@ export interface CommandContext {
   }
   /** Texto actual del portapapeles. */
   clipboardText(): Promise<string>
+  links: {
+    /** Desacorta (preguntando solo al acortador) y pone el destino en la barra. */
+    expand(url: string): Promise<Outcome>
+    /** Abre un enlace http(s) en el navegador. */
+    open(url: string): Promise<Outcome>
+  }
+  /** Abre la ventana de ajustes. */
+  openSettings(): void
   launcher: {
     search(query: string, limit: number): Promise<LaunchTarget[]>
     favorites(): Promise<LaunchTarget[]>

@@ -7,7 +7,9 @@
  *   Si es una frase y la IA está lista, se ofrece "Interpretar con IA"
  *   justo debajo de Google (solo consulta al modelo si se elige).
  */
+import { looksLikeUrl } from '../security'
 import { ai } from './ai'
+import { link } from './link'
 import { COMMANDS, findCommandById } from './index'
 import type { CommandContext, CommandModule, Suggestion } from './types'
 
@@ -53,6 +55,20 @@ export async function suggestFor(commandId: string | null, text: string, ctx: Co
     }))
   }
 
+  // Si se pega un enlace, lo primero es ofrecer comprobarlo.
+  const linkRows: Ranked[] = looksLikeUrl(text)
+    ? [
+        {
+          command: link,
+          suggestion: {
+            title: '🛡️ Comprobar el enlace antes de abrirlo',
+            subtitle: text.trim().slice(0, 120),
+            run: () => ({ kind: 'activate', commandId: 'link', text: text.trim() })
+          }
+        }
+      ]
+    : []
+
   const [web, ranked] = await Promise.all([
     Promise.all(COMMANDS.filter((c) => c.global === 'web').map((c) => safeSuggest(c, text, ctx))),
     Promise.all(COMMANDS.filter((c) => c.global === 'ranked').map((c) => safeSuggest(c, text, ctx)))
@@ -82,6 +98,6 @@ export async function suggestFor(commandId: string | null, text: string, ctx: Co
   const strong = (rankedRows[0]?.suggestion.score ?? 0) >= STRONG_MATCH
   const [first, ...restWeb] = webRows
   return strong
-    ? [...rankedRows, ...(first ? [first] : []), ...interpretRows, ...restWeb]
-    : [...(first ? [first] : []), ...interpretRows, ...rankedRows, ...restWeb]
+    ? [...linkRows, ...rankedRows, ...(first ? [first] : []), ...interpretRows, ...restWeb]
+    : [...linkRows, ...(first ? [first] : []), ...interpretRows, ...rankedRows, ...restWeb]
 }

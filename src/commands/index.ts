@@ -11,10 +11,12 @@ import { ai, explain, summarize } from './ai'
 import { github } from './github'
 import { google } from './google'
 import { launcher } from './launcher'
+import { link } from './link'
 import { maps } from './maps'
 import { notes } from './notes'
 import { pomodoro } from './pomodoro'
 import { reminders } from './reminders'
+import { settings } from './settings'
 import { translate } from './translate'
 import type { CommandModule } from './types'
 import { buildWebUrl, type BuildResult, type WebCommand } from './web'
@@ -29,6 +31,7 @@ export const COMMANDS: readonly CommandModule[] = [
   google,
   launcher,
   ai,
+  link,
   youtube,
   maps,
   github,
@@ -37,7 +40,8 @@ export const COMMANDS: readonly CommandModule[] = [
   reminders,
   pomodoro,
   summarize,
-  explain
+  explain,
+  settings
 ]
 
 export function findCommandById(id: string): CommandModule | undefined {
