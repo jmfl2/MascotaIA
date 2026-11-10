@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' ws://localhost:*; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Ajustes de Mascota</title>
+  </head>
+  <body>
+    <div id="window" class="window">
+      <header class="titlebar">
+        <h1>Ajustes</h1>
+        <button id="close" class="close" type="button" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10 M17 7L7 17" /></svg>
+        </button>
+      </header>
+
+      <main class="scroll">
+        <section class="hero">
+          <div id="preview" class="preview" title="Haz clic en él"></div>
+          <p id="hero-name" class="hero-name">Mascota</p>
+          <p class="hero-sub">Así se verá en tu escritorio</p>
+        </section>
+
+        <h2>Apariencia</h2>
+        <div class="group">
+          <div class="row column">
+            <span class="label">Color</span>
+            <div id="skins" class="swatches" role="radiogroup" aria-label="Color"></div>
+          </div>
+          <div class="row column">
+            <span class="label">Accesorios</span>
+            <div id="accessories" class="chips" role="group" aria-label="Accesorios"></div>
+          </div>
+        </div>
+
+        <h2>Personalidad</h2>
+        <div class="group">
+          <label class="row">
+            <span class="label">Nombre</span>
+            <input id="name" class="text-input" type="text" maxlength="20" spellcheck="false" autocomplete="off" />
+          </label>
+          <div class="row column">
+            <span class="label">Cuánto habla</span>
+            <div id="chattiness" class="segmented" role="radiogroup" aria-label="Cuánto habla"></div>
+            <p id="chattiness-hint" class="hint"></p>
+          </div>
+          <div class="row column">
+            <span class="label">Tono de la IA</span>
+            <div id="tone" class="segmented" role="radiogroup" aria-label="Tono de la IA"></div>
+          </div>
+        </div>
+
+        <h2>Ayuda y seguridad</h2>
+        <div class="group">
+          <label class="row">
+            <span class="label-block">
+              <span class="label">Avisar de enlaces sospechosos</span>
+              <span class="hint">Al copiar un enlace, comprueba si imita a una marca o esconde el destino</span>
+            </span>
+            <input id="linkGuard" class="switch" type="checkbox" />
+          </label>
+          <label class="row">
+            <span class="label-block">
+              <span class="label">Portapapeles inteligente</span>
+              <span class="hint">Ofrece buscar, traducir o resumir lo que copias</span>
+            </span>
+            <input id="clipboardEnabled" class="switch" type="checkbox" />
+          </label>
+          <label class="row">
+            <span class="label">Iniciar con Windows</span>
+            <input id="startWithWindows" class="switch" type="checkbox" />
+          </label>
+        </div>
+
+        <p class="footnote">Todo se guarda en tu PC, en %APPDATA%\mascota</p>
+      </main>
+    </div>
+    <script type="module" src="./settings/main.ts"></script>
+  </body>
+</html>
