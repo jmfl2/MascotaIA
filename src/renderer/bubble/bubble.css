@@ -1,0 +1,136 @@
+@import '../shared/theme.css';
+
+/* La ventana deja 14 px alrededor para la sombra (MARGIN en bubbleWindow.ts). */
+body {
+  padding: 14px;
+}
+
+.bubble {
+  position: relative;
+  width: 272px;
+  padding: 14px 16px 14px;
+  border-radius: 22px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    0 10px 30px rgba(15, 23, 42, 0.2),
+    0 1px 4px rgba(15, 23, 42, 0.08),
+    0 0 0 0.5px var(--glass-edge),
+    inset 0 1px 0 var(--glass-shine);
+  color: var(--text);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+/* Cola que apunta al robot */
+.tail {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  margin-top: -7px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 3px;
+  transform: rotate(45deg);
+}
+/* Solo asoma la mitad exterior del rombo, para que no se superponga al cristal. */
+.side-left .tail {
+  right: -7px;
+  border-left: 0;
+  border-bottom: 0;
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+}
+.side-right .tail {
+  left: -7px;
+  border-right: 0;
+  border-top: 0;
+  clip-path: polygon(0 0, 0 100%, 100% 100%);
+}
+
+.close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--kbd-bg);
+  color: var(--text-2);
+  cursor: default;
+  transition: background 150ms ease;
+}
+.close:hover { background: var(--selection); }
+.close svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+.title {
+  margin: 0 26px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.text {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-2);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.text:empty { display: none; }
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+.actions:empty { display: none; }
+
+.action {
+  height: 28px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--kbd-bg);
+  color: var(--text);
+  font: 500 12.5px var(--font);
+  cursor: default;
+  transition:
+    background 150ms ease,
+    transform 300ms var(--spring-press, ease);
+}
+.action:hover { background: var(--selection); }
+.action:active { transform: scale(0.95); }
+.action.primary {
+  background: var(--accent);
+  color: #fff;
+}
+.action.primary:hover { filter: brightness(1.08); }
+
+/* Línea que se acorta mientras corre el tiempo de cierre automático */
+.timer {
+  position: absolute;
+  left: 22px;
+  right: 22px;
+  bottom: 5px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--text-3);
+  opacity: 0.5;
+  transform-origin: left center;
+  transform: scaleX(0);
+}

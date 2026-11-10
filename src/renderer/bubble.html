@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' ws://localhost:*; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Bocadillo</title>
+  </head>
+  <body>
+    <div id="bubble" class="bubble" role="status" aria-live="polite">
+      <div class="tail" aria-hidden="true"></div>
+      <button id="close" class="close" type="button" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10 M17 7L7 17" /></svg>
+      </button>
+      <p id="title" class="title"></p>
+      <p id="text" class="text"></p>
+      <div id="actions" class="actions"></div>
+      <div id="timer" class="timer" aria-hidden="true"></div>
+    </div>
+    <script type="module" src="./bubble/main.ts"></script>
+  </body>
+</html>
