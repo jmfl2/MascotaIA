@@ -97,7 +97,10 @@ function start(): void {
       startChatter()
     }, 600)
   )
-  void refreshIndex(true) // indexa las apps del menú Inicio en segundo plano
+  // Indexa las apps del menú Inicio (y sus iconos) en segundo plano, cuando el
+  // robot ya está en pantalla: así no compite con el arranque. Si abres la
+  // barra antes, la búsqueda lo lanza ella misma.
+  setTimeout(() => void refreshIndex(), 4000)
   void refreshAiStatus()
   setInterval(() => void refreshAiStatus(), 60_000)
 

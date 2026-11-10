@@ -300,11 +300,27 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
   }
 
   // --- Bucle de animación ----------------------------------------------------
+  // Pintar una ventana transparente cuesta GPU en cada fotograma. Cuando nada se
+  // mueve solo queda la respiración, que es lenta: basta con pocos fps.
+  const IDLE_FRAME_MS = 1000 / 30
+  const SLEEP_FRAME_MS = 1000 / 12
+  const SETTLED = 0.002
+
+  /** ¿Algún muelle sigue en movimiento o lejos de su objetivo? */
+  function moving(): boolean {
+    for (const spring of Object.values(s)) {
+      if (Math.abs(spring.velocity) > SETTLED || Math.abs(spring.value - spring.target) > SETTLED) return true
+    }
+    return false
+  }
+
+  /** Estados o interacciones que piden toda la fluidez (pulsos, saltitos, el ratón encima). */
+  function lively(state: RobotState): boolean {
+    return hover || dragging || dropHover || state === 'listening' || state === 'thinking' || state === 'alert'
+  }
+
   let last = performance.now()
   function frame(now: number): void {
-    const dt = Math.min((now - last) / 1000, 1 / 30) // si la ventana se congela, no "salta"
-    last = now
-    const t = now / 1000
     const state = current()
 
     // Hacia dónde mira según el estado.
@@ -314,6 +330,15 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
     else if (state === 'sleeping') [gx, gy] = [0, 0.35]
     s.gazeX.target = gx
     s.gazeY.target = gy
+
+    if (!lively(state) && !moving() && now - last < (state === 'sleeping' ? SLEEP_FRAME_MS : IDLE_FRAME_MS)) {
+      requestAnimationFrame(frame)
+      return
+    }
+
+    const dt = Math.min((now - last) / 1000, 1 / 30) // si la ventana se congela, no "salta"
+    last = now
+    const t = now / 1000
 
     // Con un aviso pendiente, da saltitos para llamar la atención.
     if (state === 'alert' && now - lastHop > ALERT_HOP_MS) {
