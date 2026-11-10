@@ -67,7 +67,7 @@ export interface ExecuteRequest {
 export type ExecuteResponse =
   | { kind: 'close' }
   | { kind: 'error'; message: string }
-  | { kind: 'activate'; commandId: string }
+  | { kind: 'activate'; commandId: string; text?: string }
   | { kind: 'refresh' }
   /** La lista cambió mientras tanto: hay que volver a consultar. */
   | { kind: 'stale' }
@@ -92,6 +92,20 @@ export interface BubbleView {
   side: 'left' | 'right'
   /** Sonar un aviso suave. */
   chime?: boolean
+}
+
+// --- Chat con la IA ----------------------------------------------------------------
+
+export interface ChatMessageView {
+  role: 'user' | 'assistant'
+  text: string
+  error?: boolean
+}
+
+export interface ChatSnapshot {
+  messages: ChatMessageView[]
+  /** La IA está escribiendo la última respuesta. */
+  streaming: boolean
 }
 
 // --- Canales ------------------------------------------------------------------------
@@ -122,7 +136,17 @@ export const IPC = {
   bubbleHidden: 'bubble:hidden',
   bubbleResize: 'bubble:resize',
   bubbleAction: 'bubble:action',
-  bubbleDismiss: 'bubble:dismiss'
+  bubbleDismiss: 'bubble:dismiss',
+  bubbleUpdate: 'bubble:update',
+  // Chat con la IA
+  aiSend: 'ai:send',
+  aiStop: 'ai:stop',
+  aiReset: 'ai:reset',
+  aiCopy: 'ai:copy',
+  aiSnapshot: 'ai:snapshot',
+  aiUpdate: 'ai:update',
+  aiDelta: 'ai:delta',
+  barEnterChat: 'bar:enter-chat'
 } as const
 
 /** Función que, al llamarla, deja de escuchar el evento. */
@@ -154,7 +178,18 @@ export interface MascotaApi {
     reportError(): void
     onOpen(cb: () => void): Unsubscribe
     onClose(cb: () => void): Unsubscribe
+    /** El proceso principal pide pasar al chat (p. ej. "Resumir" desde el bocadillo). */
+    onEnterChat(cb: () => void): Unsubscribe
     getInfo(): Promise<AppInfo | null>
+  }
+  ai: {
+    send(text: string): void
+    stop(): void
+    reset(): void
+    copy(index: number): void
+    snapshot(): Promise<ChatSnapshot | null>
+    onUpdate(cb: (snapshot: ChatSnapshot) => void): Unsubscribe
+    onDelta(cb: (d: { index: number; delta: string }) => void): Unsubscribe
   }
   bubble: {
     action(bubbleId: string, actionId: string): void
@@ -163,6 +198,7 @@ export interface MascotaApi {
     resize(height: number): void
     hidden(): void
     onShow(cb: (view: BubbleView) => void): Unsubscribe
+    onUpdate(cb: (patch: { id: string; title?: string; text?: string }) => void): Unsubscribe
     onHide(cb: () => void): Unsubscribe
   }
 }

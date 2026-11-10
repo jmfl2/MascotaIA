@@ -22,6 +22,8 @@ import {
   getBubbleWebContents,
   repositionBubble
 } from './bubbleWindow'
+import { chatSnapshot, copyAnswer, resetChat, sendToAi, stopAi } from './ai/aiChat'
+import { aiStatus, onAiStatusChange, pullModel, refreshAiStatus, setAiModel, startOllama, warmUpModel } from './ai/aiService'
 import { appInfo, execute, query } from './commandRunner'
 import { handleDroppedPaths, setClipboardEnabled, startFeatures } from './features'
 import { robotMood } from './robotMood'
@@ -70,7 +72,11 @@ function start(): void {
   const bubbleWin = createBubbleWindow()
 
   // El robot escucha mientras la barra está abierta; el bocadillo lo sigue al moverse.
-  onBarVisibilityChange((open) => robotMood.setBarOpen(open))
+  onBarVisibilityChange((open) => {
+    robotMood.setBarOpen(open)
+    // Por si se instaló o arrancó Ollama mientras tanto; y precalienta el modelo.
+    if (open) void refreshAiStatus().then(warmUpModel)
+  })
   onRobotMoved(repositionBubble)
 
   registerShortcut(getConfig().shortcut, toggleBar)
@@ -81,8 +87,10 @@ function start(): void {
     new Promise((resolve) => bubbleWin.webContents.once('did-finish-load', () => resolve(null)))
   ]).then(() => setTimeout(startFeatures, 600))
   void refreshIndex(true) // indexa las apps del menú Inicio en segundo plano
+  void refreshAiStatus()
+  setInterval(() => void refreshAiStatus(), 60_000)
 
-  createTray({
+  const tray = createTray({
     toggleRobot: () => setRobotVisible(!isRobotVisible()),
     isRobotVisible,
     openBar,
@@ -91,8 +99,13 @@ function start(): void {
     setClipboardEnabled,
     isPomodoroRunning: () => pomodoroService.status() !== null,
     stopPomodoro: () => pomodoroService.stop(),
+    aiStatus,
+    setAiModel,
+    startOllama: () => void startOllama(),
+    pullModel: () => void pullModel(),
     quit: () => app.quit()
   })
+  onAiStatusChange(() => tray.rebuild())
 }
 
 /** Valida que algo sea un string de longitud razonable. */
@@ -167,4 +180,19 @@ function registerIpc(): void {
   ipcMain.on(IPC.bubbleHidden, (event) => {
     if (isFrom(event, bubble())) bubbleHidden()
   })
+
+  // --- Chat con la IA (desde la barra) ---
+  ipcMain.on(IPC.aiSend, (event, text: unknown) => {
+    if (isFrom(event, bar()) && isShortString(text, 20_000)) void sendToAi('chat', text)
+  })
+  ipcMain.on(IPC.aiStop, (event) => {
+    if (isFrom(event, bar())) stopAi()
+  })
+  ipcMain.on(IPC.aiReset, (event) => {
+    if (isFrom(event, bar())) resetChat()
+  })
+  ipcMain.on(IPC.aiCopy, (event, index: unknown) => {
+    if (isFrom(event, bar()) && isInt(index, 0, 1000)) copyAnswer(index)
+  })
+  ipcMain.handle(IPC.aiSnapshot, (event) => (isFrom(event, bar()) ? chatSnapshot() : null))
 }

@@ -4,7 +4,10 @@
  * (Sin dependencias de Electron, para poder probarlo.)
  */
 
+/** Hasta aquí, texto "corto": se ofrece buscar, traducir o guardar. */
 export const MAX_OFFER_LENGTH = 300
+/** Textos más largos (artículos, correos, código) se ofrecen para resumir o explicar con la IA. */
+export const MAX_LONG_LENGTH = 20_000
 
 /** Formatos que los gestores de contraseñas añaden para pedir que no se lea el portapapeles. */
 export const PRIVATE_CLIPBOARD_FORMATS = [
@@ -25,6 +28,19 @@ const SECRET_PATTERNS = [
   /-----BEGIN [A-Z ]*(?:PRIVATE KEY|CERTIFICATE)-----/
 ]
 
+/** Secretos que pueden ir en mitad de un texto largo (un .env, un correo con una clave...). */
+const SECRET_ANYWHERE = [
+  /-----BEGIN [A-Z ]*(?:PRIVATE KEY|CERTIFICATE)-----/,
+  /\b(?:sk|rk)[-_](?:live|test|proj)?[-_]?[A-Za-z0-9_-]{20,}/,
+  /\bgh[pousr]_[A-Za-z0-9]{20,}/,
+  /\bgithub_pat_[A-Za-z0-9_]{20,}/,
+  /\bAKIA[0-9A-Z]{16}\b/,
+  /\bxox[abprs]-[A-Za-z0-9-]{10,}/,
+  /\bAIza[0-9A-Za-z_-]{30,}/,
+  /\beyJ[\w-]{10,}\.[\w-]{10,}\.[\w-]{10,}/,
+  /\b(?:password|passwd|contraseña|secret|api[_-]?key|token)\s*[:=]\s*\S{6,}/i
+]
+
 /** ¿Una sola "palabra" con aspecto de contraseña? (mezcla de tipos de carácter) */
 function looksLikePassword(token: string): boolean {
   if (token.length < 8 || /\s/.test(token)) return false
@@ -35,20 +51,29 @@ function looksLikePassword(token: string): boolean {
   return token.length >= 20 && classes >= 2 && !/[aeiou]{1}.*[aeiou]/i.test(token.slice(0, 12))
 }
 
-export type OfferDecision = { offer: true; text: string } | { offer: false; reason: string }
+export type OfferDecision =
+  | { offer: true; kind: 'short' | 'long'; text: string }
+  | { offer: false; reason: string }
 
 export function shouldOffer(raw: string): OfferDecision {
   const text = raw.trim()
   if (text.length < 2) return { offer: false, reason: 'muy corto' }
-  if (text.length > MAX_OFFER_LENGTH) return { offer: false, reason: 'muy largo' }
-  if (text.split(/\r?\n/).length > 4) return { offer: false, reason: 'varias líneas (código o tabla)' }
+  if (text.length > MAX_LONG_LENGTH) return { offer: false, reason: 'demasiado largo' }
+
+  const isLong = text.length > MAX_OFFER_LENGTH || text.split(/\r?\n/).length > 4
+  if (isLong) {
+    if (SECRET_ANYWHERE.some((re) => re.test(text))) return { offer: false, reason: 'contiene una clave o un token' }
+    if (text.split(/\s+/).length < 12) return { offer: false, reason: 'largo pero sin texto que resumir' }
+    return { offer: true, kind: 'long', text }
+  }
+
   if (SECRET_PATTERNS.some((re) => re.test(text))) return { offer: false, reason: 'parece una clave' }
   if (looksLikePassword(text)) return { offer: false, reason: 'parece una contraseña' }
   const digits = text.replace(/[\s\-.]/g, '')
   if (/^\d+$/.test(digits)) return { offer: false, reason: 'solo números (códigos, tarjetas, teléfonos)' }
   if (/^[A-Z]{2}\d{2}[A-Z0-9 ]{10,}$/.test(text.replace(/\s/g, ''))) return { offer: false, reason: 'parece un IBAN' }
   if (!/\p{L}/u.test(text)) return { offer: false, reason: 'sin letras' }
-  return { offer: true, text: text.replace(/\s+/g, ' ') }
+  return { offer: true, kind: 'short', text: text.replace(/\s+/g, ' ') }
 }
 
 const SPANISH_WORDS = new Set(['el', 'la', 'los', 'las', 'de', 'que', 'y', 'en', 'un', 'una', 'es', 'por', 'para', 'con', 'no', 'del', 'se', 'lo', 'como', 'más', 'pero', 'muy', 'está', 'hola', 'gracias'])

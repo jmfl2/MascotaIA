@@ -1,4 +1,5 @@
 /** Configuración persistente en %APPDATA%/mascota/config.json. */
+import { MODEL_NAME } from '../ai/ollama'
 import { readJson, writeJson } from './services/jsonFile'
 
 export interface Config {
@@ -10,16 +11,20 @@ export interface Config {
   robotVisible: boolean
   /** Portapapeles inteligente: ofrecer acciones al copiar texto. */
   clipboardEnabled: boolean
+  /** Modelo de Ollama para la IA local. */
+  aiModel: string
 }
 
 export const DEFAULT_SHORTCUT = 'Control+Space'
+export const DEFAULT_AI_MODEL = 'gemma3:4b'
 const FILE = 'config.json'
 
 const DEFAULTS: Config = {
   robotPosition: null,
   shortcut: DEFAULT_SHORTCUT,
   robotVisible: true,
-  clipboardEnabled: true
+  clipboardEnabled: true,
+  aiModel: DEFAULT_AI_MODEL
 }
 
 let cache: Config | null = null
@@ -39,6 +44,7 @@ function validate(raw: unknown): Config {
   if (typeof r.shortcut === 'string' && r.shortcut.length > 0 && r.shortcut.length < 64) cfg.shortcut = r.shortcut
   if (typeof r.robotVisible === 'boolean') cfg.robotVisible = r.robotVisible
   if (typeof r.clipboardEnabled === 'boolean') cfg.clipboardEnabled = r.clipboardEnabled
+  if (typeof r.aiModel === 'string' && MODEL_NAME.test(r.aiModel)) cfg.aiModel = r.aiModel
   return cfg
 }
 

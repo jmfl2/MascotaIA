@@ -103,14 +103,15 @@ export function repositionBubble(): void {
   w.setBounds({ x: Math.round(x), y: Math.round(y), width: WIDTH, height: Math.round(height) })
 }
 
-export function showBubble(spec: BubbleSpec): void {
-  if (active && PRIORITY[spec.kind] < PRIORITY[active.view.kind]) return
+/** Muestra un bocadillo. Devuelve su id (o null si no se mostró). */
+export function showBubble(spec: BubbleSpec): string | null {
+  if (active && PRIORITY[spec.kind] < PRIORITY[active.view.kind]) return null
 
   if (!isRobotVisible()) {
     if (spec.notifyIfHidden && Notification.isSupported()) {
       new Notification({ title: spec.title, body: spec.text ?? '', silent: !spec.chime }).show()
     }
-    return
+    return null
   }
 
   // Sustituye al anterior (sin llamar a su onDismiss: no lo cerró el usuario).
@@ -132,6 +133,14 @@ export function showBubble(spec: BubbleSpec): void {
   }
   repositionBubble()
   getWin()?.webContents.send(IPC.bubbleShow, view)
+  return view.id
+}
+
+/** Cambia el texto del bocadillo sin volver a animarlo (p. ej. progreso de una descarga). */
+export function updateBubble(id: string, patch: { title?: string; text?: string }): void {
+  if (!active || active.view.id !== id) return
+  active.view = { ...active.view, ...patch }
+  getWin()?.webContents.send(IPC.bubbleUpdate, { id, ...patch })
 }
 
 /** Cierra el bocadillo actual con animación. */

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { shouldOffer, translateTarget } from './clipboardFilter'
+import { shouldOffer, translateTarget, type OfferDecision } from './clipboardFilter'
+
+const kind = (d: OfferDecision) => (d.offer ? d.kind : null)
 
 describe('portapapeles: qué se ofrece', () => {
   it.each(['receta de croquetas', 'Hello world', 'https://example.com/articulo', 'Plaza Mayor, Madrid', 'ñu'])('ofrece "%s"', (text) => {
@@ -18,11 +20,26 @@ describe('portapapeles: qué se ofrece', () => {
     ['tarjeta', '4111 1111 1111 1111'],
     ['IBAN', 'ES91 2100 0418 4502 0005 1332'],
     ['vacío', '  '],
-    ['muy largo', 'palabra '.repeat(60)],
-    ['código', 'a\nb\nc\nd\ne'],
-    ['clave privada', '-----BEGIN RSA PRIVATE KEY-----']
+    ['líneas sin texto', 'a\nb\nc\nd\ne'],
+    ['clave privada', '-----BEGIN RSA PRIVATE KEY-----'],
+    ['demasiado largo', 'palabra '.repeat(3000)]
   ])('no ofrece %s', (_label, text) => {
     expect(shouldOffer(text).offer).toBe(false)
+  })
+})
+
+describe('portapapeles: textos largos (para resumir)', () => {
+  const article = 'La fotosíntesis es el proceso mediante el cual las plantas convierten la luz en energía química. '.repeat(5)
+
+  it('ofrece resumir artículos y código', () => {
+    expect(kind(shouldOffer(article))).toBe('long')
+    expect(kind(shouldOffer('function suma(a, b) {\n  // devuelve la suma de los dos números\n  const total = a + b\n  console.log("resultado", total)\n  return total\n}'))).toBe('long')
+  })
+
+  it('no ofrece textos largos con secretos dentro', () => {
+    expect(shouldOffer(`${article}\nAPI_KEY=sk-live-abcdefghijklmnopqrstuvwx`).offer).toBe(false)
+    expect(shouldOffer(`${article}\npassword: hunter2hunter2`).offer).toBe(false)
+    expect(shouldOffer(`${article}\n-----BEGIN OPENSSH PRIVATE KEY-----\nabc`).offer).toBe(false)
   })
 })
 

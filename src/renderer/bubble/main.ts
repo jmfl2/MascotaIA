@@ -107,6 +107,14 @@ api.onShow((view) => {
   startCountdown()
 })
 
+// Actualización en sitio (p. ej. progreso de una descarga), sin volver a animar.
+api.onUpdate((patch) => {
+  if (!current || current.id !== patch.id) return
+  if (patch.title !== undefined) title.textContent = patch.title
+  if (patch.text !== undefined) text.textContent = patch.text
+  api.resize(bubble.offsetHeight)
+})
+
 api.onHide(() => {
   pauseCountdown()
   const closing = current

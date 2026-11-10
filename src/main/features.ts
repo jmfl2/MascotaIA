@@ -2,20 +2,23 @@
  * Conecta los servicios de la fase 2 con el robot y el bocadillo:
  * recordatorios, pomodoro, portapapeles inteligente y favoritos soltados.
  */
-import { buildCommandUrl } from '../commands'
+import { buildCommandUrl, type AiTask } from '../commands'
 import { formatDuration } from '../commands/format'
-import { isBarOpen } from './barWindow'
+import { sendToAi } from './ai/aiChat'
+import { aiStatus } from './ai/aiService'
+import { getBarWindow, isBarOpen, openBar } from './barWindow'
 import { showBubble, toast } from './bubbleWindow'
 import { openExternalUrl } from './commandRunner'
 import { robotMood } from './robotMood'
 import { sendPomodoro } from './robotWindow'
-import { translateTarget } from './services/clipboardFilter'
+import { translateTarget, type OfferDecision } from './services/clipboardFilter'
 import { clipboardWatcher } from './services/clipboardWatcher'
 import { addFavorites } from './services/launcher'
 import { notesService } from './services/notes'
 import { pomodoroService } from './services/pomodoro'
 import { remindersService } from './services/reminders'
 import { getConfig, setConfig } from './store'
+import { IPC } from '../shared/ipc'
 
 const SNOOZE_MS = 10 * 60_000
 const LATE_THRESHOLD_MS = 60_000
@@ -99,8 +102,45 @@ async function openOrComplain(commandId: string, query: string): Promise<void> {
   robotMood.flash(outcome.kind === 'close' ? 'happy' : 'confused')
 }
 
-function offerClipboard(text: string): void {
+/** Abre la barra en modo chat y le pide a la IA que resuma o explique el texto. */
+export function askAiAbout(task: AiTask, text: string): void {
+  void sendToAi(task, text)
+  openBar()
+  getBarWindow()?.webContents.send(IPC.barEnterChat)
+}
+
+const saveNote = (text: string) => ({
+  id: 'note',
+  label: 'Guardar nota',
+  run: () => {
+    notesService.add(text)
+    robotMood.flash('happy')
+    toast('Nota guardada')
+  }
+})
+
+function offerClipboard(decision: Extract<OfferDecision, { offer: true }>): void {
   if (isBarOpen()) return
+  const { text } = decision
+  const aiReady = aiStatus().state === 'ready'
+
+  if (decision.kind === 'long') {
+    if (!aiReady) return // sin IA no hay nada útil que ofrecer para un texto largo
+    const words = text.split(/\s+/).length
+    showBubble({
+      kind: 'clipboard',
+      title: '¿Te resumo esto?',
+      text: `${words} palabras · «${snippet(text, 60)}»`,
+      timeoutMs: 6000,
+      actions: [
+        { id: 'summarize', label: '✨ Resumir', primary: true, run: () => askAiAbout('summarize', text) },
+        { id: 'explain', label: 'Explicar', run: () => askAiAbout('explain', text) },
+        saveNote(text)
+      ]
+    })
+    return
+  }
+
   const target = translateTarget(text)
   showBubble({
     kind: 'clipboard',
@@ -114,15 +154,8 @@ function offerClipboard(text: string): void {
         label: target === 'en' ? 'Traducir al inglés' : 'Traducir',
         run: () => void openOrComplain('translate', `${target}: ${text}`)
       },
-      {
-        id: 'note',
-        label: 'Guardar nota',
-        run: () => {
-          notesService.add(text)
-          robotMood.flash('happy')
-          toast('Nota guardada')
-        }
-      }
+      saveNote(text),
+      ...(aiReady ? [{ id: 'explain', label: '✨ Explicar', run: () => askAiAbout('explain', text) }] : [])
     ]
   })
 }

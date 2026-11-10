@@ -6,10 +6,12 @@
  * de la fila elegida y ejecuta la acción guardada: el renderer nunca envía
  * URLs, rutas ni textos que se vayan a ejecutar.
  */
-import { shell } from 'electron'
+import { clipboard, shell } from 'electron'
 import { COMMANDS, type CommandContext, type Outcome } from '../commands'
 import { suggestFor, type Ranked } from '../commands/engine'
 import type { AppInfo, CommandMeta, ExecuteRequest, ExecuteResponse, QueryRequest, QueryResponse, ResultView } from '../shared/ipc'
+import { sendToAi } from './ai/aiChat'
+import { aiStatus, interpret, pullModel, refreshAiStatus, startOllama } from './ai/aiService'
 import { toast } from './bubbleWindow'
 import { robotMood } from './robotMood'
 import { clipboardWatcher } from './services/clipboardWatcher'
@@ -41,6 +43,13 @@ export const commandContext: CommandContext = {
   now: () => Date.now(),
   openUrl: openExternalUrl,
   copyText: (text) => clipboardWatcher.copy(text),
+  clipboardText: () => clipboard.readText().catch(() => ''),
+  ai: {
+    status: aiStatus,
+    interpret,
+    start: startOllama,
+    pull: pullModel
+  },
   notes: notesService,
   reminders: remindersService,
   pomodoro: pomodoroService,
@@ -75,6 +84,8 @@ function toView({ command, suggestion: s }: Ranked): ResultView {
 }
 
 export async function query(req: QueryRequest): Promise<QueryResponse> {
+  // Los comandos de IA necesitan saber si Ollama está listo; sin texto basta con el último estado.
+  if (req.commandId && ['ai', 'summarize', 'explain'].includes(req.commandId)) await refreshAiStatus()
   const rows = await suggestFor(req.commandId, req.text, commandContext)
   // Solo guardamos si sigue siendo la consulta más reciente.
   if (req.seq >= lastSeq) {
@@ -109,6 +120,10 @@ export async function execute(req: ExecuteRequest, closeBar: () => void): Promis
     case 'error':
       robotMood.flash('confused')
       return outcome
+    case 'chat':
+      // La conversación la lleva el proceso principal; la barra pasa a la vista de chat.
+      void sendToAi(outcome.task, outcome.text)
+      return { kind: 'activate', commandId: 'ai', text: '' }
     default:
       return outcome
   }

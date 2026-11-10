@@ -6,7 +6,15 @@
  * Nunca se expone `ipcRenderer` entero ni canales arbitrarios.
  */
 import { contextBridge, ipcRenderer, webUtils, type IpcRendererEvent } from 'electron'
-import { IPC, type BubbleView, type CursorOffset, type MascotaApi, type PomodoroView, type RobotState } from '../shared/ipc'
+import {
+  IPC,
+  type BubbleView,
+  type ChatSnapshot,
+  type CursorOffset,
+  type MascotaApi,
+  type PomodoroView,
+  type RobotState
+} from '../shared/ipc'
 
 /** Suscribe a un canal fijo y devuelve la función para darse de baja. */
 function listen<T>(channel: string, cb: (payload: T) => void) {
@@ -44,7 +52,17 @@ const api: MascotaApi = {
     reportError: () => ipcRenderer.send(IPC.barError),
     onOpen: (cb) => listen<void>(IPC.barOpen, () => cb()),
     onClose: (cb) => listen<void>(IPC.barClose, () => cb()),
+    onEnterChat: (cb) => listen<void>(IPC.barEnterChat, () => cb()),
     getInfo: () => ipcRenderer.invoke(IPC.appInfo)
+  },
+  ai: {
+    send: (text) => ipcRenderer.send(IPC.aiSend, text),
+    stop: () => ipcRenderer.send(IPC.aiStop),
+    reset: () => ipcRenderer.send(IPC.aiReset),
+    copy: (index) => ipcRenderer.send(IPC.aiCopy, index),
+    snapshot: () => ipcRenderer.invoke(IPC.aiSnapshot),
+    onUpdate: (cb) => listen<ChatSnapshot>(IPC.aiUpdate, cb),
+    onDelta: (cb) => listen<{ index: number; delta: string }>(IPC.aiDelta, cb)
   },
   bubble: {
     action: (bubbleId, actionId) => ipcRenderer.send(IPC.bubbleAction, { bubbleId, actionId }),
@@ -52,6 +70,7 @@ const api: MascotaApi = {
     resize: (height) => ipcRenderer.send(IPC.bubbleResize, height),
     hidden: () => ipcRenderer.send(IPC.bubbleHidden),
     onShow: (cb) => listen<BubbleView>(IPC.bubbleShow, cb),
+    onUpdate: (cb) => listen<{ id: string; title?: string; text?: string }>(IPC.bubbleUpdate, cb),
     onHide: (cb) => listen<void>(IPC.bubbleHide, () => cb())
   }
 }

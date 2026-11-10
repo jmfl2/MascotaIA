@@ -5,7 +5,9 @@
  * Electron 45 usa una API asíncrona al estilo de `navigator.clipboard`.
  */
 import { clipboard } from 'electron'
-import { PRIVATE_CLIPBOARD_FORMATS, shouldOffer } from './clipboardFilter'
+import { PRIVATE_CLIPBOARD_FORMATS, shouldOffer, type OfferDecision } from './clipboardFilter'
+
+export type Offer = Extract<OfferDecision, { offer: true }>
 
 const POLL_MS = 700
 
@@ -31,7 +33,7 @@ async function isPrivate(): Promise<boolean> {
   return false
 }
 
-async function check(onText: (text: string) => void): Promise<void> {
+async function check(onText: (offer: Offer) => void): Promise<void> {
   if (checking) return
   checking = true
   try {
@@ -44,7 +46,7 @@ async function check(onText: (text: string) => void): Promise<void> {
     }
     if (!text || (await isPrivate())) return
     const decision = shouldOffer(text)
-    if (decision.offer) onText(decision.text)
+    if (decision.offer) onText(decision)
   } catch {
     /* portapapeles ocupado por otra app: se reintenta en la siguiente vuelta */
   } finally {
@@ -53,7 +55,7 @@ async function check(onText: (text: string) => void): Promise<void> {
 }
 
 export const clipboardWatcher = {
-  start(onText: (text: string) => void): void {
+  start(onText: (offer: Offer) => void): void {
     if (running) return
     running = true
     // Lo que ya había al arrancar no se ofrece: se lee antes de empezar a vigilar.

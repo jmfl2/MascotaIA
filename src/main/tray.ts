@@ -1,5 +1,6 @@
 /** Icono de la bandeja del sistema: el único control visible de la app. */
-import { app, Menu, nativeImage, Tray } from 'electron'
+import { app, Menu, nativeImage, Tray, type MenuItemConstructorOptions } from 'electron'
+import type { AiStatus } from '../commands'
 import { formatAccelerator } from '../shared/accelerator'
 import { assetPath } from './paths'
 import { currentShortcut, SHORTCUT_PRESETS } from './shortcut'
@@ -13,7 +14,44 @@ export interface TrayActions {
   setClipboardEnabled(enabled: boolean): void
   isPomodoroRunning(): boolean
   stopPomodoro(): void
+  aiStatus(): AiStatus
+  setAiModel(model: string): void
+  startOllama(): void
+  pullModel(): void
   quit(): void
+}
+
+const AI_STATE_LABEL: Record<AiStatus['state'], string> = {
+  checking: 'Comprobando…',
+  ready: 'Lista',
+  'not-installed': 'Ollama no está instalado',
+  'not-running': 'Ollama está parado',
+  'no-model': 'Falta el modelo',
+  pulling: 'Descargando el modelo…'
+}
+
+/** Submenú "IA local": estado, modelo y acciones para arreglarlo. */
+function aiMenu(actions: TrayActions): MenuItemConstructorOptions[] {
+  const s = actions.aiStatus()
+  const items: MenuItemConstructorOptions[] = [
+    { label: `Estado: ${AI_STATE_LABEL[s.state]}${s.state === 'pulling' ? ` ${Math.round((s.progress ?? 0) * 100)} %` : ''}`, enabled: false },
+    { label: `Modelo: ${s.model}`, enabled: false }
+  ]
+  if (s.state === 'not-running') items.push({ label: 'Iniciar Ollama', click: () => actions.startOllama() })
+  if (s.state === 'no-model') items.push({ label: `Descargar ${s.model}`, click: () => actions.pullModel() })
+  if (s.models.length > 1 || (s.models.length === 1 && !s.models.includes(s.model))) {
+    items.push(
+      { type: 'separator' },
+      { label: 'Usar modelo', enabled: false },
+      ...s.models.map((m) => ({
+        label: m,
+        type: 'radio' as const,
+        checked: m === s.model || m === `${s.model}:latest`,
+        click: () => actions.setAiModel(m)
+      }))
+    )
+  }
+  return items
 }
 
 let tray: Tray | null = null
@@ -33,7 +71,7 @@ function setStartsWithWindows(enabled: boolean): void {
   app.setLoginItemSettings({ openAtLogin: enabled, ...loginItemOptions() })
 }
 
-export function createTray(actions: TrayActions): Tray {
+export function createTray(actions: TrayActions): { tray: Tray; rebuild: () => void } {
   // tray.png (16 px) y tray@2x.png (32 px): Electron elige según el escalado.
   const icon = nativeImage.createFromPath(assetPath('tray.png'))
   tray = new Tray(icon)
@@ -85,6 +123,7 @@ export function createTray(actions: TrayActions): Tray {
         checked: actions.isClipboardEnabled(),
         click: (item) => actions.setClipboardEnabled(item.checked)
       },
+      { label: 'IA local', submenu: aiMenu(actions) },
       ...(actions.isPomodoroRunning()
         ? [{ label: 'Detener pomodoro', click: () => actions.stopPomodoro() }]
         : []),
@@ -108,5 +147,5 @@ export function createTray(actions: TrayActions): Tray {
     actions.toggleRobot()
     rebuild()
   })
-  return tray
+  return { tray, rebuild }
 }
