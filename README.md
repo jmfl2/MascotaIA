@@ -2,8 +2,10 @@
 
 Un pequeño robot que vive en el escritorio de Windows y te ayuda con tareas
 cotidianas. Haz clic en él o pulsa **Ctrl+Espacio** y escribe: busca en la web,
-abre apps, guarda notas, ponte recordatorios o arranca un pomodoro. Y si copias
-un texto, el robot te ofrece buscarlo, traducirlo o guardarlo.
+abre apps, guarda notas, ponte recordatorios o arranca un pomodoro. Si copias un
+texto, el robot te ofrece buscarlo, traducirlo, guardarlo o resumirlo. Y con
+**IA local** (Ollama) entiende lo que le pides en lenguaje natural y puedes
+chatear con él sin que nada salga de tu PC.
 
 Hecho con **Electron + TypeScript + Vite**, interfaz web y animaciones de muelle.
 
@@ -11,6 +13,16 @@ Hecho con **Electron + TypeScript + Vite**, interfaz web y animaciones de muelle
 
 - Windows 10 u 11
 - Node.js 20 o superior (probado con Node 24)
+- *Opcional, para la IA:* [Ollama](https://ollama.com) y un modelo (por defecto
+  `gemma3:4b`, unos 3,3 GB). Sin Ollama todo lo demás funciona igual.
+
+  ```powershell
+  winget install Ollama.Ollama
+  ollama pull gemma3:4b
+  ```
+
+  También puedes descargar el modelo desde la propia app: escribe `ia` en la
+  barra o usa la bandeja (*IA local*).
 
 > Si trabajas desde WSL, ejecuta los comandos en **PowerShell o cmd de Windows**,
 > no dentro de WSL. Electron tiene que ser el de Windows para que funcionen la
@@ -32,7 +44,7 @@ npm run dev
 | Script              | Qué hace                                                   |
 | ------------------- | ---------------------------------------------------------- |
 | `npm run dev`       | Arranca la app con recarga en caliente de la interfaz.     |
-| `npm test`          | Ejecuta los tests (vitest).                                |
+| `npm test`          | Ejecuta los tests (vitest). Los de Ollama real se saltan.  |
 | `npm run build`     | Comprueba los tipos, pasa los tests y compila en `out/`.   |
 | `npm run preview`   | Ejecuta la versión compilada.                              |
 | `npm run typecheck` | Solo comprueba los tipos.                                  |
@@ -64,10 +76,45 @@ Empieza con un prefijo y un espacio: el prefijo se convierte en una etiqueta.
 | `nota`, `notas`, `n`  | Notas rápidas     | `nota comprar pilas` · `notas` lista y busca                     |
 | `rec`, `recordar`, `r`| Recordatorios     | `rec 10m sacar la ropa` · `rec 18:30 llamar` · `rec mañana 9:00 dentista` |
 | `pomo`, `pomodoro`    | Pomodoro          | `pomo` (25/5) · `pomo 50/10` · si ya hay uno: detener o saltar fase |
+| `ia`, `chat`, `?`     | Chat con la IA    | `ia ¿qué es una API REST?`                                       |
+| `resumir`, `resume`   | Resumir           | `resumir` (el portapapeles) · `resumir <texto>`                  |
+| `explicar`, `explica` | Explicar          | `explicar` (el portapapeles) · `explicar git rebase -i`          |
 
 Formatos de tiempo que entiende `rec`: `10m`, `45s`, `2h`, `1h30m`,
 `en 20 minutos`, `1 hora y 30 minutos`, `18:30`, `a las 9`, `mañana 9:00`,
 `mañana a las 8`. Si la hora ya pasó hoy, se programa para mañana.
+
+### IA local (Ollama)
+
+- **Lenguaje natural:** si escribes una frase sin prefijo, aparece
+  **✨ Interpretar con IA** debajo de Google. Al elegirla, la IA decide qué
+  comando encaja y la barra se rellena como si lo hubieras escrito tú; pulsas
+  `Intro` para confirmar. Ejemplos:
+
+  | Escribes                                         | La barra queda en                           |
+  | ------------------------------------------------ | ------------------------------------------- |
+  | ponme vídeos de cómo cambiar la rueda de una bici | YouTube · `cómo cambiar la rueda de una bici` |
+  | recuérdame en media hora que saque la ropa       | Recordatorios · `30m sacar la ropa`         |
+  | cómo se dice "me encanta programar" en inglés    | Traductor · `en: me encanta programar`      |
+  | dónde hay un hospital cerca de Plaza España      | Google Maps · `hospitales cerca Plaza España` |
+  | qué es un agujero negro                          | Chat con la IA (te lo explica)              |
+
+  Solo consulta al modelo cuando eliges esa fila: mientras escribes no se gasta
+  GPU.
+- **Chat:** `ia` (o `Tab` sobre la fila de IA) cambia la lista por una
+  conversación. La respuesta llega a medida que se escribe. `Esc` la detiene,
+  `Ctrl+N` empieza otra conversación y *Copiar* (al pasar el ratón) copia una
+  respuesta. La conversación vive en memoria: no se guarda en disco.
+- **Resumir y explicar:** al copiar un texto largo (un artículo, un correo,
+  código), el robot ofrece **✨ Resumir** o **Explicar**; con textos cortos
+  ofrece también *Explicar*. Desde la barra: `resumir` o `explicar`.
+- **Si Ollama no está:** nada falla. La barra explica qué pasa (no instalado,
+  parado o falta el modelo) y ofrece *Iniciar Ollama* o *Descargar el modelo*.
+  Las funciones de IA simplemente no aparecen hasta que esté listo.
+- **Cambiar de modelo:** bandeja → *IA local* → *Usar modelo* (entre los que
+  tengas descargados con `ollama pull`).
+- **Privacidad:** la app solo habla con `http://127.0.0.1:11434` (la dirección
+  no es configurable); tus textos no salen de tu PC.
 
 ### Teclado
 
@@ -76,9 +123,10 @@ Formatos de tiempo que entiende `rec`: `10m`, `45s`, `2h`, `1h30m`,
 | `↑` `↓` `RePág` `AvPág` | Elegir fila                                               |
 | `Intro`            | Abrir · guardar · copiar la nota · empezar                     |
 | `Supr`             | Borrar nota, cancelar recordatorio o quitar de favoritos       |
+| `Ctrl+N`           | En el chat: conversación nueva                                 |
 | `Tab`              | Fijar como etiqueta el comando de la fila elegida              |
 | `Retroceso`        | Con el campo vacío, quita la etiqueta                          |
-| `Esc`              | Cerrar                                                         |
+| `Esc`              | Cerrar (en el chat, si está respondiendo: detener)             |
 
 ### El robot
 
@@ -98,9 +146,10 @@ Formatos de tiempo que entiende `rec`: `10m`, `45s`, `2h`, `1h30m`,
 ### Portapapeles inteligente
 
 Al copiar un texto corto, el robot ofrece **Buscar**, **Traducir** (al inglés si
-está en español, al español si no) o **Guardar nota**. El bocadillo se va solo a
-los 6 segundos (o se queda mientras tengas el ratón encima). *Resumir* llegará
-con la IA local en la fase 3.
+está en español, al español si no), **Guardar nota** y, con la IA lista,
+**Explicar**. Con un texto largo (hasta 20 000 caracteres) ofrece **Resumir** o
+**Explicar** con la IA. El bocadillo se va solo a los 6 segundos (o se queda
+mientras tengas el ratón encima).
 
 Para no ser pesado ni curioso, **no ofrece nada** cuando:
 
@@ -110,7 +159,9 @@ Para no ser pesado ni curioso, **no ofrece nada** cuando:
 - el texto parece una contraseña, una clave de API, un token (GitHub, AWS,
   Slack, JWT...), una clave privada, un IBAN o solo números (códigos, tarjetas,
   teléfonos);
-- es muy largo (más de 300 caracteres) o tiene varias líneas (código, tablas);
+- es un texto largo que **contiene** una clave, un token o una línea tipo
+  `password: …` (por ejemplo, un `.env` o un correo con credenciales);
+- es un texto largo y la IA no está lista (no habría nada útil que ofrecer);
 - la barra está abierta.
 
 El texto copiado **nunca se guarda en disco ni se registra**, salvo que pulses
@@ -146,12 +197,13 @@ mascota/
 │   │   ├── *Window.ts       # ventanas: robot, barra y bocadillo
 │   │   ├── commandRunner.ts # ejecuta los comandos y guarda sus acciones
 │   │   ├── features.ts      # conecta recordatorios, pomodoro, portapapeles y favoritos
+│   │   ├── ai/              # estado de Ollama, interpretación y conversación
 │   │   └── services/        # notas, recordatorios, pomodoro, lanzador, portapapeles
 │   ├── preload/         # puente seguro entre las páginas y Electron (window.mascota)
 │   ├── renderer/        # interfaz: robot.html, bar.html y bubble.html
 │   ├── commands/        # un módulo por comando + motor de sugerencias (sin Electron)
 │   ├── shared/          # tipos y canales IPC comunes
-│   └── ai/              # cliente de Ollama (fase 3)
+│   └── ai/              # cliente de Ollama, prompts, NDJSON y Markdown seguro (sin Electron)
 ├── assets/              # iconos (generados con npm run icons)
 └── scripts/
 ```
@@ -207,6 +259,17 @@ export const hola: CommandModule = {
 Después, añádelo a `COMMANDS` en `src/commands/index.ts`. La barra lo mostrará
 sola.
 
+## Tests
+
+```powershell
+npm test                      # tests unitarios (no necesitan Ollama)
+
+# Contra un Ollama real (comprueba que el prompt funciona con el modelo):
+set OLLAMA_TEST=1
+npx vitest run src/ai/ollama.integration.test.ts
+# otro modelo: set OLLAMA_MODEL=qwen2.5:7b
+```
+
 ## Seguridad
 
 - **Aislamiento:** las páginas corren con `contextIsolation`, `sandbox` y sin
@@ -227,6 +290,13 @@ sola.
   como lista y sin shell. Los archivos soltados se comprueban (ruta absoluta y
   existente) antes de guardarlos.
 - **Portapapeles:** ver *Portapapeles inteligente* arriba.
+- **IA:** el modelo nunca ejecuta nada. Para interpretar, devuelve un JSON
+  restringido por esquema (`format` de Ollama) con un comando de una lista
+  cerrada y un texto; se valida y se coloca en la barra como si lo hubieras
+  escrito, de modo que pasa por las mismas validaciones y tú confirmas con
+  `Intro`. Las respuestas del chat se pintan con un Markdown propio que solo
+  crea nodos con `textContent` (sin `innerHTML`): un modelo no puede inyectar
+  HTML ni enlaces. Solo se contacta con `127.0.0.1`.
 - **IPC:** cada mensaje comprueba que viene de la ventana esperada y se validan
   tipos y longitudes.
 - **Páginas cerradas:** se bloquean la navegación, las ventanas emergentes, los
@@ -260,6 +330,16 @@ sola.
 - **Recordatorios por sondeo:** se revisan cada 5 s en lugar de usar un
   `setTimeout` por recordatorio, que se desajusta al suspender el PC y no admite
   esperas de más de unos 24 días.
+- **IA bajo demanda y con confirmación:** interpretar solo consulta al modelo
+  si eliges la fila, y el resultado se muestra antes de ejecutarse.
+- **Modelo precalentado:** al abrir la barra con la IA lista, se carga el modelo
+  en la GPU en segundo plano (la primera carga puede tardar decenas de
+  segundos; después, cada respuesta empieza en menos de 1 s). Todas las
+  peticiones usan el mismo tamaño de contexto: si cambiara, Ollama recargaría
+  el modelo.
+- **`ollama serve` y no la app de bandeja de Ollama:** al arrancar Ollama desde
+  la mascota se lanza solo el servidor, sin ventana. Lanzada desde Electron, la
+  app de bandeja no llegaba a levantar su servidor.
 - **Electron 45:** la API del portapapeles es asíncrona (como `navigator.clipboard`)
   y los formatos nativos de Windows se consultan con
   `clipboard.has('electron application/osclipboard;format="…"')`.
@@ -268,5 +348,5 @@ sola.
 
 - [x] **Fase 1:** robot en el escritorio, barra de comandos, Google, YouTube, Maps, GitHub y el traductor.
 - [x] **Fase 2:** portapapeles inteligente, recordatorios y Pomodoro, lanzador de apps y favoritos, notas rápidas.
-- [ ] **Fase 3:** IA local con Ollama (lenguaje natural, resúmenes y chat).
+- [x] **Fase 3:** IA local con Ollama (lenguaje natural, resúmenes y chat).
 - [ ] **Fase 4:** avisos de enlaces sospechosos, skins y personalidad.
