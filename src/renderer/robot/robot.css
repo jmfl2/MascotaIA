@@ -6,11 +6,52 @@
   --spring-bouncy-duration: 700ms;
 }
 
-.robot {
-  display: block;
+.robot-host {
   width: 100vw;
   height: 100vh;
+}
+
+.robot {
+  display: block;
+  width: 100%;
+  height: 100%;
   overflow: visible;
+}
+
+/* --- Accesorios (se activan con las clases with-<id> en el SVG) --- */
+.acc { display: none; }
+.with-gorro #acc-gorro,
+.with-gafas #acc-gafas,
+.with-pajarita #acc-pajarita,
+.with-auriculares #acc-auriculares { display: inline; }
+/* El gorro tapa la antena: el pompón hace de antena. */
+.with-gorro #antenna { display: none; }
+
+.acc-main { fill: var(--accessory); }
+.acc-band {
+  fill: none;
+  stroke: var(--accessory-dark);
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+.acc-knit {
+  fill: none;
+  stroke: #000;
+  stroke-opacity: 0.12;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.acc-lens {
+  fill: #fff;
+  fill-opacity: 0.06;
+  stroke: var(--accessory);
+  stroke-width: 2.6;
+}
+.acc-frame {
+  fill: none;
+  stroke: var(--accessory);
+  stroke-width: 2.6;
+  stroke-linecap: round;
 }
 
 /* Colores de los degradados desde los tokens (así el modo oscuro y las futuras skins funcionan) */

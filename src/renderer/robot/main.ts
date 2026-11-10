@@ -1,8 +1,9 @@
 import './robot.css'
+import { applyAppearance } from './appearance'
 import { createRobot } from './robot'
+import { mountRobot } from './robotSvg'
 
-const svg = document.querySelector<SVGSVGElement>('#robot')
-if (!svg) throw new Error('No se encontró el SVG del robot')
+const svg = mountRobot(document.getElementById('robot-host')!)
 
 const api = window.mascota.robot
 const robot = createRobot(svg, {
@@ -17,3 +18,10 @@ api.onCursor(robot.setCursor)
 api.onDragMoving(robot.onDragMoving)
 api.onHover(robot.setHover)
 api.onPomodoro(robot.setPomodoro)
+api.onAppearance((appearance) => applyAppearance(svg, appearance))
+
+// Clic derecho: menú nativo (ajustes, ocultar...).
+window.addEventListener('contextmenu', (e) => {
+  e.preventDefault()
+  api.contextMenu()
+})
