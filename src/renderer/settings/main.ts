@@ -11,6 +11,7 @@ import {
   sanitizeName,
   SKINS,
   type AccessoryId,
+  toggleAccessory,
   type SettingsView
 } from '../../shared/appearance'
 import { applyAppearance } from '../robot/appearance'
@@ -74,10 +75,7 @@ for (const acc of ACCESSORIES) {
   chip.dataset.id = acc.id
   chip.addEventListener('click', () => {
     if (!view) return
-    const set = new Set<AccessoryId>(view.appearance.accessories)
-    if (set.has(acc.id)) set.delete(acc.id)
-    else set.add(acc.id)
-    updateAppearance({ ...view.appearance, accessories: [...set] })
+    updateAppearance({ ...view.appearance, accessories: toggleAccessory(view.appearance.accessories, acc.id) })
     robot.setState('happy')
   })
   accessoriesEl.append(chip)

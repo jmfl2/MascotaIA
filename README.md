@@ -133,8 +133,18 @@ Abre los **Ajustes** desde la bandeja, con clic derecho sobre el robot o con
 robot te sigue con la mirada; haz clic en él) y en el escritorio.
 
 - **Color:** Clásico, Medianoche, Menta, Coral, Lavanda y Grafito.
-- **Accesorios** (combinables): auriculares, gorro (sustituye a la antena),
-  gafas (se mueven con la mirada) y pajarita.
+- **Accesorios**, uno por zona (si eliges otro de la misma zona, sustituye al
+  anterior):
+  - *Cabeza:* gorro, corona pixel, gorra de hélice o bandana. Los tres primeros
+    sustituyen a la antena.
+  - *Cara:* gafas o gafas pixel. Se mueven con la mirada.
+  - *Encima:* vidas, tres corazones de 8 bits (uno ya gastado).
+  - *Orejas:* auriculares. *Cuello:* pajarita. *Espalda:* espada.
+    *Manos:* mando.
+
+  Los de videojuegos son guiños genéricos en pixel art, no de ningún juego
+  concreto. Se dibujan desde un mapa de caracteres (`pixels()` en
+  `robotSvg.ts`), así que añadir uno nuevo es dibujarlo con letras.
 - **Nombre:** cómo se llama el robot. Lo usa la IA ("Te llamas…") y aparece al
   saludar.
 - **Cuánto habla:**

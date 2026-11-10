@@ -8,6 +8,64 @@
  *
  * Es una cadena estática del propio código (no contiene nada del usuario).
  */
+
+/**
+ * Pixel art a partir de un dibujo con caracteres: cada carácter es un color
+ * (un '#rrggbb' o una clase CSS) y '.' es un hueco. Junta los píxeles seguidos
+ * del mismo color en un solo rectángulo para no llenar el SVG de nodos.
+ */
+export function pixels(rows: readonly string[], size: number, x0: number, y0: number, palette: Record<string, string>): string {
+  const out: string[] = []
+  rows.forEach((row, y) => {
+    let x = 0
+    while (x < row.length) {
+      const ch = row[x]
+      let end = x + 1
+      while (end < row.length && row[end] === ch) end++
+      const color = palette[ch]
+      if (ch !== '.' && color) {
+        const paint = color.startsWith('#') ? `fill="${color}"` : `class="${color}"`
+        // +0.15 de solape: sin él se ven rayitas entre píxeles al escalar.
+        out.push(`<rect x="${x0 + x * size}" y="${y0 + y * size}" width="${(end - x) * size + 0.15}" height="${size + 0.15}" ${paint} />`)
+      }
+      x = end
+    }
+  })
+  return out.join('')
+}
+
+/** Corona de 8 bits con gemas. */
+const CROWN = pixels(
+  ['g.....g.....g', 'gg...ggg...gg', 'ggg.ggggg.ggg', 'gwggggggggggg', 'ggrgggbgggrgg', 'ggggggggggggg', 'ddddddddddddd'],
+  4, 74, 28,
+  { g: '#ffcc33', d: '#e0991a', w: '#fff3b8', r: '#ff3b5c', b: '#3ba0ff' }
+)
+
+/** Corazón con borde, lleno (r) o vacío (e), como una barra de vida. */
+function heart(fill: 'r' | 'e', x: number): string {
+  const f = (n: number) => fill.repeat(n)
+  return pixels(
+    ['.kk...kk.', `k${f(2)}k.k${f(2)}k`, `k${fill}w${fill}k${f(3)}k`, `k${f(7)}k`, `.k${f(5)}k.`, `..k${f(3)}k..`, `...k${fill}k...`, '....k....'],
+    1.9, x, 18,
+    { k: '#2b1d2e', r: '#ff3b5c', e: '#5d5468', w: '#ffffff' }
+  )
+}
+const HEARTS = heart('r', 28) + heart('r', 47) + heart('e', 66)
+
+/** Espada pixelada a la espalda (va detrás del cuerpo: solo asoma la empuñadura). */
+const SWORD = pixels(
+  ['..ggg..', '...h...', '...h...', '...h...', 'ggggggg', ...Array<string>(14).fill('..lmd..'), '...m...'],
+  3.6, -12.6, -16.2,
+  { g: '#ffcc33', h: '#8a5a2b', l: '#f4f8fc', m: '#c9d4e2', d: '#8fa0b8' }
+)
+
+/** Gafas de sol pixeladas: montura del color del accesorio, cristales que tapan los ojos. */
+const PIXEL_GLASSES = pixels(
+  ['ffffffffffffffffffffffff', '.fwwkkkkkf....fwwkkkkkf.', '.fwkkkkkkf....fwkkkkkkf.', '.fkkkkkkkf....fkkkkkkkf.', '..fkkkkkf......fkkkkkf..', '...fffff........fffff...'],
+  3.6, 56.8, 88,
+  { f: 'acc-main', k: '#06070b', w: '#ffffff' }
+)
+
 export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" aria-label="Robot mascota" role="img">
   <defs>
     <linearGradient id="g-body" x1="0" y1="0" x2="0" y2="1">
@@ -61,6 +119,9 @@ export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" ar
       <circle cx="98" cy="29" r="2.2" fill="#fff" opacity="0.9" />
     </g>
 
+    <!-- Accesorio: espada a la espalda (detrás del cuerpo) -->
+    <g id="acc-espada" class="acc" transform="translate(150 54) rotate(36)">${SWORD}</g>
+
     <!-- Orejas -->
     <rect x="29" y="94" width="14" height="32" rx="7" fill="url(#g-body)" class="part-edge" />
     <rect x="157" y="94" width="14" height="32" rx="7" fill="url(#g-body)" class="part-edge" />
@@ -103,6 +164,8 @@ export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" ar
           <circle cx="118" cy="100" r="15" class="acc-lens" />
           <path d="M96.5 97 Q100 93.5 103.5 97" class="acc-frame" />
         </g>
+        <!-- Accesorio: gafas pixeladas -->
+        <g id="acc-gafas-pixel" class="acc">${PIXEL_GLASSES}</g>
         <ellipse id="cheek-l" cx="70" cy="117" rx="6" ry="3.5" class="cheek" opacity="0" />
         <ellipse id="cheek-r" cx="130" cy="117" rx="6" ry="3.5" class="cheek" opacity="0" />
         <g class="thinking-dots">
@@ -130,6 +193,49 @@ export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" ar
       <rect x="156" y="86" width="23" height="44" rx="10" class="acc-main" />
       <rect x="25" y="92" width="6" height="32" rx="3" fill="#fff" opacity="0.28" />
       <rect x="160" y="92" width="6" height="32" rx="3" fill="#fff" opacity="0.28" />
+    </g>
+
+    <!-- Accesorio: bandana con el nudo a un lado -->
+    <g id="acc-bandana" class="acc">
+      <path d="M57 63 Q100 47 143 63 L145 72 Q100 57 55 72 Z" class="acc-main" />
+      <path d="M56 69 Q100 54 144 69" fill="none" stroke="#000" stroke-opacity="0.16" stroke-width="1.6" />
+      <path d="M151 66 Q166 62 180 72 L172 78 Q162 70 151 70 Z" class="acc-main" />
+      <path d="M150 70 Q160 78 166 92 L158 94 Q154 81 147 72 Z" class="acc-main" />
+      <path d="M151 66 Q166 62 180 72 L172 78 Q162 70 151 70 Z M150 70 Q160 78 166 92 L158 94 Q154 81 147 72 Z" fill="#000" opacity="0.14" />
+      <circle cx="148" cy="67" r="5.5" class="acc-main" />
+    </g>
+
+    <!-- Accesorio: gorra de hélice (tapa la antena) -->
+    <g id="acc-helice" class="acc">
+      <path d="M58 60 C58 25, 142 25, 142 60 Z" class="acc-main" />
+      <path d="M89 60 C90 38, 110 38, 111 60 Z" fill="#ffd23f" />
+      <path d="M64 50 C67 39, 76 33, 84 31" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="3" stroke-linecap="round" />
+      <rect x="52" y="54" width="96" height="9" rx="4.5" class="acc-main" />
+      <rect x="52" y="54" width="96" height="9" rx="4.5" fill="#000" opacity="0.15" />
+      <rect x="98" y="21" width="4" height="13" rx="2" fill="#6b7280" />
+      <ellipse cx="87" cy="21" rx="13" ry="3.4" fill="#ff4d6d" />
+      <ellipse cx="113" cy="21" rx="13" ry="3.4" fill="#3ba0ff" />
+      <circle cx="100" cy="21" r="3.4" fill="#ffd23f" />
+    </g>
+
+    <!-- Accesorio: corona pixelada (tapa la antena) -->
+    <g id="acc-corona" class="acc" transform="rotate(-7 100 50)">${CROWN}</g>
+
+    <!-- Accesorio: vidas encima de la cabeza -->
+    <g id="acc-vidas" class="acc">${HEARTS}</g>
+
+    <!-- Accesorio: mando en la mano -->
+    <g id="acc-mando" class="acc" transform="translate(38 154) rotate(-14)">
+      <circle cx="-15" cy="5" r="9.5" class="acc-dark" />
+      <circle cx="15" cy="5" r="9.5" class="acc-dark" />
+      <rect x="-24" y="-11" width="48" height="20" rx="10" class="acc-dark" />
+      <rect x="-21" y="-9" width="22" height="4" rx="2" fill="#fff" opacity="0.12" />
+      <rect x="-20" y="-2.6" width="11" height="3.6" rx="1" fill="#e5e7eb" />
+      <rect x="-16.3" y="-6.3" width="3.6" height="11" rx="1" fill="#e5e7eb" />
+      <circle cx="12" cy="-4" r="2.6" fill="#ff4d6d" />
+      <circle cx="17.5" cy="0.5" r="2.6" fill="#3ba0ff" />
+      <circle cx="6.5" cy="0.5" r="2.6" fill="#34c759" />
+      <circle cx="12" cy="5" r="2.6" fill="#ffd23f" />
     </g>
 
     <!-- Burbujas de estado -->

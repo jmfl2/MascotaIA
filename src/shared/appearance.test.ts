@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { sanitizeName, validateAppearance, validatePersonality } from './appearance'
+import { sanitizeName, toggleAccessory, validateAppearance, validatePersonality } from './appearance'
 
 describe('ajustes: validación', () => {
   it('limpia el nombre del robot', () => {
@@ -18,6 +18,14 @@ describe('ajustes: validación', () => {
     })
     expect(validateAppearance({ skin: '../../evil' })).toEqual({ skin: 'clasico', accessories: [] })
     expect(validateAppearance(null)).toEqual({ skin: 'clasico', accessories: [] })
+  })
+
+  it('un accesorio por zona: ponerse la corona quita el gorro', () => {
+    expect(toggleAccessory(['gorro', 'gafas'], 'corona')).toEqual(['gafas', 'corona'])
+    expect(toggleAccessory(['gafas', 'corona'], 'corona')).toEqual(['gafas'])
+    expect(toggleAccessory(['espada'], 'mando')).toEqual(['espada', 'mando'])
+    // Una config editada a mano con dos de la misma zona: gana el último.
+    expect(validateAppearance({ accessories: ['gorro', 'vidas', 'helice'] }).accessories).toEqual(['vidas', 'helice'])
   })
 
   it('personalidad con valores por defecto si algo no encaja', () => {

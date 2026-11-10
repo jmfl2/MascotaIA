@@ -23,11 +23,21 @@
 .with-gorro #acc-gorro,
 .with-gafas #acc-gafas,
 .with-pajarita #acc-pajarita,
-.with-auriculares #acc-auriculares { display: inline; }
-/* El gorro tapa la antena: el pompón hace de antena. */
-.with-gorro #antenna { display: none; }
+.with-auriculares #acc-auriculares,
+.with-corona #acc-corona,
+.with-helice #acc-helice,
+.with-bandana #acc-bandana,
+.with-gafas-pixel #acc-gafas-pixel,
+.with-vidas #acc-vidas,
+.with-espada #acc-espada,
+.with-mando #acc-mando { display: inline; }
+/* Lo que va en la cabeza tapa la antena (en el gorro, el pompón hace de antena). */
+.with-gorro #antenna,
+.with-corona #antenna,
+.with-helice #antenna { display: none; }
 
 .acc-main { fill: var(--accessory); }
+.acc-dark { fill: var(--accessory-dark); }
 .acc-band {
   fill: none;
   stroke: var(--accessory-dark);

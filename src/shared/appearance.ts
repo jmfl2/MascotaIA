@@ -56,13 +56,36 @@ export const SKINS: readonly Skin[] = [
   }
 ]
 
+/**
+ * Accesorios. Cada uno ocupa una zona del robot y solo cabe uno por zona (una
+ * corona y un gorro a la vez se pisarían): al ponerte uno, se quita el otro.
+ * Los de videojuegos son guiños genéricos en pixel art, no de ningún juego concreto.
+ */
 export const ACCESSORIES = [
-  { id: 'auriculares', name: 'Auriculares' },
-  { id: 'gorro', name: 'Gorro' },
-  { id: 'gafas', name: 'Gafas' },
-  { id: 'pajarita', name: 'Pajarita' }
+  { id: 'auriculares', name: 'Auriculares', slot: 'orejas' },
+  { id: 'gorro', name: 'Gorro', slot: 'cabeza' },
+  { id: 'gafas', name: 'Gafas', slot: 'cara' },
+  { id: 'pajarita', name: 'Pajarita', slot: 'cuello' },
+  { id: 'corona', name: 'Corona pixel', slot: 'cabeza' },
+  { id: 'helice', name: 'Gorra de hélice', slot: 'cabeza' },
+  { id: 'bandana', name: 'Bandana', slot: 'cabeza' },
+  { id: 'gafas-pixel', name: 'Gafas pixel', slot: 'cara' },
+  { id: 'vidas', name: 'Vidas', slot: 'encima' },
+  { id: 'espada', name: 'Espada', slot: 'espalda' },
+  { id: 'mando', name: 'Mando', slot: 'manos' }
 ] as const
 export type AccessoryId = (typeof ACCESSORIES)[number]['id']
+export type AccessorySlot = (typeof ACCESSORIES)[number]['slot']
+
+function slotOf(id: AccessoryId): AccessorySlot {
+  return ACCESSORIES.find((a) => a.id === id)!.slot
+}
+
+/** Pone o quita un accesorio; al ponerlo, quita el que ocupara su misma zona. */
+export function toggleAccessory(current: readonly AccessoryId[], id: AccessoryId): AccessoryId[] {
+  if (current.includes(id)) return current.filter((a) => a !== id)
+  return [...current.filter((a) => slotOf(a) !== slotOf(id)), id]
+}
 
 export const CHATTINESS = [
   { id: 'discreto', name: 'Discreto', hint: 'Solo avisos importantes: recordatorios, pomodoro y enlaces peligrosos' },
@@ -112,9 +135,11 @@ export function validateAppearance(raw: unknown): Appearance {
   const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
   const skin = typeof r.skin === 'string' && SKINS.some((s) => s.id === r.skin) ? r.skin : DEFAULT_APPEARANCE.skin
   const ids = new Set<string>(ACCESSORIES.map((a) => a.id))
-  const accessories = Array.isArray(r.accessories)
-    ? [...new Set(r.accessories.filter((a): a is AccessoryId => typeof a === 'string' && ids.has(a)))]
+  const valid = Array.isArray(r.accessories)
+    ? r.accessories.filter((a): a is AccessoryId => typeof a === 'string' && ids.has(a))
     : []
+  // Uno por zona: si hay varios (config editada a mano), gana el último.
+  const accessories = valid.reduce<AccessoryId[]>((acc, id) => (acc.includes(id) ? acc : toggleAccessory(acc, id)), [])
   return { skin, accessories }
 }
 
