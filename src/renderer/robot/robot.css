@@ -37,7 +37,13 @@
 .with-manzana #acc-manzana,
 .with-linterna #acc-linterna,
 .with-vial #acc-vial,
-.with-gancho #acc-gancho { display: inline; }
+.with-gancho #acc-gancho,
+.with-hierba #acc-hierba,
+.with-spray #acc-spray,
+.with-mascara-gas #acc-mascara-gas,
+.with-vendas #acc-vendas,
+.with-cinta #acc-cinta,
+.with-cuchillo #acc-cuchillo { display: inline; }
 /* Lo que va en la cabeza tapa la antena (en el gorro, el pompón hace de antena). */
 .with-gorro #antenna,
 .with-corona #antenna,

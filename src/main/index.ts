@@ -45,6 +45,7 @@ import { pomodoroService } from './services/pomodoro'
 import { registerShortcut } from './shortcut'
 import { getConfig } from './store'
 import { createTray } from './tray'
+import { musicAction, startMusic, stopMusic, syncMusic } from './music'
 import { setLang, t } from '../shared/i18n'
 
 // Una sola instancia: si se lanza otra vez, abrimos la barra de la que ya corre.
@@ -67,6 +68,7 @@ app.on('window-all-closed', () => {
 app.on('will-quit', () => {
   globalShortcut.unregisterAll()
   shutdownAi()
+  stopMusic()
 })
 
 function start(): void {
@@ -80,6 +82,9 @@ function start(): void {
   const refreshTabInfo = () => setTabInfo(getConfig().personality.name, getConfig().shortcut)
   refreshTabInfo()
   onSettingsChange(refreshTabInfo)
+  // La música, cuando la pestaña ya está cargada (y al cambiar los ajustes o el modo).
+  tabWin.webContents.once('did-finish-load', startMusic)
+  onSettingsChange(syncMusic)
   createBarWindow()
   const bubbleWin = createBubbleWindow()
 
@@ -194,6 +199,9 @@ function registerIpc(): void {
   const tab = () => getTabWindow()?.webContents
   ipcMain.on(IPC.tabClick, (event) => {
     if (isFrom(event, tab())) toggleBar()
+  })
+  ipcMain.on(IPC.tabMediaAction, (event, action: unknown) => {
+    if (isFrom(event, tab())) musicAction(action)
   })
   ipcMain.on(IPC.tabContextMenu, (event) => {
     const win = getTabWindow()

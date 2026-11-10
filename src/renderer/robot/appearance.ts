@@ -2,7 +2,7 @@
 import { ACCESSORIES, skinById, skinCssVars, type Appearance } from '../../shared/appearance'
 
 export function applyAppearance(svg: SVGSVGElement, appearance: Appearance): void {
-  for (const [name, value] of Object.entries(skinCssVars(skinById(appearance.skin)))) {
+  for (const [name, value] of Object.entries(skinCssVars(skinById(appearance.skin), appearance))) {
     svg.style.setProperty(name, value)
   }
   for (const acc of ACCESSORIES) {

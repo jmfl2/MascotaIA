@@ -51,11 +51,42 @@ export const SKINS: readonly Skin[] = [
     colors: { bodyTop: '#fbf8ff', bodyBottom: '#cdbdf5', bodyEdge: '#b6a3ea', screenTop: '#2a2142', screenBottom: '#120d20', eye: '#a6f4ff', cheek: '#ff9ad5', accessory: '#7c5cff', accessoryDark: '#30264d' }
   },
   {
+    id: 'zombi',
+    name: { es: 'Zombi', en: 'Zombie' },
+    colors: { bodyTop: '#bcc6a9', bodyBottom: '#7e8b6b', bodyEdge: '#6a7659', screenTop: '#262b21', screenBottom: '#0f120c', eye: '#ff3b30', cheek: '#9fb07a', accessory: '#7a2e2a', accessoryDark: '#22261c' }
+  },
+  {
+    id: 'laboratorio',
+    name: { es: 'Laboratorio', en: 'Lab' },
+    colors: { bodyTop: '#ffffff', bodyBottom: '#e2e6ea', bodyEdge: '#cdd3d9', screenTop: '#13201a', screenBottom: '#060c09', eye: '#7dff6a', cheek: '#ffb3b3', accessory: '#f5c518', accessoryDark: '#1f2326' }
+  },
+  {
     id: 'grafito',
     name: { es: 'Grafito', en: 'Graphite' },
     colors: { bodyTop: '#6b7280', bodyBottom: '#2f343d', bodyEdge: '#23272e', screenTop: '#111318', screenBottom: '#050607', eye: '#7dff9a', cheek: '#ff8f8f', accessory: '#f97316', accessoryDark: '#16181c' }
   }
 ]
+
+/** Temas para agrupar los accesorios en los ajustes. */
+export const ACCESSORY_THEMES = [
+  { id: 'basico', name: { es: 'Básicos', en: 'Basics' } },
+  { id: 'juegos', name: { es: 'Videojuegos', en: 'Games' } },
+  { id: 'anime', name: { es: 'Anime', en: 'Anime' } },
+  { id: 'terror', name: { es: 'Terror', en: 'Horror' } }
+] as const
+export type AccessoryTheme = (typeof ACCESSORY_THEMES)[number]['id']
+
+/** Nombre de cada zona del robot (para explicar por qué un accesorio quita otro). */
+export const SLOT_NAMES: Record<string, Text> = {
+  orejas: { es: 'Orejas', en: 'Ears' },
+  cabeza: { es: 'Cabeza', en: 'Head' },
+  cara: { es: 'Cara', en: 'Face' },
+  cuello: { es: 'Cuello', en: 'Neck' },
+  encima: { es: 'Encima', en: 'Above' },
+  espalda: { es: 'Espalda', en: 'Back' },
+  manos: { es: 'Mano', en: 'Hand' },
+  cuerpo: { es: 'Cuerpo', en: 'Body' }
+}
 
 /**
  * Accesorios. Cada uno ocupa una zona del robot y solo cabe uno por zona (una
@@ -64,24 +95,30 @@ export const SKINS: readonly Skin[] = [
  * a esos mundos, sin logos ni diseños de ninguna obra concreta.
  */
 export const ACCESSORIES = [
-  { id: 'auriculares', name: { es: 'Auriculares', en: 'Headphones' }, slot: 'orejas' },
-  { id: 'gorro', name: { es: 'Gorro', en: 'Beanie' }, slot: 'cabeza' },
-  { id: 'gafas', name: { es: 'Gafas', en: 'Glasses' }, slot: 'cara' },
-  { id: 'pajarita', name: { es: 'Pajarita', en: 'Bow tie' }, slot: 'cuello' },
-  { id: 'corona', name: { es: 'Corona pixel', en: 'Pixel crown' }, slot: 'cabeza' },
-  { id: 'helice', name: { es: 'Gorra de hélice', en: 'Propeller cap' }, slot: 'cabeza' },
-  { id: 'bandana', name: { es: 'Bandana', en: 'Bandana' }, slot: 'cabeza' },
-  { id: 'gafas-pixel', name: { es: 'Gafas pixel', en: 'Pixel shades' }, slot: 'cara' },
-  { id: 'vidas', name: { es: 'Vidas', en: 'Lives' }, slot: 'encima' },
-  { id: 'espada', name: { es: 'Espada', en: 'Sword' }, slot: 'espalda' },
-  { id: 'mando', name: { es: 'Mando', en: 'Controller' }, slot: 'manos' },
-  { id: 'sombrero-paja', name: { es: 'Sombrero de paja', en: 'Straw hat' }, slot: 'cabeza' },
-  { id: 'parche', name: { es: 'Parche pirata', en: 'Eye patch' }, slot: 'cara' },
-  { id: 'libreta', name: { es: 'Libreta negra', en: 'Black notebook' }, slot: 'manos' },
-  { id: 'manzana', name: { es: 'Manzana', en: 'Apple' }, slot: 'manos' },
-  { id: 'linterna', name: { es: 'Linterna', en: 'Flashlight' }, slot: 'manos' },
-  { id: 'vial', name: { es: 'Vial', en: 'Vial' }, slot: 'manos' },
-  { id: 'gancho', name: { es: 'Gancho', en: 'Hook' }, slot: 'espalda' }
+  { id: 'auriculares', name: { es: 'Auriculares', en: 'Headphones' }, slot: 'orejas', theme: 'basico' },
+  { id: 'gorro', name: { es: 'Gorro', en: 'Beanie' }, slot: 'cabeza', theme: 'basico' },
+  { id: 'gafas', name: { es: 'Gafas', en: 'Glasses' }, slot: 'cara', theme: 'basico' },
+  { id: 'pajarita', name: { es: 'Pajarita', en: 'Bow tie' }, slot: 'cuello', theme: 'basico' },
+  { id: 'corona', name: { es: 'Corona pixel', en: 'Pixel crown' }, slot: 'cabeza', theme: 'juegos' },
+  { id: 'helice', name: { es: 'Gorra de hélice', en: 'Propeller cap' }, slot: 'cabeza', theme: 'juegos' },
+  { id: 'bandana', name: { es: 'Bandana', en: 'Bandana' }, slot: 'cabeza', theme: 'juegos' },
+  { id: 'gafas-pixel', name: { es: 'Gafas pixel', en: 'Pixel shades' }, slot: 'cara', theme: 'juegos' },
+  { id: 'vidas', name: { es: 'Vidas', en: 'Lives' }, slot: 'encima', theme: 'juegos' },
+  { id: 'espada', name: { es: 'Espada', en: 'Sword' }, slot: 'espalda', theme: 'juegos' },
+  { id: 'mando', name: { es: 'Mando', en: 'Controller' }, slot: 'manos', theme: 'juegos' },
+  { id: 'sombrero-paja', name: { es: 'Sombrero de paja', en: 'Straw hat' }, slot: 'cabeza', theme: 'anime' },
+  { id: 'parche', name: { es: 'Parche pirata', en: 'Eye patch' }, slot: 'cara', theme: 'anime' },
+  { id: 'libreta', name: { es: 'Libreta negra', en: 'Black notebook' }, slot: 'manos', theme: 'anime' },
+  { id: 'manzana', name: { es: 'Manzana', en: 'Apple' }, slot: 'manos', theme: 'anime' },
+  { id: 'linterna', name: { es: 'Linterna', en: 'Flashlight' }, slot: 'manos', theme: 'terror' },
+  { id: 'vial', name: { es: 'Vial', en: 'Vial' }, slot: 'manos', theme: 'terror' },
+  { id: 'gancho', name: { es: 'Gancho', en: 'Hook' }, slot: 'espalda', theme: 'terror' },
+  { id: 'hierba', name: { es: 'Hierba en maceta', en: 'Potted herb' }, slot: 'manos', theme: 'terror' },
+  { id: 'spray', name: { es: 'Spray de primeros auxilios', en: 'First aid spray' }, slot: 'manos', theme: 'terror' },
+  { id: 'mascara-gas', name: { es: 'Máscara de gas', en: 'Gas mask' }, slot: 'cara', theme: 'terror' },
+  { id: 'vendas', name: { es: 'Vendas', en: 'Bandages' }, slot: 'cabeza', theme: 'terror' },
+  { id: 'cinta', name: { es: 'Cinta de peligro', en: 'Hazard tape' }, slot: 'cuerpo', theme: 'terror' },
+  { id: 'cuchillo', name: { es: 'Cuchillo de combate', en: 'Combat knife' }, slot: 'espalda', theme: 'terror' }
 ] as const
 export type AccessoryId = (typeof ACCESSORIES)[number]['id']
 export type AccessorySlot = (typeof ACCESSORIES)[number]['slot']
@@ -119,15 +156,40 @@ export const CHATTINESS = [
 export type Chattiness = (typeof CHATTINESS)[number]['id']
 
 export const AI_TONES = [
-  { id: 'cercano', name: { es: 'Cercano', en: 'Friendly' } },
-  { id: 'formal', name: { es: 'Formal', en: 'Formal' } },
-  { id: 'divertido', name: { es: 'Divertido', en: 'Playful' } }
+  { id: 'cercano', name: { es: 'Cercano', en: 'Friendly' }, hint: { es: 'Amable y al grano, tuteando', en: 'Warm and to the point' } },
+  { id: 'formal', name: { es: 'Formal', en: 'Formal' }, hint: { es: 'Profesional y precisa, tratando de usted', en: 'Professional and precise' } },
+  { id: 'divertido', name: { es: 'Divertido', en: 'Playful' }, hint: { es: 'Con humor y algún emoji, sin dejar de ayudar', en: 'Jokes and the odd emoji, still helpful' } }
 ] as const
 export type AiTone = (typeof AI_TONES)[number]['id']
+
+/** Colores que se pueden elegir para los ojos y los accesorios (además de uno a mano). */
+export const COLOR_PRESETS: readonly { color: string; name: Text }[] = [
+  { color: '#7ef0ff', name: { es: 'Cian', en: 'Cyan' } },
+  { color: '#7dff6a', name: { es: 'Verde', en: 'Green' } },
+  { color: '#ffd166', name: { es: 'Ámbar', en: 'Amber' } },
+  { color: '#ff7a3d', name: { es: 'Naranja', en: 'Orange' } },
+  { color: '#ff3b30', name: { es: 'Rojo', en: 'Red' } },
+  { color: '#ff7ad9', name: { es: 'Rosa', en: 'Pink' } },
+  { color: '#a78bfa', name: { es: 'Violeta', en: 'Violet' } },
+  { color: '#5b8cff', name: { es: 'Azul', en: 'Blue' } },
+  { color: '#f4f5f7', name: { es: 'Blanco', en: 'White' } },
+  { color: '#2b2f3a', name: { es: 'Negro', en: 'Black' } }
+]
+
+const HEX_COLOR = /^#[0-9a-f]{6}$/i
+
+/** Color "#rrggbb" válido (en minúsculas) o null. */
+export function validColor(raw: unknown): string | null {
+  return typeof raw === 'string' && HEX_COLOR.test(raw) ? raw.toLowerCase() : null
+}
 
 export interface Appearance {
   skin: string
   accessories: AccessoryId[]
+  /** Color de ojos propio (null = el de la skin). */
+  eyeColor: string | null
+  /** Color de los accesorios propio (null = el de la skin). */
+  accessoryColor: string | null
 }
 
 export interface Personality {
@@ -136,7 +198,7 @@ export interface Personality {
   aiTone: AiTone
 }
 
-export const DEFAULT_APPEARANCE: Appearance = { skin: 'clasico', accessories: [] }
+export const DEFAULT_APPEARANCE: Appearance = { skin: 'clasico', accessories: [], eyeColor: null, accessoryColor: null }
 export const DEFAULT_PERSONALITY: Personality = { name: 'Mascota', chattiness: 'normal', aiTone: 'cercano' }
 export const MAX_NAME_LENGTH = 20
 
@@ -164,7 +226,7 @@ export function validateAppearance(raw: unknown): Appearance {
     : []
   // Uno por zona: si hay varios (config editada a mano), gana el último.
   const accessories = valid.reduce<AccessoryId[]>((acc, id) => (acc.includes(id) ? acc : toggleAccessory(acc, id)), [])
-  return { skin, accessories }
+  return { skin, accessories, eyeColor: validColor(r.eyeColor), accessoryColor: validColor(r.accessoryColor) }
 }
 
 export function validatePersonality(raw: unknown): Personality {
@@ -174,9 +236,9 @@ export function validatePersonality(raw: unknown): Personality {
   return { name: sanitizeName(r.name), chattiness, aiTone }
 }
 
-/** Variables CSS que pintan el robot con una skin. */
-export function skinCssVars(skin: Skin): Record<string, string> {
-  const c = skin.colors
+/** Variables CSS que pintan el robot con una skin (y los colores propios, si los hay). */
+export function skinCssVars(skin: Skin, custom: Pick<Appearance, 'eyeColor' | 'accessoryColor'> = DEFAULT_APPEARANCE): Record<string, string> {
+  const c = { ...skin.colors, eye: custom.eyeColor ?? skin.colors.eye, accessory: custom.accessoryColor ?? skin.colors.accessory }
   return {
     '--body-top': c.bodyTop,
     '--body-bottom': c.bodyBottom,
@@ -200,6 +262,8 @@ export interface SettingsView {
   startWithWindows: boolean
   /** Modo pestaña: el robot se esconde en una pestaña arriba de la pantalla. */
   dockTop: boolean
+  /** Enseñar en la pestaña la canción que suena. */
+  nowPlaying: boolean
   language: Lang
 }
 

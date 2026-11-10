@@ -20,6 +20,18 @@ export interface CursorOffset {
 /** Progreso del pomodoro para la barrita del pecho del robot (null = no hay). */
 export type PomodoroView = { phase: 'focus' | 'break'; progress: number } | null
 
+/** Canción que suena, para la pestaña de arriba (null = nada que enseñar). */
+export type TabMediaView = {
+  title: string
+  artist: string
+  app: string
+  playing: boolean
+  /** Carátula como data:image/png;base64. */
+  art?: string
+} | null
+
+export type MediaAction = 'toggle' | 'next' | 'prev'
+
 /** Lo que enseña la pestaña al acercarse. */
 export interface TabInfo {
   name: string
@@ -142,6 +154,8 @@ export const IPC = {
   tabInfo: 'tab:info',
   tabPomodoro: 'tab:pomodoro',
   tabContextMenu: 'tab:context-menu',
+  tabMedia: 'tab:media',
+  tabMediaAction: 'tab:media-action',
   // Ajustes
   settingsGet: 'settings:get',
   settingsUpdate: 'settings:update',
@@ -210,6 +224,9 @@ export interface MascotaApi {
     onNear(cb: (near: number) => void): Unsubscribe
     onInfo(cb: (info: TabInfo) => void): Unsubscribe
     onPomodoro(cb: (view: PomodoroView) => void): Unsubscribe
+    /** Lo que suena (Spotify, el navegador...). */
+    onMedia(cb: (view: TabMediaView) => void): Unsubscribe
+    mediaAction(action: MediaAction): void
   }
   settings: {
     get(): Promise<SettingsView | null>

@@ -36,6 +36,8 @@ export interface Config {
   personality: Personality
   /** Idioma de la interfaz (la primera vez, el del sistema). */
   language: Lang
+  /** Enseñar en la pestaña de arriba la canción que suena. */
+  nowPlaying: boolean
 }
 
 export const DEFAULT_SHORTCUT = 'Control+Space'
@@ -52,7 +54,8 @@ const DEFAULTS: Config = {
   linkGuard: true,
   appearance: DEFAULT_APPEARANCE,
   personality: DEFAULT_PERSONALITY,
-  language: 'es'
+  language: 'es',
+  nowPlaying: true
 }
 
 let cache: Config | null = null
@@ -78,6 +81,7 @@ function validate(raw: unknown): Config {
   if (r.appearance !== undefined) cfg.appearance = validateAppearance(r.appearance)
   if (r.personality !== undefined) cfg.personality = validatePersonality(r.personality)
   if (isLang(r.language)) cfg.language = r.language
+  if (typeof r.nowPlaying === 'boolean') cfg.nowPlaying = r.nowPlaying
   return cfg
 }
 

@@ -31,6 +31,7 @@ export function getSettingsView(): SettingsView {
     linkGuard: cfg.linkGuard,
     startWithWindows: startsWithWindows(),
     dockTop: isDocked(),
+    nowPlaying: cfg.nowPlaying,
     language: cfg.language
   }
 }
@@ -52,6 +53,7 @@ export function applySettingsPatch(raw: unknown): void {
   if (typeof patch.linkGuard === 'boolean') setLinkGuard(patch.linkGuard)
   if (typeof patch.startWithWindows === 'boolean') setStartsWithWindows(patch.startWithWindows)
   if (typeof patch.dockTop === 'boolean') setDocked(patch.dockTop)
+  if (typeof patch.nowPlaying === 'boolean') setConfig({ nowPlaying: patch.nowPlaying })
   if (isLang(patch.language) && patch.language !== cfg.language) {
     setConfig({ language: patch.language })
     setLang(patch.language)

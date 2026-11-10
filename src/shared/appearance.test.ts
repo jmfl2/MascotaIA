@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { sanitizeName, toggleAccessory, validateAppearance, validatePersonality } from './appearance'
+import { DEFAULT_APPEARANCE, sanitizeName, skinById, skinCssVars, toggleAccessory, validateAppearance, validatePersonality } from './appearance'
 
 describe('ajustes: validación', () => {
   it('limpia el nombre del robot', () => {
@@ -14,10 +14,26 @@ describe('ajustes: validación', () => {
   it('solo acepta skins y accesorios conocidos', () => {
     expect(validateAppearance({ skin: 'menta', accessories: ['gorro', 'gorro', 'gafas', '<script>'] })).toEqual({
       skin: 'menta',
-      accessories: ['gorro', 'gafas']
+      accessories: ['gorro', 'gafas'],
+      eyeColor: null,
+      accessoryColor: null
     })
-    expect(validateAppearance({ skin: '../../evil' })).toEqual({ skin: 'clasico', accessories: [] })
-    expect(validateAppearance(null)).toEqual({ skin: 'clasico', accessories: [] })
+    expect(validateAppearance({ skin: '../../evil' })).toEqual(DEFAULT_APPEARANCE)
+    expect(validateAppearance(null)).toEqual(DEFAULT_APPEARANCE)
+  })
+
+  it('colores propios: solo "#rrggbb"', () => {
+    expect(validateAppearance({ eyeColor: '#FF3B30', accessoryColor: '#5b8cff' })).toMatchObject({ eyeColor: '#ff3b30', accessoryColor: '#5b8cff' })
+    expect(validateAppearance({ eyeColor: 'red', accessoryColor: 'url(javascript:x)' })).toMatchObject({ eyeColor: null, accessoryColor: null })
+    const vars = skinCssVars(skinById('clasico'), { eyeColor: '#ff3b30', accessoryColor: null })
+    expect(vars['--eye']).toBe('#ff3b30')
+    expect(vars['--accessory']).toBe(skinById('clasico').colors.accessory)
+  })
+
+  it('el pack de terror tiene zonas propias', () => {
+    expect(toggleAccessory(['gafas', 'vial'], 'mascara-gas')).toEqual(['vial', 'mascara-gas'])
+    expect(toggleAccessory(['espada'], 'cuchillo')).toEqual(['cuchillo'])
+    expect(toggleAccessory(['pajarita'], 'cinta')).toEqual(['pajarita', 'cinta'])
   })
 
   it('un accesorio por zona: ponerse la corona quita el gorro', () => {

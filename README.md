@@ -14,7 +14,8 @@ que se ejecuta íntegramente en tu equipo.
 ## Características
 
 - **Barra de comandos** (`Ctrl+Espacio`): búsqueda en Google, YouTube, Maps y
-  GitHub, traductor, lanzador de aplicaciones y favoritos.
+  GitHub, traductor, lanzador de aplicaciones y favoritos. Al abrirla, tus
+  aplicaciones más usadas aparecen las primeras.
 - **Productividad:** notas rápidas, recordatorios en lenguaje natural
   (`rec mañana 9:00 dentista`) y temporizador Pomodoro.
 - **IA local con Ollama** (opcional): chat, resúmenes, explicaciones y
@@ -23,10 +24,16 @@ que se ejecuta íntegramente en tu equipo.
   y avisa de suplantaciones, homógrafos y acortadores.
 - **Portapapeles inteligente:** al copiar un texto ofrece buscarlo, traducirlo,
   guardarlo o resumirlo, e ignora contraseñas y claves.
+- **Música en la pestaña:** como la isla del iPhone, la pestaña de arriba
+  muestra lo que suena en Spotify, el navegador u otras apps, con carátula y
+  botones de anterior, pausa y siguiente.
 - **Discreto:** vive escondido en una pestaña en el borde superior de la
   pantalla y apenas consume recursos en reposo.
-- **Personalizable:** seis colores, dieciocho accesorios, nombre propio y
-  nivel de conversación.
+- **Personalizable:** ocho colores, veinticinco accesorios agrupados por tema
+  (básicos, videojuegos, anime y terror), color propio para los ojos y los
+  accesorios, nombre, nivel de conversación y tono de la IA.
+- **En español e inglés:** el idioma se elige en los ajustes; la primera vez se
+  usa el de Windows.
 
 ## Instalación
 
@@ -69,22 +76,23 @@ coinciden. Con un prefijo seguido de un espacio se usa un comando concreto:
 | Prefijo                     | Función            | Ejemplo                                                    |
 | --------------------------- | ------------------ | ---------------------------------------------------------- |
 | `g`                         | Google             | `g receta de croquetas`                                    |
-| `a`, `abrir`, `app`         | Apps y favoritos   | `a calculadora` · sin texto: favoritos                     |
+| `a`, `abrir`, `app`, `open` | Apps y favoritos   | `a calculadora` · sin texto: favoritos                     |
 | `yt`                        | YouTube            | `yt lofi para estudiar`                                    |
 | `maps`, `map`               | Google Maps        | `maps farmacia de guardia`                                 |
 | `gh`                        | GitHub             | `gh electron/electron`                                     |
 | `trad`, `tr`                | Traductor          | `trad hello world` · `trad en: buenos días`                |
-| `nota`, `notas`, `n`        | Notas              | `nota comprar pilas` · `notas` para listar y buscar        |
-| `rec`, `recordar`, `r`      | Recordatorios      | `rec 10m sacar la ropa` · `rec 18:30 llamar`               |
+| `nota`, `notas`, `n`, `note` | Notas             | `nota comprar pilas` · `notas` para listar y buscar        |
+| `rec`, `recordar`, `r`, `remind` | Recordatorios | `rec 10m sacar la ropa` · `rec 18:30 llamar` · `rec tomorrow 8am run` |
 | `pomo`, `pomodoro`          | Pomodoro           | `pomo` (25/5) · `pomo 50/10`                               |
-| `ia`, `chat`, `?`           | Chat con la IA     | `ia ¿qué es una API REST?`                                 |
+| `ia`, `ai`, `chat`, `?`     | Chat con la IA     | `ia ¿qué es una API REST?`                                 |
 | `resumir`, `explicar`       | Resumir o explicar | Sin texto, usa el contenido del portapapeles               |
 | `link`, `enlace`, `url`     | Comprobar enlace   | `link https://bit.ly/...`                                  |
 | `ajustes`, `config`, `skin` | Ajustes            | Abre la ventana de ajustes                                 |
 
 Los recordatorios aceptan `10m`, `45s`, `2h`, `1h30m`, `en 20 minutos`,
-`18:30`, `a las 9`, `mañana 9:00` y `mañana a las 8`. Si la hora ya ha pasado,
-se programan para el día siguiente.
+`18:30`, `a las 9`, `mañana 9:00` y `mañana a las 8`, y también en inglés
+(`in 20 minutes`, `6:30pm`, `tomorrow at 8am`). Si la hora ya ha pasado, se
+programan para el día siguiente.
 
 ### Teclado
 
@@ -92,7 +100,7 @@ se programan para el día siguiente.
 | --------------------------- | ------------------------------------------------------- |
 | `↑` `↓` `RePág` `AvPág`     | Seleccionar fila                                        |
 | `Intro`                     | Ejecutar la fila seleccionada                           |
-| `Supr`                      | Borrar nota, cancelar recordatorio o quitar favorito    |
+| `Supr`                      | Borrar nota, cancelar recordatorio, quitar favorito o quitar de las más usadas |
 | `Tab`                       | Fijar el comando de la fila seleccionada                |
 | `Retroceso`                 | Con el campo vacío, quitar el comando fijado            |
 | `Ctrl+N`                    | En el chat, empezar una conversación nueva              |

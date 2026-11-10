@@ -17,89 +17,142 @@
         </button>
       </header>
 
-      <main class="scroll">
-        <section class="hero">
-          <div id="preview" class="preview" title="Haz clic en él" data-en-title="Click it"></div>
+      <section class="hero">
+        <div id="preview" class="preview" title="Haz clic en él" data-en-title="Click it"></div>
+        <div class="hero-text">
           <p id="hero-name" class="hero-name">Mascota</p>
-          <p class="hero-sub" data-en="This is how it will look on your desktop">Así se verá en tu escritorio</p>
+          <p id="hero-sub" class="hero-sub"></p>
+          <button id="surprise" class="link-button" type="button" data-en="🎲 Surprise me">🎲 Sorpréndeme</button>
+        </div>
+      </section>
+
+      <nav class="tabs-wrap">
+        <div id="tabs" class="segmented tabs" role="tablist" aria-label="Secciones" data-en-aria-label="Sections"></div>
+      </nav>
+
+      <main id="scroll" class="scroll">
+        <!-- Apariencia -->
+        <section class="panel" data-panel="look" role="tabpanel">
+          <h2 data-en="Body">Cuerpo</h2>
+          <div class="group">
+            <div class="row column">
+              <div id="skins" class="swatches" role="radiogroup" aria-label="Color" data-en-aria-label="Color"></div>
+            </div>
+          </div>
+
+          <h2 data-en="Eyes">Ojos</h2>
+          <div class="group">
+            <div class="row column">
+              <div id="eye-colors" class="dots" role="radiogroup" aria-label="Color de ojos" data-en-aria-label="Eye color"></div>
+            </div>
+          </div>
+
+          <div class="h2-row">
+            <h2 data-en="Accessories">Accesorios</h2>
+            <button id="clear-acc" class="link-button" type="button" data-en="Remove all">Quitar todos</button>
+          </div>
+          <div class="group">
+            <div class="row column">
+              <div id="acc-themes" class="segmented small" role="radiogroup" aria-label="Tema" data-en-aria-label="Theme"></div>
+              <div id="accessories" class="chips" role="group" aria-label="Accesorios" data-en-aria-label="Accessories"></div>
+              <p class="hint" data-en="Only one per zone: putting on a hat takes off the one you were wearing."
+                >Solo uno por zona: al ponerle un gorro se quita el que llevara.</p
+              >
+            </div>
+            <div class="row column">
+              <span class="label" data-en="Accessory color">Color de los accesorios</span>
+              <div id="acc-colors" class="dots" role="radiogroup" aria-label="Color de los accesorios" data-en-aria-label="Accessory color"></div>
+            </div>
+          </div>
         </section>
 
-        <h2 data-en="Appearance">Apariencia</h2>
-        <div class="group">
-          <div class="row column">
-            <span class="label" data-en="Color">Color</span>
-            <div id="skins" class="swatches" role="radiogroup" aria-label="Color" data-en-aria-label="Color"></div>
+        <!-- Personalidad -->
+        <section class="panel" data-panel="personality" role="tabpanel" hidden>
+          <h2 data-en="Identity">Identidad</h2>
+          <div class="group">
+            <label class="row">
+              <span class="label" data-en="Name">Nombre</span>
+              <input id="name" class="text-input" type="text" maxlength="20" spellcheck="false" autocomplete="off" />
+            </label>
           </div>
-          <div class="row column">
-            <span class="label" data-en="Accessories">Accesorios</span>
-            <div id="accessories" class="chips" role="group" aria-label="Accesorios" data-en-aria-label="Accessories"></div>
-          </div>
-        </div>
 
-        <h2 data-en="Personality">Personalidad</h2>
-        <div class="group">
-          <label class="row">
-            <span class="label" data-en="Name">Nombre</span>
-            <input id="name" class="text-input" type="text" maxlength="20" spellcheck="false" autocomplete="off" />
-          </label>
-          <div class="row column">
-            <span class="label" data-en="How much it talks">Cuánto habla</span>
-            <div id="chattiness" class="segmented" role="radiogroup" aria-label="Cuánto habla" data-en-aria-label="How much it talks"></div>
-            <p id="chattiness-hint" class="hint"></p>
+          <h2 data-en="How much it talks">Cuánto habla</h2>
+          <div class="group">
+            <div class="row column">
+              <div id="chattiness" class="segmented" role="radiogroup" aria-label="Cuánto habla" data-en-aria-label="How much it talks"></div>
+              <p id="chattiness-hint" class="hint"></p>
+            </div>
           </div>
-          <div class="row column">
-            <span class="label" data-en="AI tone">Tono de la IA</span>
-            <div id="tone" class="segmented" role="radiogroup" aria-label="Tono de la IA" data-en-aria-label="AI tone"></div>
-          </div>
-        </div>
 
-        <h2 data-en="Language">Idioma</h2>
-        <div class="group">
-          <div class="row column">
-            <span class="label" data-en="Interface language">Idioma de la interfaz</span>
-            <div id="language" class="segmented" role="radiogroup" aria-label="Idioma" data-en-aria-label="Language"></div>
-            <p class="hint" data-en="The robot, the bar, the menus and the AI replies change too">También cambian el robot, la barra, los menús y las respuestas de la IA</p>
+          <h2 data-en="AI tone">Tono de la IA</h2>
+          <div class="group">
+            <div class="row column">
+              <div id="tone" class="segmented" role="radiogroup" aria-label="Tono de la IA" data-en-aria-label="AI tone"></div>
+              <p id="tone-hint" class="hint"></p>
+            </div>
           </div>
-        </div>
+        </section>
 
-        <h2 data-en="On screen">En pantalla</h2>
-        <div class="group">
-          <label class="row">
-            <span class="label-block">
-              <span class="label" data-en="Hide in a tab at the top">Esconder en una pestaña arriba</span>
-              <span class="hint" data-en="The robot comes down from the tab when you click it or when it has something to tell you"
-                >El robot baja de la pestaña al hacerle clic o cuando tiene algo que decirte</span
+        <!-- General -->
+        <section class="panel" data-panel="general" role="tabpanel" hidden>
+          <h2 data-en="Language">Idioma</h2>
+          <div class="group">
+            <div class="row column">
+              <div id="language" class="segmented" role="radiogroup" aria-label="Idioma" data-en-aria-label="Language"></div>
+              <p class="hint" data-en="The robot, the bar, the menus and the AI replies change too"
+                >También cambian el robot, la barra, los menús y las respuestas de la IA</p
               >
-            </span>
-            <input id="dockTop" class="switch" type="checkbox" />
-          </label>
-        </div>
+            </div>
+          </div>
 
-        <h2 data-en="Help and security">Ayuda y seguridad</h2>
-        <div class="group">
-          <label class="row">
-            <span class="label-block">
-              <span class="label" data-en="Warn about suspicious links">Avisar de enlaces sospechosos</span>
-              <span class="hint" data-en="When you copy a link, it checks whether it imitates a brand or hides where it goes"
-                >Al copiar un enlace, comprueba si imita a una marca o esconde el destino</span
-              >
-            </span>
-            <input id="linkGuard" class="switch" type="checkbox" />
-          </label>
-          <label class="row">
-            <span class="label-block">
-              <span class="label" data-en="Smart clipboard">Portapapeles inteligente</span>
-              <span class="hint" data-en="Offers to search, translate or summarize what you copy">Ofrece buscar, traducir o resumir lo que copias</span>
-            </span>
-            <input id="clipboardEnabled" class="switch" type="checkbox" />
-          </label>
-          <label class="row">
-            <span class="label" data-en="Start with Windows">Iniciar con Windows</span>
-            <input id="startWithWindows" class="switch" type="checkbox" />
-          </label>
-        </div>
+          <h2 data-en="On screen">En pantalla</h2>
+          <div class="group">
+            <label class="row">
+              <span class="label-block">
+                <span class="label" data-en="Hide in a tab at the top">Esconder en una pestaña arriba</span>
+                <span class="hint" data-en="The robot comes down from the tab when you click it or when it has something to tell you"
+                  >El robot baja de la pestaña al hacerle clic o cuando tiene algo que decirte</span
+                >
+              </span>
+              <input id="dockTop" class="switch" type="checkbox" />
+            </label>
+            <label class="row">
+              <span class="label-block">
+                <span class="label" data-en="Show the music in the tab">Mostrar la música en la pestaña</span>
+                <span class="hint" data-en="Like the iPhone: what's playing in Spotify, the browser… with play/pause. Only with the tab at the top"
+                  >Como en el iPhone: lo que suena en Spotify, el navegador… con pausa y siguiente. Solo con la pestaña arriba</span
+                >
+              </span>
+              <input id="nowPlaying" class="switch" type="checkbox" />
+            </label>
+          </div>
 
-        <p class="footnote" data-en="Everything is stored on your PC, in %APPDATA%\mascota">Todo se guarda en tu PC, en %APPDATA%\mascota</p>
+          <h2 data-en="Help and security">Ayuda y seguridad</h2>
+          <div class="group">
+            <label class="row">
+              <span class="label-block">
+                <span class="label" data-en="Warn about suspicious links">Avisar de enlaces sospechosos</span>
+                <span class="hint" data-en="When you copy a link, it checks whether it imitates a brand or hides where it goes"
+                  >Al copiar un enlace, comprueba si imita a una marca o esconde el destino</span
+                >
+              </span>
+              <input id="linkGuard" class="switch" type="checkbox" />
+            </label>
+            <label class="row">
+              <span class="label-block">
+                <span class="label" data-en="Smart clipboard">Portapapeles inteligente</span>
+                <span class="hint" data-en="Offers to search, translate or summarize what you copy">Ofrece buscar, traducir o resumir lo que copias</span>
+              </span>
+              <input id="clipboardEnabled" class="switch" type="checkbox" />
+            </label>
+            <label class="row">
+              <span class="label" data-en="Start with Windows">Iniciar con Windows</span>
+              <input id="startWithWindows" class="switch" type="checkbox" />
+            </label>
+          </div>
+
+          <p class="footnote" data-en="Everything is stored on your PC, in %APPDATA%\mascota">Todo se guarda en tu PC, en %APPDATA%\mascota</p>
+        </section>
       </main>
     </div>
     <script type="module" src="./settings/main.ts"></script>

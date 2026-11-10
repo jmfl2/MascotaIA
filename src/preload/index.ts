@@ -14,7 +14,8 @@ import {
   type MascotaApi,
   type PomodoroView,
   type RobotState,
-  type TabInfo
+  type TabInfo,
+  type TabMediaView
 } from '../shared/ipc'
 import type { Appearance, SettingsView } from '../shared/appearance'
 
@@ -62,7 +63,9 @@ const api: MascotaApi = {
     contextMenu: () => ipcRenderer.send(IPC.tabContextMenu),
     onNear: (cb) => listen<number>(IPC.tabNear, cb),
     onInfo: (cb) => listen<TabInfo>(IPC.tabInfo, cb),
-    onPomodoro: (cb) => listen<PomodoroView>(IPC.tabPomodoro, cb)
+    onPomodoro: (cb) => listen<PomodoroView>(IPC.tabPomodoro, cb),
+    onMedia: (cb) => listen<TabMediaView>(IPC.tabMedia, cb),
+    mediaAction: (action) => ipcRenderer.send(IPC.tabMediaAction, action)
   },
   settings: {
     get: () => ipcRenderer.invoke(IPC.settingsGet),

@@ -9,15 +9,38 @@
     <title data-en="Tab">Pestaña</title>
   </head>
   <body>
-    <!-- Tamaño de la píldora abierta: OPEN_PILL en src/main/tabWindow.ts -->
-    <button id="pill" class="pill" type="button" aria-label="Abrir la mascota" data-en-aria-label="Open the mascot">
+    <!-- Tamaño de la píldora abierta: OPEN_PILL y MUSIC_PILL en src/main/tabWindow.ts -->
+    <div id="pill" class="pill" role="button" aria-label="Abrir la mascota" data-en-aria-label="Open the mascot">
       <span class="content">
         <span class="face" aria-hidden="true"><i></i><i></i></span>
         <span id="name" class="name">Mascota</span>
         <kbd id="shortcut" class="kbd"></kbd>
       </span>
+
+      <!-- Lo que suena (como la isla del iPhone) -->
+      <span class="music">
+        <img id="art" class="art" alt="" draggable="false" />
+        <span class="track">
+          <span id="track-title" class="track-title"></span>
+          <span id="track-artist" class="track-artist"></span>
+        </span>
+        <span class="controls">
+          <button class="ctl" type="button" data-action="prev" aria-label="Anterior" data-en-aria-label="Previous">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 6v12 M18 6.5v11L9.5 12z" /></svg>
+          </button>
+          <button id="toggle" class="ctl ctl-main" type="button" data-action="toggle" aria-label="Pausar o reanudar" data-en-aria-label="Play or pause">
+            <svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5h2.6v13H8z M13.4 5.5H16v13h-2.6z" /></svg>
+            <svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13L18.5 12z" /></svg>
+          </button>
+          <button class="ctl" type="button" data-action="next" aria-label="Siguiente" data-en-aria-label="Next">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 6v12 M6 6.5v11L14.5 12z" /></svg>
+          </button>
+        </span>
+        <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
+      </span>
+
       <span id="pomo" class="pomo" aria-hidden="true"></span>
-    </button>
+    </div>
     <script type="module" src="./tab/main.ts"></script>
   </body>
 </html>

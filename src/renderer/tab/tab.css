@@ -32,22 +32,24 @@ body {
   /* Solo las esquinas de abajo: parece que sale del borde de la pantalla. */
   border-radius: 0 0 calc(4px + 13px * var(--near)) calc(4px + 13px * var(--near));
   background: var(--glass-bg);
-  backdrop-filter: blur(30px) saturate(180%);
+  /* Sin backdrop-filter: en una ventana transparente no hay nada detrás que
+     desenfocar (el escritorio no le llega a Chromium) y cuesta GPU en cada fotograma. */
   box-shadow:
     0 calc(8px * var(--near)) calc(24px * var(--near)) rgba(15, 23, 42, calc(0.1 + 0.12 * var(--near))),
     0 0 0 0.5px var(--glass-edge),
     inset 0 -1px 0 var(--glass-shine);
   color: var(--text);
   cursor: default;
+  /* La cercanía llega en pasos (unas 60 veces por segundo); la transición los suaviza. */
   transition:
-    width 90ms linear,
-    height 90ms linear,
-    border-radius 90ms linear,
-    box-shadow 90ms linear,
+    width 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    height 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-radius 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 140ms cubic-bezier(0.22, 1, 0.36, 1),
     transform 160ms var(--spring);
 }
 
-.pill:active {
+.pill:active:not(:has(.ctl:active)) {
   transform: scale(0.96);
 }
 
@@ -119,9 +121,177 @@ body {
   background: color-mix(in srgb, var(--pomo-color) calc(70% * (1 - var(--near))), var(--glass-bg));
 }
 
+/* --- Música: la píldora se vuelve una "isla" oscura con lo que suena --------------
+ * Tamaños: en reposo, carátula pequeña y barritas; abierta, título y controles.
+ * La abierta coincide con MUSIC_PILL en src/main/tabWindow.ts. */
+.music {
+  display: none;
+}
+.pill.has-music {
+  --rest-w: 156px;
+  --rest-h: 28px;
+  --open-w: 320px;
+  --open-h: 56px;
+  justify-content: flex-start;
+  border-radius: 0 0 calc(14px + 10px * var(--near)) calc(14px + 10px * var(--near));
+  background: #0c0c10;
+  color: #f4f5f7;
+  box-shadow:
+    0 calc(8px * var(--near)) calc(24px * var(--near)) rgba(0, 0, 0, calc(0.18 + 0.2 * var(--near))),
+    0 0 0 0.5px rgba(255, 255, 255, 0.08);
+}
+.pill.has-music .content {
+  display: none;
+}
+.pill.has-music .music {
+  display: flex;
+  align-items: center;
+  gap: calc(8px + 4px * var(--near));
+  width: 100%;
+  height: 100%;
+  /* Margen igual por todos los lados de la carátula: (alto - carátula) / 2. */
+  padding: 0 calc(9px + 1px * var(--near)) 0 calc(5px + 3px * var(--near));
+}
+
+.art {
+  flex: none;
+  width: calc(18px + 22px * var(--near));
+  height: calc(18px + 22px * var(--near));
+  border-radius: calc(5px + 5px * var(--near));
+  object-fit: cover;
+  background: linear-gradient(135deg, #3a3d46, #1d1f25);
+  /* Borde fino por encima de la imagen: separa las carátulas claras del fondo. */
+  outline: 0.5px solid rgba(255, 255, 255, 0.16);
+  outline-offset: -0.5px;
+  image-rendering: auto;
+  transition:
+    width 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    height 140ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* Sin carátula: una nota musical. */
+.pill:not(.has-art) .art {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 17.5V6l9-2v11.5' fill='none' stroke='%23a1a4ad' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='17.5' r='2.3' fill='%23a1a4ad'/%3E%3Ccircle cx='16' cy='15.5' r='2.3' fill='%23a1a4ad'/%3E%3C/svg%3E");
+  padding: 18%;
+}
+
+/* Título y artista: aparecen al abrirse. */
+.track {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  opacity: clamp(0, (var(--near) - 0.45) * 3, 1);
+  transition: opacity 90ms linear;
+}
+.track-title,
+.track-artist {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.track-title {
+  font-size: 12.5px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.track-artist {
+  font-size: 11px;
+  color: rgba(244, 245, 247, 0.6);
+}
+
+.controls {
+  flex: none;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  max-width: calc(100px * clamp(0, (var(--near) - 0.4) * 2.5, 1));
+  opacity: clamp(0, (var(--near) - 0.55) * 3, 1);
+  transition: opacity 90ms linear;
+}
+.ctl {
+  all: unset;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: #f4f5f7;
+  transition: background 120ms ease, transform 250ms var(--spring);
+}
+.ctl:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.ctl:active {
+  transform: scale(0.86);
+}
+.ctl svg {
+  width: 17px;
+  height: 17px;
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.ctl-main svg {
+  width: 20px;
+  height: 20px;
+  stroke: none;
+}
+.icon-pause,
+.pill.is-playing .icon-play {
+  display: none;
+}
+.pill.is-playing .icon-pause {
+  display: block;
+}
+
+/* Barritas que bailan mientras suena (solo en reposo, a la derecha). */
+.eq {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  height: 12px;
+  margin-left: auto;
+  overflow: hidden;
+  width: calc(16px * (1 - clamp(0, var(--near) * 2.5, 1)));
+  opacity: calc(1 - clamp(0, var(--near) * 2.5, 1));
+}
+.eq i {
+  width: 3px;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--eye);
+  transform-origin: 50% 100%;
+  transform: scaleY(0.35);
+}
+.pill.is-playing .eq i {
+  animation: eq 900ms ease-in-out infinite;
+}
+.pill.is-playing .eq i:nth-child(2) {
+  animation-duration: 700ms;
+  animation-delay: -250ms;
+}
+.pill.is-playing .eq i:nth-child(3) {
+  animation-duration: 1100ms;
+  animation-delay: -500ms;
+}
+@keyframes eq {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pill,
-  .content {
+  .content,
+  .art {
     transition: none;
+  }
+  .pill.is-playing .eq i {
+    animation: none;
+    transform: scaleY(0.7);
   }
 }
