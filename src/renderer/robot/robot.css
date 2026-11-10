@@ -44,6 +44,11 @@
 
 .cheek { fill: var(--cheek); }
 
+.pomo-track {
+  fill: var(--body-edge);
+  opacity: 0.45;
+}
+
 #hit {
   fill: transparent;
   pointer-events: all;

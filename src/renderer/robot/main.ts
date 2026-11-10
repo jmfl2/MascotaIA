@@ -6,12 +6,14 @@ if (!svg) throw new Error('No se encontró el SVG del robot')
 
 const api = window.mascota.robot
 const robot = createRobot(svg, {
-  setIgnoreMouse: api.setIgnoreMouse,
   dragStart: api.dragStart,
   dragEnd: api.dragEnd,
-  click: api.click
+  click: api.click,
+  dropFiles: api.dropFiles
 })
 
 api.onState(robot.setState)
 api.onCursor(robot.setCursor)
 api.onDragMoving(robot.onDragMoving)
+api.onHover(robot.setHover)
+api.onPomodoro(robot.setPomodoro)

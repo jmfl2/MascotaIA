@@ -5,7 +5,7 @@
  * fotograma: cada estado define una "expresión" (objetivos de los muelles)
  * y los muelles se encargan de que los cambios sean suaves y con rebote.
  */
-import type { CursorOffset, RobotState } from '../../shared/ipc'
+import type { CursorOffset, PomodoroView, RobotState } from '../../shared/ipc'
 import { Spring } from './spring'
 
 /** Parámetros de la cara para cada estado. */
@@ -32,8 +32,17 @@ const EXPRESSIONS: Record<RobotState, Expression> = {
   thinking: { open: 0.72, size: 1, happy: 0, asym: 0.2, tilt: -4, glow: 0.6, cheeks: 0 },
   happy: { open: 1, size: 1.06, happy: 1, asym: 0, tilt: 0, glow: 0.9, cheeks: 1 },
   confused: { open: 1, size: 1, happy: 0, asym: 0.45, tilt: 8, glow: 0.3, cheeks: 0 },
-  sleeping: { open: 0.08, size: 1, happy: 0, asym: 0, tilt: 3, glow: 0, cheeks: 0 }
+  sleeping: { open: 0.08, size: 1, happy: 0, asym: 0, tilt: 3, glow: 0, cheeks: 0 },
+  alert: { open: 1.18, size: 1.14, happy: 0, asym: 0, tilt: 0, glow: 1, cheeks: 0 }
 }
+
+/** Colores de la barrita del pomodoro. */
+const POMODORO_COLORS = { focus: '#ff6b5a', break: '#34c759' }
+/** Ancho máximo de la barrita del pomodoro (igual que #pomo-track en robot.html). */
+const POMODORO_WIDTH = 44
+const POMODORO_MIN_WIDTH = 6
+/** Cada cuánto da un saltito mientras hay un aviso pendiente. */
+const ALERT_HOP_MS = 1400
 
 /** Estados pasajeros: duran un rato y vuelven al estado base. */
 const TRANSIENT_MS: Partial<Record<RobotState, number>> = { happy: 1700, confused: 1900 }
@@ -57,14 +66,16 @@ const s = {
   cheeks: new Spring(0, soft),
   squashX: new Spring(1, { stiffness: 420, damping: 13 }),
   squashY: new Spring(1, { stiffness: 420, damping: 13 }),
-  lift: new Spring(0, { stiffness: 320, damping: 15 })
+  lift: new Spring(0, { stiffness: 320, damping: 15 }),
+  pomo: new Spring(0, { stiffness: 120, damping: 20 }),
+  pomoVisible: new Spring(0, soft)
 }
 
 export interface RobotCallbacks {
-  setIgnoreMouse(ignore: boolean): void
   dragStart(): void
   dragEnd(): Promise<{ moved: boolean }>
   click(): void
+  dropFiles(files: File[]): void
 }
 
 export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
@@ -80,6 +91,8 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
   const bellyLight = $<SVGRectElement>('#belly-light')
   const cheeks = [$<SVGEllipseElement>('#cheek-l'), $<SVGEllipseElement>('#cheek-r')]
   const hit = $<SVGRectElement>('#hit')
+  const pomoGroup = $<SVGGElement>('#pomo')
+  const pomoFill = $<SVGRectElement>('#pomo-fill')
   const eyes = (['#eye-l', '#eye-r'] as const).map((id, i) => {
     const g = $<SVGGElement>(id)
     return {
@@ -96,6 +109,8 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
   let hover = false
   let dragging = false
   let dragMoving = false
+  let dropHover = false
+  let lastHop = 0
   let lastActivity = performance.now()
   const cursorGaze = { x: 0, y: 0 }
 
@@ -106,7 +121,11 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
     const state = current()
     const e = EXPRESSIONS[state]
     s.open.target = e.open
-    s.size.target = e.size * (hover && !dragging ? 1.05 : 1) * (dragMoving ? 1.15 : 1)
+    s.size.target = e.size * (hover && !dragging ? 1.05 : 1) * (dragMoving ? 1.15 : 1) * (dropHover ? 1.2 : 1)
+    if (dropHover) {
+      s.open.target = 1.25
+      s.glow.target = 1
+    }
     s.happy.target = e.happy
     s.asym.target = e.asym
     s.tilt.target = e.tilt
@@ -190,21 +209,13 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
     )
   }
 
-  // --- Ratón: zonas transparentes, arrastre y clic ---------------------------
+  // --- Ratón: encima, arrastre y clic ------------------------------------------
+  /** El proceso principal decide si el cursor está sobre el robot (ver robotWindow.ts). */
   function setHover(value: boolean): void {
     if (value === hover) return
     hover = value
-    cb.setIgnoreMouse(!value)
     refresh()
   }
-
-  window.addEventListener('mousemove', (e) => {
-    const target = e.target as Element | null
-    setHover(!!target?.closest?.('#hit'))
-  })
-  document.documentElement.addEventListener('mouseleave', () => {
-    if (!dragging) setHover(false)
-  })
 
   hit.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return
@@ -240,6 +251,45 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
   hit.addEventListener('pointerup', () => void endPointer())
   hit.addEventListener('lostpointercapture', () => void endPointer())
 
+  // --- Soltar archivos y carpetas encima: se añaden a favoritos --------------------
+  const hasFiles = (e: DragEvent) => !!e.dataTransfer?.types.includes('Files')
+  window.addEventListener('dragover', (e) => {
+    if (!hasFiles(e)) return
+    e.preventDefault()
+    e.dataTransfer!.dropEffect = 'link'
+    if (!dropHover) {
+      dropHover = true
+      noteActivity()
+      s.lift.kick(-120)
+      refresh()
+    }
+  })
+  const endDropHover = () => {
+    if (!dropHover) return
+    dropHover = false
+    refresh()
+  }
+  window.addEventListener('dragleave', (e) => {
+    if (e.relatedTarget === null) endDropHover()
+  })
+  window.addEventListener('drop', (e) => {
+    e.preventDefault()
+    endDropHover()
+    const files = Array.from(e.dataTransfer?.files ?? [])
+    if (files.length) cb.dropFiles(files)
+  })
+
+  // --- Pomodoro ---------------------------------------------------------------------
+  function setPomodoro(view: PomodoroView): void {
+    s.pomoVisible.target = view ? 1 : 0
+    if (view) {
+      // Al cambiar de fase la barra se vacía de golpe y vuelve a crecer.
+      if (view.progress < s.pomo.target - 0.5) s.pomo.value = 0
+      s.pomo.target = view.progress
+      pomoFill.setAttribute('fill', POMODORO_COLORS[view.phase])
+    }
+  }
+
   /** El proceso principal confirma que el ratón se está moviendo: se encoge. */
   function onDragMoving(): void {
     if (!dragging) return
@@ -264,6 +314,13 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
     else if (state === 'sleeping') [gx, gy] = [0, 0.35]
     s.gazeX.target = gx
     s.gazeY.target = gy
+
+    // Con un aviso pendiente, da saltitos para llamar la atención.
+    if (state === 'alert' && now - lastHop > ALERT_HOP_MS) {
+      lastHop = now
+      s.lift.kick(-200)
+      s.squashY.kick(1.6)
+    }
 
     for (const spring of Object.values(s)) spring.update(dt)
 
@@ -308,7 +365,12 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
     const glow = Math.max(0, s.glow.value)
     const pulse = state === 'listening' || state === 'thinking' ? 0.85 + 0.15 * Math.sin(t * 6) : 1
     antennaGlow.setAttribute('opacity', (glow * pulse).toFixed(3))
-    bellyLight.setAttribute('opacity', (0.3 + glow * 0.6).toFixed(3))
+    const pomoVisible = Math.min(1, Math.max(0, s.pomoVisible.value))
+    bellyLight.setAttribute('opacity', ((0.3 + glow * 0.6) * (1 - pomoVisible)).toFixed(3))
+    pomoGroup.setAttribute('opacity', pomoVisible.toFixed(3))
+    // Empieza como un punto (ancho = alto) y crece hasta llenar la pista.
+    const pomoProgress = Math.max(0, Math.min(1, s.pomo.value))
+    pomoFill.setAttribute('width', (POMODORO_MIN_WIDTH + pomoProgress * (POMODORO_WIDTH - POMODORO_MIN_WIDTH)).toFixed(2))
     const cheekOpacity = (Math.max(0, s.cheeks.value) * 0.75).toFixed(3)
     for (const c of cheeks) c.setAttribute('opacity', cheekOpacity)
 
@@ -326,5 +388,5 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
   scheduleBlink()
   requestAnimationFrame(frame)
 
-  return { setState, setCursor, onDragMoving }
+  return { setState, setCursor, setHover, setPomodoro, onDragMoving }
 }
