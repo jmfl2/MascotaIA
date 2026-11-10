@@ -1,0 +1,213 @@
+@import '../shared/theme.css';
+
+/* La ventana mide 720x440: 20 px de margen alrededor para que quepa la sombra. */
+.backdrop {
+  height: 100%;
+  padding: 20px;
+}
+
+.panel {
+  position: relative;
+  width: 680px;
+  border-radius: 24px;
+  background: var(--glass-bg);
+  /* Difumina lo que haya detrás dentro de la ventana (el escritorio no: ver README). */
+  backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    var(--shadow),
+    0 0 0 0.5px var(--glass-edge),
+    inset 0 1px 0 var(--glass-shine);
+  color: var(--text);
+  overflow: hidden;
+  opacity: 0;
+  transform-origin: 50% 0;
+  will-change: transform, opacity;
+}
+
+/* --- Fila de búsqueda --- */
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 64px;
+  padding: 0 20px;
+}
+
+.search-icon {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: var(--text-2);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px 0 8px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--chip-color, var(--accent)) 16%, transparent);
+  color: var(--chip-color, var(--accent));
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.chip[hidden] { display: none; }
+.chip svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 21px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  caret-color: var(--accent);
+}
+.input::placeholder { color: var(--text-3); }
+
+/* --- Resultados --- */
+.results-wrap {
+  position: relative;
+  height: 0;
+  overflow: hidden;
+  border-top: 1px solid transparent;
+  transition: border-color 200ms ease;
+}
+.results-wrap.has-content { border-top-color: var(--separator); }
+
+.results {
+  list-style: none;
+  margin: 0;
+  padding: 8px;
+}
+
+.row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 52px;
+  padding: 0 12px;
+  border-radius: 14px;
+  cursor: default;
+}
+
+.row-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: var(--row-color);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+.row-icon svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.row-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.row-title {
+  font-size: 15px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.row-subtitle {
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+
+.row-kbd { flex: none; }
+
+kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: var(--kbd-bg);
+  color: var(--text-2);
+  font: 500 12px var(--font);
+}
+
+/* Pastilla de selección que se desliza con un muelle */
+.highlight {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--selection);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.message {
+  margin: 0;
+  padding: 0 20px 14px;
+  font-size: 13px;
+  color: var(--danger);
+  min-height: 0;
+}
+.message:empty { display: none; }
+
+/* --- Pie --- */
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 38px;
+  padding: 0 18px;
+  border-top: 1px solid var(--separator);
+  font-size: 12px;
+  color: var(--text-3);
+}
+.footer span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.footer kbd {
+  min-width: 18px;
+  height: 18px;
+  font-size: 11px;
+  padding: 0 4px;
+}
+.footer-right { margin-left: auto; }

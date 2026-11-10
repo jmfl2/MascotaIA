@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' ws://localhost:*; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Barra de comandos</title>
+  </head>
+  <body>
+    <div id="backdrop" class="backdrop">
+      <div id="panel" class="panel" role="dialog" aria-label="Barra de comandos">
+        <div class="search-row">
+          <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M10.5 4a6.5 6.5 0 1 0 0 13a6.5 6.5 0 0 0 0-13z M15.3 15.3L20 20" />
+          </svg>
+          <span id="chip" class="chip" hidden></span>
+          <input
+            id="input"
+            class="input"
+            type="text"
+            spellcheck="false"
+            autocomplete="off"
+            aria-label="Buscar"
+            aria-controls="results"
+            aria-autocomplete="list"
+            maxlength="500"
+          />
+        </div>
+        <div id="results-wrap" class="results-wrap">
+          <div id="highlight" class="highlight" aria-hidden="true"></div>
+          <ul id="results" class="results" role="listbox"></ul>
+          <p id="message" class="message" role="status" aria-live="polite"></p>
+        </div>
+        <footer class="footer">
+          <span><kbd>↑</kbd><kbd>↓</kbd> elegir</span>
+          <span><kbd>↵</kbd> abrir</span>
+          <span><kbd>Tab</kbd> comando</span>
+          <span><kbd>Esc</kbd> cerrar</span>
+          <span id="shortcut-hint" class="footer-right"></span>
+        </footer>
+      </div>
+    </div>
+    <script type="module" src="./bar/main.ts"></script>
+  </body>
+</html>
