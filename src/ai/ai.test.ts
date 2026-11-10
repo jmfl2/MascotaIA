@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { parseMarkdown, parseInline } from './markdown'
 import { NdjsonSplitter } from './ndjson'
-import { createOllamaClient, OllamaError } from './ollama'
+import { createOllamaClient, KEEP_ALIVE, OllamaError } from './ollama'
 import { parseInterpretation } from './prompts'
 
 /** Respuesta HTTP en streaming troceada a mano, como llegaría por la red. */
@@ -76,6 +76,19 @@ describe('cliente de Ollama', () => {
     const promise = createOllamaClient(fake).chat({ model: 'm', messages: [], signal: controller.signal })
     controller.abort()
     await expect(promise).rejects.toMatchObject({ code: 'aborted' })
+  })
+
+  it('suelta el modelo de memoria al momento y por defecto lo deja poco tiempo', async () => {
+    const bodies: Array<Record<string, unknown>> = []
+    const fake = (async (_url: string, init: RequestInit) => {
+      bodies.push(JSON.parse(String(init.body)))
+      return new Response('{}')
+    }) as unknown as typeof fetch
+    const client = createOllamaClient(fake)
+    await client.unload('m')
+    await client.warmup('m')
+    expect(bodies[0]).toMatchObject({ model: 'm', keep_alive: 0 })
+    expect(bodies[1]).toMatchObject({ model: 'm', keep_alive: KEEP_ALIVE })
   })
 })
 

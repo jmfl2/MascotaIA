@@ -11,7 +11,7 @@ import { COMMANDS, type CommandContext, type Outcome } from '../commands'
 import { suggestFor, type Ranked } from '../commands/engine'
 import type { AppInfo, CommandMeta, ExecuteRequest, ExecuteResponse, QueryRequest, QueryResponse, ResultView } from '../shared/ipc'
 import { sendToAi } from './ai/aiChat'
-import { aiStatus, interpret, pullModel, refreshAiStatus, startOllama } from './ai/aiService'
+import { aiStatus, interpret, pullModel, refreshAiStatus, startOllama, warmUpModel } from './ai/aiService'
 import { expandShortLink } from '../security/expand'
 import { toast } from './bubbleWindow'
 import { openSettings } from './settingsWindow'
@@ -115,7 +115,11 @@ function toView({ command, suggestion: s }: Ranked): ResultView {
 
 export async function query(req: QueryRequest): Promise<QueryResponse> {
   // Los comandos de IA necesitan saber si Ollama está listo; sin texto basta con el último estado.
-  if (req.commandId && ['ai', 'summarize', 'explain'].includes(req.commandId)) await refreshAiStatus()
+  // Entrar en uno de ellos es la señal de que vas a usar la IA: se precalienta el modelo.
+  if (req.commandId && ['ai', 'summarize', 'explain'].includes(req.commandId)) {
+    await refreshAiStatus()
+    warmUpModel()
+  }
   const rows = await suggestFor(req.commandId, req.text, commandContext)
   // Solo guardamos si sigue siendo la consulta más reciente.
   if (req.seq >= lastSeq) {

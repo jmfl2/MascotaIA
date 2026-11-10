@@ -3,7 +3,7 @@
  * de lenguaje natural. Todo es opcional: si Ollama no está, la app funciona
  * igual y las filas de la barra explican qué falta.
  */
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync, type ChildProcess } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { delimiter, dirname, join } from 'node:path'
 import type { AiStatus, Outcome } from '../../commands'
@@ -75,6 +75,23 @@ export function setAiModel(model: string): void {
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
+/** El `ollama serve` que arrancamos nosotros (null si Ollama ya estaba en marcha). */
+let ownServer: ChildProcess | null = null
+
+/**
+ * Ajustes de Ollama para gastar menos memoria. Solo se aplican al servidor que
+ * arranca la mascota; si Ollama ya estaba abierto, manda su propia configuración.
+ * - Una sola petición a la vez: cada petición en paralelo reserva su propio contexto.
+ * - Un solo modelo cargado.
+ * - Flash attention y caché de contexto en 8 bits: la caché ocupa la mitad.
+ */
+const LOW_MEMORY_ENV = {
+  OLLAMA_NUM_PARALLEL: '1',
+  OLLAMA_MAX_LOADED_MODELS: '1',
+  OLLAMA_FLASH_ATTENTION: '1',
+  OLLAMA_KV_CACHE_TYPE: 'q8_0'
+}
+
 /**
  * Arranca el servidor de Ollama (`ollama serve`) en segundo plano y sin ventana.
  * No se usa "ollama app.exe" (la app de bandeja): lanzada desde aquí, su
@@ -84,9 +101,19 @@ export async function startOllama(): Promise<Outcome> {
   const exe = findOllamaExe()
   if (!exe) return { kind: 'error', message: 'Ollama no está instalado' }
   try {
-    const child = spawn(exe, ['serve'], { cwd: dirname(exe), detached: true, stdio: 'ignore', windowsHide: true })
+    const child = spawn(exe, ['serve'], {
+      cwd: dirname(exe),
+      env: { ...process.env, ...LOW_MEMORY_ENV },
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true
+    })
     child.on('error', (err) => console.warn('[ia] No se pudo arrancar Ollama:', err))
+    child.on('exit', () => {
+      if (ownServer === child) ownServer = null
+    })
     child.unref()
+    ownServer = child
   } catch {
     return { kind: 'error', message: 'No se pudo arrancar Ollama' }
   }
@@ -133,12 +160,14 @@ export async function pullModel(): Promise<Outcome> {
 
 let warmedAt = 0
 let warming = false
-const WARM_EVERY_MS = 8 * 60_000
+/** Algo menos que KEEP_ALIVE: mientras tanto el modelo sigue cargado. */
+const WARM_EVERY_MS = 2 * 60_000
 
 /**
- * Precalienta el modelo (lo carga en la GPU) si la IA está lista y no se ha
- * usado hace poco. Se llama al abrir la barra: así, cuando se pide algo, el
- * modelo ya está cargado. Ollama lo libera solo tras unos minutos sin uso.
+ * Precalienta el modelo (lo carga en memoria) si la IA está lista y no se ha
+ * usado hace poco. Se llama al entrar en un comando de IA (ia, resumir,
+ * explicar), no al abrir la barra: así no ocupa varios GB cada vez que abres
+ * una app o buscas algo. Ollama lo libera solo tras KEEP_ALIVE sin uso.
  */
 export function warmUpModel(): void {
   if (status.state !== 'ready' || warming || Date.now() - warmedAt < WARM_EVERY_MS) return
@@ -157,6 +186,32 @@ export function warmUpModel(): void {
 /** Marca el modelo como "en uso" (las peticiones normales también lo mantienen cargado). */
 export function markModelUsed(): void {
   warmedAt = Date.now()
+}
+
+/** Saca el modelo de la memoria ahora mismo (desde la bandeja). */
+export async function freeAiMemory(): Promise<void> {
+  warmedAt = 0
+  try {
+    await client.unload(status.model)
+    toast('🧹 Memoria de la IA liberada')
+  } catch {
+    toast('Ollama no está en marcha: no hay nada que liberar')
+  }
+}
+
+/**
+ * Al salir de la app: si arrancamos nosotros Ollama, lo cerramos (con sus
+ * procesos hijos, que son los que tienen el modelo en memoria). Si ya estaba
+ * abierto, solo descargamos nuestro modelo y lo dejamos funcionando.
+ */
+export function shutdownAi(): void {
+  const pid = ownServer?.pid
+  if (pid) {
+    spawnSync('taskkill', ['/pid', String(pid), '/T', '/F'], { windowsHide: true, timeout: 3000 })
+    ownServer = null
+  } else if (status.state === 'ready') {
+    void client.unload(status.model, 1000).catch(() => {})
+  }
 }
 
 /** Mensaje para el usuario cuando la IA no está disponible. */

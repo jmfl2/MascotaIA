@@ -407,11 +407,17 @@ npx vitest run src/security/expand.integration.test.ts
   esperas de más de unos 24 días.
 - **IA bajo demanda y con confirmación:** interpretar solo consulta al modelo
   si eliges la fila, y el resultado se muestra antes de ejecutarse.
-- **Modelo precalentado:** al abrir la barra con la IA lista, se carga el modelo
-  en la GPU en segundo plano (la primera carga puede tardar decenas de
-  segundos; después, cada respuesta empieza en menos de 1 s). Todas las
-  peticiones usan el mismo tamaño de contexto: si cambiara, Ollama recargaría
-  el modelo.
+- **Modelo precalentado, pero solo cuando hace falta:** al entrar en `ia`,
+  `resumir` o `explicar` se carga el modelo en segundo plano. Abrir la barra
+  para otra cosa no lo carga, porque un modelo de 4B ocupa varios GB de RAM.
+  Ollama lo suelta tras 3 minutos sin uso, y desde la bandeja (*IA local →
+  Liberar memoria*) se puede soltar al momento. Todas las peticiones usan el
+  mismo tamaño de contexto: si cambiara, Ollama recargaría el modelo.
+- **Ollama en modo ahorro:** el `ollama serve` que arranca la mascota atiende
+  una petición a la vez, con un solo modelo cargado, flash attention y caché de
+  contexto en 8 bits. Al salir de la mascota se cierra ese servidor. Si Ollama
+  ya estaba abierto por su cuenta, se respeta su configuración y solo se
+  descarga el modelo.
 - **`ollama serve` y no la app de bandeja de Ollama:** al arrancar Ollama desde
   la mascota se lanza solo el servidor, sin ventana. Lanzada desde Electron, la
   app de bandeja no llegaba a levantar su servidor.

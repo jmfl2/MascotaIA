@@ -16,6 +16,13 @@ export const OLLAMA_URL = 'http://127.0.0.1:11434'
  */
 export const CONTEXT_SIZE = 8192
 
+/**
+ * Cuánto tiempo deja Ollama el modelo en memoria tras usarlo. Un modelo de 4B
+ * ocupa varios GB de RAM/VRAM: mejor soltarlo pronto que tenerlo ocupado
+ * mientras no se usa (volver a cargarlo desde la caché de disco tarda segundos).
+ */
+export const KEEP_ALIVE = '3m'
+
 export type OllamaErrorCode = 'unreachable' | 'timeout' | 'model-missing' | 'aborted' | 'bad-response'
 
 const MESSAGES: Record<OllamaErrorCode, string> = {
@@ -154,7 +161,7 @@ export function createOllamaClient(fetchFn: FetchFn = fetch, baseUrl = OLLAMA_UR
           stream: true,
           format: opts.format,
           options: { num_ctx: CONTEXT_SIZE, ...opts.options },
-          keep_alive: opts.keepAlive ?? '10m'
+          keep_alive: opts.keepAlive ?? KEEP_ALIVE
         }),
         signal: opts.signal,
         timeoutMs: opts.firstByteTimeoutMs ?? 60_000
@@ -175,12 +182,22 @@ export function createOllamaClient(fetchFn: FetchFn = fetch, baseUrl = OLLAMA_UR
     },
 
     /** Carga el modelo en memoria sin generar nada, para que la primera respuesta sea rápida. */
-    async warmup(model: string, keepAlive = '10m'): Promise<void> {
+    async warmup(model: string, keepAlive = KEEP_ALIVE): Promise<void> {
       await request('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model, keep_alive: keepAlive, options: { num_ctx: CONTEXT_SIZE } }),
         timeoutMs: 180_000
+      })
+    },
+
+    /** Saca el modelo de la memoria ya (keep_alive 0). */
+    async unload(model: string, timeoutMs = 3000): Promise<void> {
+      await request('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, keep_alive: 0 }),
+        timeoutMs
       })
     },
 

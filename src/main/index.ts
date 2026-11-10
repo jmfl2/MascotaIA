@@ -23,7 +23,7 @@ import {
   repositionBubble
 } from './bubbleWindow'
 import { chatSnapshot, copyAnswer, resetChat, sendToAi, stopAi } from './ai/aiChat'
-import { aiStatus, onAiStatusChange, pullModel, refreshAiStatus, setAiModel, startOllama, warmUpModel } from './ai/aiService'
+import { aiStatus, freeAiMemory, onAiStatusChange, pullModel, refreshAiStatus, setAiModel, shutdownAi, startOllama } from './ai/aiService'
 import { appInfo, execute, query } from './commandRunner'
 import { startChatter } from './chatter'
 import { handleDroppedPaths, isClipboardEnabled, setClipboardEnabled, startFeatures } from './features'
@@ -63,7 +63,10 @@ app.on('window-all-closed', () => {
   /* no salir */
 })
 
-app.on('will-quit', () => globalShortcut.unregisterAll())
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll()
+  shutdownAi()
+})
 
 function start(): void {
   denyAllPermissions()
@@ -76,8 +79,9 @@ function start(): void {
   // El robot escucha mientras la barra está abierta; el bocadillo lo sigue al moverse.
   onBarVisibilityChange((open) => {
     robotMood.setBarOpen(open)
-    // Por si se instaló o arrancó Ollama mientras tanto; y precalienta el modelo.
-    if (open) void refreshAiStatus().then(warmUpModel)
+    // Por si se instaló o arrancó Ollama mientras tanto. El modelo no se carga
+    // aquí: solo al entrar en un comando de IA (ver commandRunner.query).
+    if (open) void refreshAiStatus()
   })
   onRobotMoved(repositionBubble)
 
@@ -110,6 +114,7 @@ function start(): void {
     setAiModel,
     startOllama: () => void startOllama(),
     pullModel: () => void pullModel(),
+    freeAiMemory: () => void freeAiMemory(),
     openSettings,
     robotName: () => getConfig().personality.name,
     changed: notifySettingsChanged,

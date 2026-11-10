@@ -19,6 +19,7 @@ export interface TrayActions {
   setAiModel(model: string): void
   startOllama(): void
   pullModel(): void
+  freeAiMemory(): void
   openSettings(): void
   robotName(): string
   /** Tras cambiar algo desde el menú (para que la ventana de ajustes se entere). */
@@ -44,6 +45,7 @@ function aiMenu(actions: TrayActions): MenuItemConstructorOptions[] {
   ]
   if (s.state === 'not-running') items.push({ label: 'Iniciar Ollama', click: () => actions.startOllama() })
   if (s.state === 'no-model') items.push({ label: `Descargar ${s.model}`, click: () => actions.pullModel() })
+  if (s.state === 'ready') items.push({ label: 'Liberar memoria', click: () => actions.freeAiMemory() })
   if (s.models.length > 1 || (s.models.length === 1 && !s.models.includes(s.model))) {
     items.push(
       { type: 'separator' },
