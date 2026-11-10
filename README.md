@@ -421,6 +421,12 @@ npx vitest run src/security/expand.integration.test.ts
 - **`ollama serve` y no la app de bandeja de Ollama:** al arrancar Ollama desde
   la mascota se lanza solo el servidor, sin ventana. Lanzada desde Electron, la
   app de bandeja no llegaba a levantar su servidor.
+- **Iconos de apps desde el shell de Windows:** `app.getFileIcon` da como mucho
+  32 px, pone la flecha de acceso directo y no sirve para las apps de la Store.
+  Por eso, tras indexar, un único PowerShell pide al shell los iconos a 256 px
+  sin superposiciones (`src/main/services/iconExtractor.ts`) y los reduce a
+  64 px. Tarda unos segundos en segundo plano; mientras tanto se ve el de
+  Electron. Las rutas le llegan por la entrada estándar, nunca dentro del script.
 - **Skins por variables CSS:** cada skin es una lista de colores en
   `src/shared/appearance.ts` que se aplica como variables CSS al SVG. Así una
   skin nueva es una línea de código y los degradados, ojos y accesorios la

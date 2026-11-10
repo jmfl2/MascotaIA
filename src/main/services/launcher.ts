@@ -19,6 +19,7 @@ import { existsSync, readdirSync, statSync } from 'node:fs'
 import { basename, extname, isAbsolute, join, parse } from 'node:path'
 import type { LaunchTarget, Outcome } from '../../commands'
 import { normalize, matchScore } from '../../commands/match'
+import { extractIcons, lowPriority } from './iconExtractor'
 import { arrayOf, isNum, isStr, newId, readJson, writeJson } from './jsonFile'
 
 interface Entry {
@@ -40,6 +41,8 @@ interface Favorite {
 }
 
 const FAVORITES_FILE = 'favorites.json'
+/** Iconos ya extraídos, para no repetir el trabajo en cada arranque. */
+const ICONS_FILE = 'icons.json'
 const REFRESH_AFTER_MS = 10 * 60_000
 const FAVORITE_BOOST = 15
 const SHORTCUT_EXT = new Set(['.lnk', '.url', '.appref-ms'])
@@ -52,7 +55,47 @@ let index: Entry[] = []
 let indexedAt = 0
 let indexing: Promise<void> | null = null
 let favorites: Favorite[] | null = null
+/** Iconos de Electron (32 px), solo mientras no llegan los buenos. */
 const iconCache = new Map<string, string | null>()
+/** Iconos en alta resolución por elemento (ruta o shell:AppsFolder\<AppID>). */
+const hiResIcons = new Map<string, string>()
+/** Elementos ya pedidos al extractor (con o sin éxito), para no repetirlos. */
+const requestedIcons = new Set<string>()
+let iconQueue: Promise<void> = Promise.resolve()
+
+interface CachedIcon {
+  target: string
+  /** Fecha de modificación del acceso directo (0 en apps de la Store). */
+  mtime: number
+  url: string
+}
+let iconDisk: Map<string, CachedIcon> | null = null
+
+function loadIconDisk(): Map<string, CachedIcon> {
+  iconDisk ??= new Map(
+    readJson(
+      ICONS_FILE,
+      (raw) =>
+        arrayOf(raw, (c) =>
+          isStr(c.target, 1000) && isNum(c.mtime) && isStr(c.url, 70_000) && c.url.startsWith('data:image/png;base64,')
+            ? { target: c.target, mtime: c.mtime, url: c.url }
+            : null
+        ),
+      () => []
+    ).map((c) => [c.target, c])
+  )
+  return iconDisk
+}
+
+/** Fecha de modificación de una ruta (si cambia el acceso directo, se vuelve a sacar el icono). */
+function mtimeOf(target: string): number {
+  if (!isAbsolute(target)) return 0
+  try {
+    return Math.floor(statSync(target).mtimeMs)
+  } catch {
+    return -1
+  }
+}
 
 // --- Favoritos -----------------------------------------------------------------
 
@@ -95,6 +138,7 @@ export function addFavorites(paths: string[]): string[] {
   if (added.length) {
     favorites = list.slice(0, 200)
     writeJson(FAVORITES_FILE, favorites)
+    loadIcons(favorites.map(favoriteEntry))
   }
   return added
 }
@@ -138,7 +182,7 @@ function scanShortcuts(dir: string, depth = 0, out = new Map<string, string>()):
 function getStartApps(): Promise<Array<{ name: string; appId: string }>> {
   const script = '[Console]::OutputEncoding=[Text.Encoding]::UTF8; Get-StartApps | Select-Object Name,AppID | ConvertTo-Json -Compress'
   return new Promise((resolve) => {
-    execFile(
+    const child = execFile(
       'powershell.exe',
       ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', script],
       { timeout: 20_000, windowsHide: true, maxBuffer: 8 * 1024 * 1024, encoding: 'utf8' },
@@ -162,6 +206,7 @@ function getStartApps(): Promise<Array<{ name: string; appId: string }>> {
         }
       }
     )
+    lowPriority(child.pid)
   })
 }
 
@@ -192,6 +237,7 @@ async function buildIndex(): Promise<void> {
   index = entries
   indexedAt = Date.now()
   console.log(`[lanzador] ${entries.length} apps indexadas`)
+  loadIcons(allEntries())
 }
 
 /** Reindexa en segundo plano si el índice es viejo. Devuelve la promesa en curso. */
@@ -206,7 +252,46 @@ export function refreshIndex(force = false): Promise<void> {
 
 // --- Iconos ----------------------------------------------------------------------
 
-async function iconFor(path: string | undefined): Promise<string | undefined> {
+/** Qué se le pide al shell de Windows para sacar el icono de una entrada. */
+function iconTarget(e: Entry): string | undefined {
+  if (e.path) return e.path
+  if (e.appId && SAFE_APP_ID.test(e.appId)) return `shell:AppsFolder\\${e.appId}`
+  return undefined
+}
+
+/**
+ * Extrae en segundo plano los iconos en alta resolución que falten. Los lotes
+ * van en cola (un solo PowerShell a la vez); mientras tanto se usa el de Electron.
+ */
+function loadIcons(entries: Entry[]): void {
+  const disk = loadIconDisk()
+  const missing: string[] = []
+  for (const target of entries.map(iconTarget)) {
+    if (!target || requestedIcons.has(target)) continue
+    requestedIcons.add(target)
+    const cached = disk.get(target)
+    if (cached && cached.mtime === mtimeOf(target)) hiResIcons.set(target, cached.url)
+    else missing.push(target)
+  }
+  if (!missing.length) return
+  iconQueue = iconQueue.then(async () => {
+    const icons = await extractIcons(missing)
+    for (const [target, url] of icons) {
+      hiResIcons.set(target, url)
+      disk.set(target, { target, mtime: mtimeOf(target), url })
+    }
+    console.log(`[lanzador] ${icons.size}/${missing.length} iconos nuevos en alta resolución`)
+    // Se guardan solo los de apps que siguen existiendo.
+    const alive = new Set(allEntries().map(iconTarget))
+    writeJson(ICONS_FILE, [...disk.values()].filter((c) => alive.has(c.target)))
+  })
+}
+
+async function iconFor(e: Entry): Promise<string | undefined> {
+  const target = iconTarget(e)
+  const hiRes = target && hiResIcons.get(target)
+  if (hiRes) return hiRes
+  const path = e.path
   if (!path) return undefined
   if (iconCache.has(path)) return iconCache.get(path) ?? undefined
   try {
@@ -221,7 +306,7 @@ async function iconFor(path: string | undefined): Promise<string | undefined> {
 }
 
 async function toTarget(e: Entry, score: number): Promise<LaunchTarget> {
-  return { id: e.id, name: e.name, detail: e.detail, favorite: e.favorite, score, icon: await iconFor(e.path) }
+  return { id: e.id, name: e.name, detail: e.detail, favorite: e.favorite, score, icon: await iconFor(e) }
 }
 
 // --- API para los comandos ---------------------------------------------------------
