@@ -1,0 +1,36 @@
+# Instalador de Windows (npm run dist -> dist/Mascota-Setup-<versión>.exe)
+appId: com.jmfl2.mascota # igual que setAppUserModelId en src/main/index.ts (notificaciones)
+productName: Mascota
+copyright: Copyright © 2026 jmfl2
+
+directories:
+  output: dist
+  buildResources: assets
+
+# Solo lo compilado y los iconos: el código fuente no va en la app.
+files:
+  - out/**
+  - assets/**
+  - package.json
+
+win:
+  target:
+    - target: nsis
+      arch: x64
+  icon: assets/icon.png
+
+nsis:
+  artifactName: Mascota-Setup-${version}.${ext}
+  # Instalador con pasos (elegir carpeta), para el usuario actual: no pide permisos de administrador.
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Mascota
+  runAfterFinish: true
+  # Al desinstalar se conservan tus notas, recordatorios y ajustes (%APPDATA%\mascota).
+  deleteAppDataOnUninstall: false
+  installerLanguages:
+    - es_ES
+  language: '3082'

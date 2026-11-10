@@ -51,6 +51,28 @@ npm run dev
 | `npm run preview`   | Ejecuta la versión compilada.                              |
 | `npm run typecheck` | Solo comprueba los tipos.                                  |
 | `npm run icons`     | Regenera los iconos PNG de `assets/`.                      |
+| `npm run dist`      | Todo lo de `build` y además genera el instalador en `dist/`. |
+
+## Instalar
+
+```powershell
+npm run dist
+```
+
+Genera `dist\Mascota-Setup-<versión>.exe`. Al ejecutarlo:
+
+- Se instala solo para tu usuario: no pide permisos de administrador. Puedes
+  elegir la carpeta, y crea accesos directos en el escritorio y en el menú
+  Inicio.
+- Al desinstalar se conservan tus notas, recordatorios y ajustes
+  (`%APPDATA%\mascota`).
+- **Windows SmartScreen** avisará de que el instalador es de un editor
+  desconocido, porque no está firmado con un certificado de pago. Pulsa
+  *Más información → Ejecutar de todas formas*.
+- Si quieres que se abra al encender el PC, actívalo después en *Ajustes →
+  Iniciar con Windows* o desde la bandeja.
+- No puede estar abierta a la vez que `npm run dev`: es la misma app y solo
+  se permite una.
 
 ## Cómo se usa
 
