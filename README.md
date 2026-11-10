@@ -5,7 +5,9 @@ cotidianas. Haz clic en él o pulsa **Ctrl+Espacio** y escribe: busca en la web,
 abre apps, guarda notas, ponte recordatorios o arranca un pomodoro. Si copias un
 texto, el robot te ofrece buscarlo, traducirlo, guardarlo o resumirlo. Y con
 **IA local** (Ollama) entiende lo que le pides en lenguaje natural y puedes
-chatear con él sin que nada salga de tu PC.
+chatear con él sin que nada salga de tu PC. Además te avisa si un enlace que
+copias parece una trampa, y puedes cambiarle el color, ponerle accesorios,
+un nombre y decidir cuánto habla.
 
 Hecho con **Electron + TypeScript + Vite**, interfaz web y animaciones de muelle.
 
@@ -79,10 +81,70 @@ Empieza con un prefijo y un espacio: el prefijo se convierte en una etiqueta.
 | `ia`, `chat`, `?`     | Chat con la IA    | `ia ¿qué es una API REST?`                                       |
 | `resumir`, `resume`   | Resumir           | `resumir` (el portapapeles) · `resumir <texto>`                  |
 | `explicar`, `explica` | Explicar          | `explicar` (el portapapeles) · `explicar git rebase -i`          |
+| `link`, `enlace`, `url` | Comprobar enlace | `link https://bit.ly/...` · sin texto: el del portapapeles       |
+| `ajustes`, `config`, `skin` | Ajustes      | Abre la ventana de ajustes                                       |
 
 Formatos de tiempo que entiende `rec`: `10m`, `45s`, `2h`, `1h30m`,
 `en 20 minutos`, `1 hora y 30 minutos`, `18:30`, `a las 9`, `mañana 9:00`,
 `mañana a las 8`. Si la hora ya pasó hoy, se programa para mañana.
+
+### Detector de enlaces sospechosos
+
+Al **copiar un enlace** (o pegarlo en la barra, donde aparece
+*🛡️ Comprobar el enlace antes de abrirlo*), el robot lo analiza **en local** y
+te da un veredicto con los motivos:
+
+| Veredicto | Qué hace el robot |
+| --------- | ----------------- |
+| 🚨 **Parece una trampa** | Se pone en alerta, suena un aviso y el bocadillo se queda hasta que respondas. La opción por defecto es **No abrir**. |
+| ⚠️ **Ojo con este enlace** | Se extraña y te enseña los motivos. |
+| 🔗 **No veo señales de alarma** | Solo lo comenta si estaba acortado (para decirte adónde lleva) o si está en modo *Hablador*. Nunca dice "seguro". |
+
+Qué mira:
+
+- **Typosquatting:** `paypa1.com`, `rnicrosoft.com`, `netflx.com`… Compara con
+  más de 40 marcas que se suelen suplantar (bancos españoles, Correos, la
+  Agencia Tributaria, PayPal, Amazon, Microsoft…) teniendo en cuenta números en
+  lugar de letras, "rn" por "m" y la distancia de edición.
+- **Homógrafos:** letras de otros alfabetos que parecen latinas (`аpple.com` con
+  una "а" cirílica) y dominios en punycode (`xn--`).
+- **La marca en el sitio equivocado:** `paypal.com.verificar-cuenta.top` (el
+  sitio real es `verificar-cuenta.top`), `santander-clientes.com`,
+  `paypal.xyz`.
+- **Trucos de la URL:** usuario escondido antes de una `@`
+  (`https://www.google.com@evil.example`), una IP en lugar de dominio, puertos
+  raros, `javascript:` o `file:`, `http` sin cifrar.
+- **Señales que suman:** dominios terminados en `.top`, `.xyz`, `.zip`…,
+  muchos subdominios o guiones, palabras como "verificar", "login" o "pago", y
+  descargas de programas (sobre todo con doble extensión, `factura.pdf.exe`).
+- **Acortadores** (bit.ly, t.co, tinyurl…): se pregunta **solo al acortador**
+  adónde lleva, sin seguir la redirección, y se analiza el destino. Es la única
+  petición de red del detector, y solo se hace con acortadores conocidos.
+
+Se activa o desactiva en *Ajustes → Avisar de enlaces sospechosos*.
+
+> Es un filtro de heurísticas, no un antivirus: puede no detectar una trampa
+> bien hecha y puede avisar de algún enlace legítimo. Ante la duda, no abras.
+
+### Skins y personalidad
+
+Abre los **Ajustes** desde la bandeja, con clic derecho sobre el robot o con
+`ajustes` en la barra. Los cambios se ven al momento en la vista previa (el
+robot te sigue con la mirada; haz clic en él) y en el escritorio.
+
+- **Color:** Clásico, Medianoche, Menta, Coral, Lavanda y Grafito.
+- **Accesorios** (combinables): auriculares, gorro (sustituye a la antena),
+  gafas (se mueven con la mirada) y pajarita.
+- **Nombre:** cómo se llama el robot. Lo usa la IA ("Te llamas…") y aparece al
+  saludar.
+- **Cuánto habla:**
+  - *Discreto:* solo avisos importantes (recordatorios, pomodoro y enlaces
+    sospechosos).
+  - *Normal:* además te ofrece ayuda cuando copias algo.
+  - *Hablador:* además te saluda al arrancar, te anima a mitad del pomodoro, te
+    sugiere un descanso tras más de una hora seguida y te riñe si trasnochas.
+    Como mucho, un comentario cada 20 minutos y nunca encima de otro aviso.
+- **Tono de la IA:** cercano, formal (trata de usted) o divertido.
 
 ### IA local (Ollama)
 
@@ -200,9 +262,10 @@ mascota/
 │   │   ├── ai/              # estado de Ollama, interpretación y conversación
 │   │   └── services/        # notas, recordatorios, pomodoro, lanzador, portapapeles
 │   ├── preload/         # puente seguro entre las páginas y Electron (window.mascota)
-│   ├── renderer/        # interfaz: robot.html, bar.html y bubble.html
+│   ├── renderer/        # interfaz: robot, barra, bocadillo y ajustes (settings.html)
 │   ├── commands/        # un módulo por comando + motor de sugerencias (sin Electron)
-│   ├── shared/          # tipos y canales IPC comunes
+│   ├── security/        # detector de enlaces sospechosos y desacortador (sin Electron)
+│   ├── shared/          # tipos IPC, skins y personalidad
 │   └── ai/              # cliente de Ollama, prompts, NDJSON y Markdown seguro (sin Electron)
 ├── assets/              # iconos (generados con npm run icons)
 └── scripts/
@@ -268,6 +331,10 @@ npm test                      # tests unitarios (no necesitan Ollama)
 set OLLAMA_TEST=1
 npx vitest run src/ai/ollama.integration.test.ts
 # otro modelo: set OLLAMA_MODEL=qwen2.5:7b
+
+# Contra un acortador real (youtu.be), sin visitar el destino:
+set NET_TEST=1
+npx vitest run src/security/expand.integration.test.ts
 ```
 
 ## Seguridad
@@ -290,6 +357,14 @@ npx vitest run src/ai/ollama.integration.test.ts
   como lista y sin shell. Los archivos soltados se comprueban (ruta absoluta y
   existente) antes de guardarlos.
 - **Portapapeles:** ver *Portapapeles inteligente* arriba.
+- **Enlaces:** el análisis es local. Al desacortar solo se contacta con hosts de
+  la lista de acortadores, por https, con `redirect: 'manual'` y sin leer el
+  cuerpo de la respuesta; en cuanto el siguiente salto no es un acortador, no se
+  hace ninguna petición más. Ante un enlace sospechoso, la acción por defecto es
+  no abrirlo.
+- **Ajustes:** la skin, los accesorios y la personalidad se validan contra
+  listas cerradas en el proceso principal; el nombre se limpia de caracteres de
+  control e invisibles y se recorta a 20 caracteres.
 - **IA:** el modelo nunca ejecuta nada. Para interpretar, devuelve un JSON
   restringido por esquema (`format` de Ollama) con un comando de una lista
   cerrada y un texto; se valida y se coloca en la barra como si lo hubieras
@@ -340,6 +415,11 @@ npx vitest run src/ai/ollama.integration.test.ts
 - **`ollama serve` y no la app de bandeja de Ollama:** al arrancar Ollama desde
   la mascota se lanza solo el servidor, sin ventana. Lanzada desde Electron, la
   app de bandeja no llegaba a levantar su servidor.
+- **Skins por variables CSS:** cada skin es una lista de colores en
+  `src/shared/appearance.ts` que se aplica como variables CSS al SVG. Así una
+  skin nueva es una línea de código y los degradados, ojos y accesorios la
+  siguen solos. El SVG del robot vive en `robotSvg.ts` y lo comparten el
+  escritorio y la vista previa de los ajustes.
 - **Electron 45:** la API del portapapeles es asíncrona (como `navigator.clipboard`)
   y los formatos nativos de Windows se consultan con
   `clipboard.has('electron application/osclipboard;format="…"')`.
@@ -349,4 +429,4 @@ npx vitest run src/ai/ollama.integration.test.ts
 - [x] **Fase 1:** robot en el escritorio, barra de comandos, Google, YouTube, Maps, GitHub y el traductor.
 - [x] **Fase 2:** portapapeles inteligente, recordatorios y Pomodoro, lanzador de apps y favoritos, notas rápidas.
 - [x] **Fase 3:** IA local con Ollama (lenguaje natural, resúmenes y chat).
-- [ ] **Fase 4:** avisos de enlaces sospechosos, skins y personalidad.
+- [x] **Fase 4:** avisos de enlaces sospechosos, skins y personalidad.
