@@ -13,7 +13,8 @@ import {
   type CursorOffset,
   type MascotaApi,
   type PomodoroView,
-  type RobotState
+  type RobotState,
+  type TabInfo
 } from '../shared/ipc'
 import type { Appearance, SettingsView } from '../shared/appearance'
 
@@ -45,7 +46,16 @@ const api: MascotaApi = {
     onDragMoving: (cb) => listen<void>(IPC.robotDragMoving, () => cb()),
     onPomodoro: (cb) => listen<PomodoroView>(IPC.robotPomodoro, cb),
     onAppearance: (cb) => listen<Appearance>(IPC.robotAppearance, cb),
-    contextMenu: () => ipcRenderer.send(IPC.robotContextMenu)
+    contextMenu: () => ipcRenderer.send(IPC.robotContextMenu),
+    onEnter: (cb) => listen<void>(IPC.robotEnter, () => cb()),
+    onLeave: (cb) => listen<void>(IPC.robotLeave, () => cb())
+  },
+  tab: {
+    click: () => ipcRenderer.send(IPC.tabClick),
+    contextMenu: () => ipcRenderer.send(IPC.tabContextMenu),
+    onNear: (cb) => listen<number>(IPC.tabNear, cb),
+    onInfo: (cb) => listen<TabInfo>(IPC.tabInfo, cb),
+    onPomodoro: (cb) => listen<PomodoroView>(IPC.tabPomodoro, cb)
   },
   settings: {
     get: () => ipcRenderer.invoke(IPC.settingsGet),

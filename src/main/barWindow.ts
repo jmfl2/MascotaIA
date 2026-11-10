@@ -10,11 +10,14 @@ import { BrowserWindow, screen } from 'electron'
 import { IPC } from '../shared/ipc'
 import { loadPage, PRELOAD_PATH } from './paths'
 import { hardenWebContents, secureWebPreferences } from './security'
+import { getConfig } from './store'
 
 /** Panel de 680 px + 20 px de margen por lado para la sombra. */
 const BAR_SIZE = { width: 720, height: 480 }
 /** Altura a la que aparece, como fracción de la pantalla. */
 const BAR_TOP = 0.2
+/** Modo pestaña: deja sitio arriba para el robot, que cuelga de la pestaña. */
+const BAR_MIN_TOP_DOCKED = 185
 /** Si el renderer no confirma el cierre en este tiempo, ocultamos igualmente. */
 const CLOSE_TIMEOUT_MS = 400
 
@@ -72,9 +75,10 @@ export function createBarWindow(): BrowserWindow {
 /** Centra la barra en la pantalla donde está el cursor. */
 function placeOnActiveDisplay(w: BrowserWindow): void {
   const area = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea
+  const top = area.height * BAR_TOP
   w.setBounds({
     x: Math.round(area.x + (area.width - BAR_SIZE.width) / 2),
-    y: Math.round(area.y + area.height * BAR_TOP),
+    y: Math.round(area.y + (getConfig().dockTop ? Math.max(top, BAR_MIN_TOP_DOCKED) : top)),
     ...BAR_SIZE
   })
 }

@@ -119,7 +119,7 @@ nameInput.addEventListener('input', () => {
   nameTimer = window.setTimeout(() => updatePersonality({ name: nameInput.value }), 400)
 })
 
-for (const key of ['linkGuard', 'clipboardEnabled', 'startWithWindows'] as const) {
+for (const key of ['dockTop', 'linkGuard', 'clipboardEnabled', 'startWithWindows'] as const) {
   el<HTMLInputElement>(key).addEventListener('change', (e) => api.update({ [key]: (e.target as HTMLInputElement).checked }))
 }
 
@@ -152,6 +152,7 @@ function render(): void {
   hint.textContent = CHATTINESS.find((c) => c.id === view!.personality.chattiness)?.hint ?? ''
   setTone(view.personality.aiTone)
 
+  el<HTMLInputElement>('dockTop').checked = view.dockTop
   el<HTMLInputElement>('linkGuard').checked = view.linkGuard
   el<HTMLInputElement>('clipboardEnabled').checked = view.clipboardEnabled
   el<HTMLInputElement>('startWithWindows').checked = view.startWithWindows

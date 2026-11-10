@@ -149,6 +149,8 @@ export interface SettingsView {
   clipboardEnabled: boolean
   linkGuard: boolean
   startWithWindows: boolean
+  /** Modo pestaña: el robot se esconde en una pestaña arriba de la pantalla. */
+  dockTop: boolean
 }
 
 export type SettingsPatch = Partial<SettingsView>

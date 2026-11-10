@@ -1,0 +1,127 @@
+@import '../shared/theme.css';
+
+/*
+ * La píldora interpola entre "en reposo" (una rayita fina pegada al borde) y
+ * "abierta" según --near (0..1), que manda el proceso principal según lo cerca
+ * que está el cursor. La transición corta suaviza los saltos entre lecturas.
+ */
+:root {
+  --near: 0;
+  --rest-w: 96px;
+  --rest-h: 6px;
+  --open-w: 208px;
+  --open-h: 34px;
+  --spring: linear(0, 0.08, 0.26, 0.47, 0.66, 0.81, 0.92, 0.99, 1.03, 1.04, 1.04, 1.03, 1.02, 1.01, 1, 1);
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.pill {
+  all: unset;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  width: calc(var(--rest-w) + (var(--open-w) - var(--rest-w)) * var(--near));
+  height: calc(var(--rest-h) + (var(--open-h) - var(--rest-h)) * var(--near));
+  /* Solo las esquinas de abajo: parece que sale del borde de la pantalla. */
+  border-radius: 0 0 calc(4px + 13px * var(--near)) calc(4px + 13px * var(--near));
+  background: var(--glass-bg);
+  backdrop-filter: blur(30px) saturate(180%);
+  box-shadow:
+    0 calc(8px * var(--near)) calc(24px * var(--near)) rgba(15, 23, 42, calc(0.1 + 0.12 * var(--near))),
+    0 0 0 0.5px var(--glass-edge),
+    inset 0 -1px 0 var(--glass-shine);
+  color: var(--text);
+  cursor: default;
+  transition:
+    width 90ms linear,
+    height 90ms linear,
+    border-radius 90ms linear,
+    box-shadow 90ms linear,
+    transform 160ms var(--spring);
+}
+
+.pill:active {
+  transform: scale(0.96);
+}
+
+.content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  white-space: nowrap;
+  /* El contenido aparece cuando ya hay sitio. */
+  opacity: clamp(0, (var(--near) - 0.55) * 3, 1);
+  transition: opacity 90ms linear;
+}
+
+/* Carita: la pantalla del robot con sus dos ojos. */
+.face {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 26px;
+  height: 18px;
+  border-radius: 7px;
+  background: linear-gradient(var(--screen-top), var(--screen-bottom));
+}
+.face i {
+  width: 4px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--eye);
+  box-shadow: 0 0 4px var(--eye-glow);
+}
+
+.name {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.kbd {
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--text-2);
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--kbd-bg);
+}
+.kbd:empty {
+  display: none;
+}
+
+/* Progreso del pomodoro: una línea en el borde de abajo. */
+.pomo {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: calc(var(--pomo, 0) * 100%);
+  background: var(--pomo-color, #ff6b5a);
+  opacity: 0;
+  transition: width 1s linear, opacity 200ms ease;
+}
+.pill.has-pomo .pomo {
+  opacity: 1;
+}
+/* En reposo la rayita entera se tiñe del color del pomodoro, para verlo de un vistazo. */
+.pill.has-pomo {
+  background: color-mix(in srgb, var(--pomo-color) calc(70% * (1 - var(--near))), var(--glass-bg));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill,
+  .content {
+    transition: none;
+  }
+}

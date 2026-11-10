@@ -367,7 +367,9 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
     const up = Math.max(-6, -y)
     const shadowScale = Math.min(1.1, Math.max(0.55, 1 - up * 0.012))
     shadow.setAttribute('transform', `translate(100 186) scale(${shadowScale.toFixed(3)} 1) translate(-100 -186)`)
-    shadow.setAttribute('opacity', Math.min(1, Math.max(0.35, 1 - up * 0.015)).toFixed(3))
+    // Al bajar o subir de la pestaña (muy arriba) la sombra desaparece del todo.
+    const away = Math.min(1, Math.max(0, 1 + y / 120))
+    shadow.setAttribute('opacity', (Math.min(1, Math.max(0.35, 1 - up * 0.015)) * away).toFixed(3))
 
     face.setAttribute(
       'transform',
@@ -413,5 +415,25 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
   scheduleBlink()
   requestAnimationFrame(frame)
 
-  return { setState, setCursor, setHover, setPomodoro, onDragMoving }
+  // --- Modo pestaña: bajar y subir --------------------------------------------------
+  /** Baja desde arriba (la pestaña) con un rebote al llegar. */
+  function enter(): void {
+    if (s.lift.target < 0) {
+      // Estaba subiendo: se da la vuelta desde donde esté.
+      s.lift.target = 0
+    } else {
+      s.lift.value = -210
+      s.lift.velocity = 0
+      s.lift.target = 0
+      s.squashY.kick(1.4)
+    }
+    noteActivity()
+  }
+
+  /** Sube hasta salir por arriba; el proceso principal oculta la ventana al terminar. */
+  function leave(): void {
+    s.lift.target = -230
+  }
+
+  return { setState, setCursor, setHover, setPomodoro, onDragMoving, enter, leave }
 }

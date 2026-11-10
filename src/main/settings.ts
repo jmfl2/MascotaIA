@@ -4,6 +4,7 @@
  */
 import { validateAppearance, validatePersonality, type SettingsView } from '../shared/appearance'
 import { IPC } from '../shared/ipc'
+import { isDocked, setDocked } from './dock'
 import { isClipboardEnabled, setClipboardEnabled, setLinkGuard } from './features'
 import { sendAppearance } from './robotWindow'
 import { getSettingsWindow } from './settingsWindow'
@@ -24,7 +25,8 @@ export function getSettingsView(): SettingsView {
     personality: cfg.personality,
     clipboardEnabled: isClipboardEnabled(),
     linkGuard: cfg.linkGuard,
-    startWithWindows: startsWithWindows()
+    startWithWindows: startsWithWindows(),
+    dockTop: isDocked()
   }
 }
 
@@ -44,6 +46,7 @@ export function applySettingsPatch(raw: unknown): void {
   if (typeof patch.clipboardEnabled === 'boolean') setClipboardEnabled(patch.clipboardEnabled)
   if (typeof patch.linkGuard === 'boolean') setLinkGuard(patch.linkGuard)
   if (typeof patch.startWithWindows === 'boolean') setStartsWithWindows(patch.startWithWindows)
+  if (typeof patch.dockTop === 'boolean') setDocked(patch.dockTop)
 
   notifySettingsChanged()
 }

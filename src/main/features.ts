@@ -13,6 +13,7 @@ import { openExternalUrl, openLink } from './commandRunner'
 import { chatterMoment } from './chatter'
 import { robotMood } from './robotMood'
 import { sendPomodoro } from './robotWindow'
+import { sendTabPomodoro } from './tabWindow'
 import { translateTarget, type OfferDecision } from './services/clipboardFilter'
 import { clipboardWatcher } from './services/clipboardWatcher'
 import { addFavorites } from './services/launcher'
@@ -60,7 +61,9 @@ function startPomodoro(): void {
   let halfSaid = false
   pomodoroService.setEvents({
     tick: (status, progress) => {
-      sendPomodoro(status ? { phase: status.phase, progress } : null)
+      const view = status ? { phase: status.phase, progress } : null
+      sendPomodoro(view)
+      sendTabPomodoro(view) // en modo pestaña, el progreso se ve en la pestaña
       // Modo hablador: ánimo a mitad de la concentración.
       if (status?.phase === 'focus' && progress >= 0.5 && !halfSaid) {
         halfSaid = true

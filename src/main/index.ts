@@ -33,11 +33,11 @@ import {
   dragEnd,
   dragStart,
   getRobotWindow,
-  isRobotVisible,
-  onRobotMoved,
-  setRobotVisible
+  onRobotMoved
 } from './robotWindow'
 import { denyAllPermissions, isFrom } from './security'
+import { isDocked, mascotVisible, needRobot, setDocked, setMascotVisible, showInitialTab } from './dock'
+import { createTabWindow, getTabWindow, setTabInfo } from './tabWindow'
 import { applySettingsPatch, getSettingsView, notifySettingsChanged, onSettingsChange } from './settings'
 import { closeSettings, getSettingsWindow, openSettings } from './settingsWindow'
 import { refreshIndex } from './services/launcher'
@@ -73,12 +73,18 @@ function start(): void {
   registerIpc()
 
   const robotWin = createRobotWindow()
+  const tabWin = createTabWindow()
+  tabWin.once('ready-to-show', showInitialTab)
+  const refreshTabInfo = () => setTabInfo(getConfig().personality.name, getConfig().shortcut)
+  refreshTabInfo()
+  onSettingsChange(refreshTabInfo)
   createBarWindow()
   const bubbleWin = createBubbleWindow()
 
   // El robot escucha mientras la barra está abierta; el bocadillo lo sigue al moverse.
   onBarVisibilityChange((open) => {
     robotMood.setBarOpen(open)
+    needRobot('bar', open) // en modo pestaña, el robot baja mientras la barra está abierta
     // Por si se instaló o arrancó Ollama mientras tanto. El modelo no se carga
     // aquí: solo al entrar en un comando de IA (ver commandRunner.query).
     if (open) void refreshAiStatus()
@@ -105,8 +111,10 @@ function start(): void {
   setInterval(() => void refreshAiStatus(), 60_000)
 
   const tray = createTray({
-    toggleRobot: () => setRobotVisible(!isRobotVisible()),
-    isRobotVisible,
+    toggleRobot: () => setMascotVisible(!mascotVisible()),
+    isRobotVisible: mascotVisible,
+    isDocked,
+    setDocked,
     openBar,
     changeShortcut: (accelerator) => registerShortcut(accelerator, toggleBar),
     isClipboardEnabled,
@@ -125,6 +133,12 @@ function start(): void {
   })
   onAiStatusChange(() => tray.rebuild())
   onSettingsChange(() => tray.rebuild())
+}
+
+/** Cambia de modo desde un menú y avisa a los ajustes y a la bandeja. */
+function toggleDock(docked: boolean): void {
+  setDocked(docked)
+  notifySettingsChanged()
 }
 
 /** Valida que algo sea un string de longitud razonable. */
@@ -162,7 +176,26 @@ function registerIpc(): void {
       { label: 'Abrir barra', click: () => openBar() },
       { label: 'Ajustes…', click: () => openSettings() },
       { type: 'separator' },
-      { label: 'Ocultar robot', click: () => setRobotVisible(false) }
+      { label: 'Esconder en una pestaña arriba', type: 'checkbox', checked: isDocked(), click: (item) => toggleDock(item.checked) },
+      { type: 'separator' },
+      { label: isDocked() ? 'Ocultar pestaña' : 'Ocultar robot', click: () => setMascotVisible(false) }
+    ]).popup({ window: win })
+  })
+
+  // --- Pestaña (modo pestaña) ---
+  const tab = () => getTabWindow()?.webContents
+  ipcMain.on(IPC.tabClick, (event) => {
+    if (isFrom(event, tab())) toggleBar()
+  })
+  ipcMain.on(IPC.tabContextMenu, (event) => {
+    const win = getTabWindow()
+    if (!isFrom(event, tab()) || !win) return
+    Menu.buildFromTemplate([
+      { label: 'Abrir barra', click: () => openBar() },
+      { label: 'Ajustes…', click: () => openSettings() },
+      { type: 'separator' },
+      { label: 'Robot siempre en pantalla', click: () => toggleDock(false) },
+      { label: 'Ocultar pestaña', click: () => setMascotVisible(false) }
     ]).popup({ window: win })
   })
 

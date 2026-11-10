@@ -19,6 +19,13 @@ export interface CursorOffset {
 /** Progreso del pomodoro para la barrita del pecho del robot (null = no hay). */
 export type PomodoroView = { phase: 'focus' | 'break'; progress: number } | null
 
+/** Lo que enseña la pestaña al acercarse. */
+export interface TabInfo {
+  name: string
+  /** Atajo ya formateado para mostrar, p. ej. "Ctrl+Espacio". */
+  shortcut: string
+}
+
 // --- Barra ----------------------------------------------------------------------
 
 /** Lo que la barra necesita saber de cada comando para pintar la etiqueta. */
@@ -126,6 +133,14 @@ export const IPC = {
   robotPomodoro: 'robot:pomodoro',
   robotAppearance: 'robot:appearance',
   robotContextMenu: 'robot:context-menu',
+  robotEnter: 'robot:enter',
+  robotLeave: 'robot:leave',
+  // Pestaña de arriba (modo pestaña)
+  tabClick: 'tab:click',
+  tabNear: 'tab:near',
+  tabInfo: 'tab:info',
+  tabPomodoro: 'tab:pomodoro',
+  tabContextMenu: 'tab:context-menu',
   // Ajustes
   settingsGet: 'settings:get',
   settingsUpdate: 'settings:update',
@@ -179,6 +194,17 @@ export interface MascotaApi {
     onAppearance(cb: (appearance: Appearance) => void): Unsubscribe
     /** Clic derecho sobre el robot: menú nativo. */
     contextMenu(): void
+    /** Modo pestaña: baja desde la pestaña / vuelve a subir. */
+    onEnter(cb: () => void): Unsubscribe
+    onLeave(cb: () => void): Unsubscribe
+  }
+  tab: {
+    click(): void
+    contextMenu(): void
+    /** Cercanía del cursor, de 0 (lejos) a 1 (encima). */
+    onNear(cb: (near: number) => void): Unsubscribe
+    onInfo(cb: (info: TabInfo) => void): Unsubscribe
+    onPomodoro(cb: (view: PomodoroView) => void): Unsubscribe
   }
   settings: {
     get(): Promise<SettingsView | null>

@@ -5,13 +5,14 @@
  * Cada bocadillo tiene acciones cuyo código se queda aquí, en el proceso
  * principal; el renderer solo envía "pulsé la acción X del bocadillo Y".
  * Si el robot está oculto, los avisos importantes salen como notificación
- * de Windows.
+ * de Windows. En modo pestaña, el robot baja para decirlo y luego vuelve a subir.
  */
 import { BrowserWindow, Notification, screen } from 'electron'
 import { IPC, type BubbleAction, type BubbleView } from '../shared/ipc'
 import { newId } from './services/jsonFile'
 import { loadPage, PRELOAD_PATH } from './paths'
-import { getRobotBounds, isRobotVisible, ROBOT_SIZE } from './robotWindow'
+import { needRobot, robotAvailable } from './dock'
+import { getRobotBounds, ROBOT_SIZE } from './robotWindow'
 import { hardenWebContents, secureWebPreferences } from './security'
 
 /** Ancho fijo; el alto se ajusta al contenido. Incluye 14 px de margen para la sombra. */
@@ -107,12 +108,14 @@ export function repositionBubble(): void {
 export function showBubble(spec: BubbleSpec): string | null {
   if (active && PRIORITY[spec.kind] < PRIORITY[active.view.kind]) return null
 
-  if (!isRobotVisible()) {
+  if (!robotAvailable()) {
     if (spec.notifyIfHidden && Notification.isSupported()) {
       new Notification({ title: spec.title, body: spec.text ?? '', silent: !spec.chime }).show()
     }
     return null
   }
+  // En modo pestaña baja el robot; va antes de elegir el lado, que depende de dónde esté.
+  needRobot('bubble', true)
 
   // Sustituye al anterior (sin llamar a su onDismiss: no lo cerró el usuario).
   active?.spec.onClose?.()
@@ -149,6 +152,7 @@ export function closeBubble(): void {
   if (!active || !w) return
   active.spec.onClose?.()
   active = null
+  needRobot('bubble', false)
   w.webContents.send(IPC.bubbleHide)
   hideTimer = setTimeout(hideNow, HIDE_TIMEOUT_MS)
 }

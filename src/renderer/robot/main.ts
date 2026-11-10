@@ -19,6 +19,8 @@ api.onDragMoving(robot.onDragMoving)
 api.onHover(robot.setHover)
 api.onPomodoro(robot.setPomodoro)
 api.onAppearance((appearance) => applyAppearance(svg, appearance))
+api.onEnter(robot.enter)
+api.onLeave(robot.leave)
 
 // Clic derecho: menú nativo (ajustes, ocultar...).
 window.addEventListener('contextmenu', (e) => {

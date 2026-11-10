@@ -15,8 +15,13 @@ export interface Config {
   robotPosition: { x: number; y: number } | null
   /** Atajo global para abrir la barra, en formato de acelerador de Electron. */
   shortcut: string
-  /** Si el robot se muestra al arrancar. */
+  /** Si el robot (o la pestaña, en modo pestaña) se muestra al arrancar. */
   robotVisible: boolean
+  /**
+   * Modo pestaña: en vez del robot siempre en pantalla, una pestaña fina arriba.
+   * El robot baja de ella al hacerle clic (o cuando tiene algo que decir).
+   */
+  dockTop: boolean
   /** Portapapeles inteligente: ofrecer acciones al copiar texto. */
   clipboardEnabled: boolean
   /** Modelo de Ollama para la IA local. */
@@ -37,6 +42,7 @@ const DEFAULTS: Config = {
   robotPosition: null,
   shortcut: DEFAULT_SHORTCUT,
   robotVisible: true,
+  dockTop: true,
   clipboardEnabled: true,
   aiModel: DEFAULT_AI_MODEL,
   linkGuard: true,
@@ -60,6 +66,7 @@ function validate(raw: unknown): Config {
   }
   if (typeof r.shortcut === 'string' && r.shortcut.length > 0 && r.shortcut.length < 64) cfg.shortcut = r.shortcut
   if (typeof r.robotVisible === 'boolean') cfg.robotVisible = r.robotVisible
+  if (typeof r.dockTop === 'boolean') cfg.dockTop = r.dockTop
   if (typeof r.clipboardEnabled === 'boolean') cfg.clipboardEnabled = r.clipboardEnabled
   if (typeof r.aiModel === 'string' && MODEL_NAME.test(r.aiModel)) cfg.aiModel = r.aiModel
   if (typeof r.linkGuard === 'boolean') cfg.linkGuard = r.linkGuard

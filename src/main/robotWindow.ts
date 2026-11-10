@@ -13,6 +13,7 @@ import { IPC, type CursorOffset, type PomodoroView, type RobotState } from '../s
 import { loadPage, PRELOAD_PATH } from './paths'
 import { hardenWebContents, secureWebPreferences } from './security'
 import { getConfig, setConfig } from './store'
+import { tabAnchor } from './tabWindow'
 
 /** Tamaño de la ventana en DIP. Deja margen para sombra, rebotes y el "asomarse". */
 export const ROBOT_SIZE = { width: 200, height: 200 }
@@ -24,6 +25,10 @@ const HIT = { x: 26, y: 20, width: 148, height: 152, radius: 56 }
 const EDGE_MARGIN = 24
 /** Píxeles que hay que mover el ratón para que cuente como arrastre y no como clic. */
 const DRAG_THRESHOLD = 4
+/** Modo pestaña: cuánto se mete la ventana bajo la píldora (su parte de arriba es transparente). */
+const DOCK_TUCK = 12
+/** Lo que tarda en subir antes de ocultar la ventana (coincide con el muelle del renderer). */
+const LEAVE_MS = 380
 
 let win: BrowserWindow | null = null
 let cursorTimer: NodeJS.Timeout | null = null
@@ -31,6 +36,7 @@ let lastCursor = { x: Number.NaN, y: Number.NaN }
 /** null = desconocido: el próximo movimiento del cursor lo recalcula. */
 let hovering: boolean | null = null
 let onMoved: () => void = () => {}
+let leaveTimer: NodeJS.Timeout | null = null
 
 interface DragState {
   startCursor: { x: number; y: number }
@@ -120,7 +126,9 @@ export function createRobotWindow(): BrowserWindow {
   hardenWebContents(win.webContents)
 
   win.once('ready-to-show', () => {
-    if (getConfig().robotVisible) win?.showInactive()
+    // En modo pestaña empieza escondido: baja cuando se le llama.
+    const { robotVisible, dockTop } = getConfig()
+    if (robotVisible && !dockTop) win?.showInactive()
   })
   // Al cargar (y en cada recarga en desarrollo) se le envía su skin.
   win.webContents.on('did-finish-load', () => sendAppearance(getConfig().appearance))
@@ -133,6 +141,55 @@ export function createRobotWindow(): BrowserWindow {
 
   void loadPage(win, 'robot')
   return win
+}
+
+// --- Modo pestaña -------------------------------------------------------------
+// El robot cuelga de la pestaña de arriba: baja al llamarlo y sube al terminar.
+
+/** ¿Está fuera (visible y sin estar subiendo)? */
+export function isRobotOut(): boolean {
+  return isRobotVisible() && !leaveTimer
+}
+
+/** Baja el robot desde la pestaña. Si ya está fuera, no hace nada. */
+export function enterDocked(): void {
+  const w = getRobotWindow()
+  if (!w) return
+  if (leaveTimer) {
+    // Estaba subiendo: vuelve a bajar desde donde esté.
+    clearTimeout(leaveTimer)
+    leaveTimer = null
+    w.webContents.send(IPC.robotEnter)
+    return
+  }
+  if (w.isVisible()) return
+  // Al volver a mostrarse, se recalcula si el cursor está encima.
+  hovering = null
+  lastCursor = { x: Number.NaN, y: Number.NaN }
+  w.setIgnoreMouseEvents(true, { forward: true })
+  const anchor = tabAnchor()
+  moveTo(anchor.centerX - ROBOT_SIZE.width / 2, anchor.bottom - DOCK_TUCK)
+  w.webContents.send(IPC.robotEnter)
+  w.showInactive()
+}
+
+/** Sube el robot a la pestaña y oculta la ventana al terminar. */
+export function leaveDocked(): void {
+  const w = getRobotWindow()
+  if (!w || !w.isVisible() || leaveTimer) return
+  w.webContents.send(IPC.robotLeave)
+  leaveTimer = setTimeout(() => {
+    leaveTimer = null
+    getRobotWindow()?.hide()
+  }, LEAVE_MS)
+}
+
+/** Al volver al modo libre: a su sitio de siempre. */
+export function placeFree(): void {
+  if (leaveTimer) clearTimeout(leaveTimer)
+  leaveTimer = null
+  const pos = initialPosition()
+  moveTo(pos.x, pos.y)
 }
 
 export function getRobotBounds(): Rectangle | null {
@@ -205,7 +262,8 @@ function stopCursorTracking(): void {
 
 export function dragStart(): void {
   const w = getRobotWindow()
-  if (!w || drag) return
+  // En modo pestaña el robot cuelga de la pestaña: no se arrastra (el clic sigue funcionando).
+  if (!w || drag || getConfig().dockTop) return
   const [x, y] = w.getPosition()
   const state: DragState = {
     startCursor: screen.getCursorScreenPoint(),

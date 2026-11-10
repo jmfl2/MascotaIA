@@ -13,7 +13,7 @@ export function assetPath(file: string): string {
  * Carga una página del renderer: en desarrollo desde el servidor de Vite
  * (recarga en caliente) y en producción desde los archivos compilados.
  */
-export function loadPage(win: BrowserWindow, page: 'robot' | 'bar' | 'bubble' | 'settings'): Promise<void> {
+export function loadPage(win: BrowserWindow, page: 'robot' | 'bar' | 'bubble' | 'settings' | 'tab'): Promise<void> {
   const devUrl = process.env['ELECTRON_RENDERER_URL']
   if (!app.isPackaged && devUrl) {
     return win.loadURL(`${devUrl}/${page}.html`)

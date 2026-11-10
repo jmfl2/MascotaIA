@@ -190,10 +190,25 @@ robot te sigue con la mirada; haz clic en él) y en el escritorio.
 | `Retroceso`        | Con el campo vacío, quita la etiqueta                          |
 | `Esc`              | Cerrar (en el chat, si está respondiendo: detener)             |
 
+### La pestaña de arriba
+
+Por defecto el robot no está siempre en pantalla: vive escondido en una
+pestaña fina en el borde de arriba, en el centro.
+
+- **Acércate** con el ratón y la pestaña crece y muestra su nombre y el atajo.
+- **Haz clic** (o pulsa el atajo) y el robot baja de la pestaña y se abre la
+  barra. Al cerrarla, vuelve a subir.
+- Cuando tiene algo que decirte (un recordatorio, lo que copias…) baja con el
+  bocadillo y sube al terminar.
+- Con un pomodoro en marcha, la rayita se tiñe de rojo o verde y, al acercarte,
+  se ve el progreso.
+- **Clic derecho** en la pestaña: ajustes, ocultarla o volver al robot siempre
+  en pantalla. También en *Ajustes → En pantalla* y en la bandeja.
+
 ### El robot
 
-- **Arrástralo** a donde quieras: se encoge al cogerlo, rebota al soltarlo y
-  recuerda dónde lo dejaste.
+- **Arrástralo** a donde quieras (con el robot siempre en pantalla): se encoge
+  al cogerlo, rebota al soltarlo y recuerda dónde lo dejaste.
 - **Suelta encima** una carpeta, un archivo o un acceso directo y se añade a
   favoritos (luego: `a nombre`).
 - Te sigue con la mirada, escucha cuando abres la barra, se alegra al ejecutar
@@ -256,13 +271,14 @@ mascota/
 ├── src/
 │   ├── main/            # proceso principal
 │   │   ├── index.ts         # arranque e IPC
-│   │   ├── *Window.ts       # ventanas: robot, barra y bocadillo
+│   │   ├── *Window.ts       # ventanas: robot, pestaña, barra y bocadillo
+│   │   ├── dock.ts          # modo pestaña: cuándo baja y sube el robot
 │   │   ├── commandRunner.ts # ejecuta los comandos y guarda sus acciones
 │   │   ├── features.ts      # conecta recordatorios, pomodoro, portapapeles y favoritos
 │   │   ├── ai/              # estado de Ollama, interpretación y conversación
 │   │   └── services/        # notas, recordatorios, pomodoro, lanzador, portapapeles
 │   ├── preload/         # puente seguro entre las páginas y Electron (window.mascota)
-│   ├── renderer/        # interfaz: robot, barra, bocadillo y ajustes (settings.html)
+│   ├── renderer/        # interfaz: robot, pestaña, barra, bocadillo y ajustes
 │   ├── commands/        # un módulo por comando + motor de sugerencias (sin Electron)
 │   ├── security/        # detector de enlaces sospechosos y desacortador (sin Electron)
 │   ├── shared/          # tipos IPC, skins y personalidad
@@ -393,8 +409,15 @@ npx vitest run src/security/expand.integration.test.ts
   con esquinas de 24 px en una ventana sin bordes (impone unos 8 px). Se eligió
   priorizar la forma de iOS: el panel es translúcido, con brillo, borde fino y
   sombra suave, pero no difumina el escritorio que hay detrás.
-- **Tres ventanas:** el robot (200×200), la barra centrada como Spotlight y el
-  bocadillo, que se coloca al lado del robot con más sitio y lo sigue al moverlo.
+- **Cuatro ventanas:** el robot (200×200), la pestaña de arriba, la barra
+  centrada como Spotlight y el bocadillo, que se coloca al lado del robot con
+  más sitio y lo sigue al moverlo.
+- **Modo pestaña con «motivos»:** el robot está fuera mientras haya algún
+  motivo (barra abierta, bocadillo visible) y sube 0,9 s después de que no
+  quede ninguno. Así, si se cierra la barra y llega un aviso, no sube y baja.
+  Escondido, su ventana está oculta y no gasta en animarse. La cercanía del
+  ratón a la pestaña la calcula el proceso principal (sondeando más despacio si
+  el cursor está lejos), igual que el robot sabe si lo tienes encima.
 - **Muelles:** la barra y el bocadillo usan `motion` (`type: 'spring'`). El robot
   usa un muelle propio (`src/renderer/robot/spring.ts`) en un único bucle por
   fotograma, porque sus objetivos cambian continuamente (la mirada sigue al
