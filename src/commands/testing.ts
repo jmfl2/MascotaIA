@@ -1,5 +1,5 @@
 /** Contexto falso en memoria para probar los comandos sin Electron. */
-import type { CommandContext, LaunchTarget, Note, PomodoroStatus, Reminder } from './types'
+import type { AiStatus, CommandContext, LaunchTarget, Note, Outcome, PomodoroStatus, Reminder } from './types'
 
 export function fakeContext(now = new Date(2026, 10, 10, 12, 0, 0).getTime()) {
   const state = {
@@ -9,7 +9,11 @@ export function fakeContext(now = new Date(2026, 10, 10, 12, 0, 0).getTime()) {
     reminders: [] as Reminder[],
     pomodoro: null as PomodoroStatus | null,
     apps: [] as LaunchTarget[],
-    launched: [] as string[]
+    launched: [] as string[],
+    clipboard: '',
+    ai: { state: 'ready', model: 'gemma3:4b', models: ['gemma3:4b'] } as AiStatus,
+    interpretResult: { kind: 'activate', commandId: 'youtube', text: 'pan casero' } as Outcome,
+    interpreted: [] as string[]
   }
   let seq = 0
   const id = () => String(++seq)
@@ -21,6 +25,16 @@ export function fakeContext(now = new Date(2026, 10, 10, 12, 0, 0).getTime()) {
       return { kind: 'close', mood: 'happy' }
     },
     copyText: (text) => void state.copied.push(text),
+    clipboardText: async () => state.clipboard,
+    ai: {
+      status: () => state.ai,
+      interpret: async (text) => {
+        state.interpreted.push(text)
+        return state.interpretResult
+      },
+      start: async () => ({ kind: 'refresh' }),
+      pull: async () => ({ kind: 'close' })
+    },
     notes: {
       all: () => state.notes,
       add: (text) => {

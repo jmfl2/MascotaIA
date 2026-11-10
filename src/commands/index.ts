@@ -7,6 +7,7 @@
  *   2. Añádelo a la lista `COMMANDS` de abajo.
  * La barra lo mostrará y el proceso principal se encargará del resto.
  */
+import { ai, explain, summarize } from './ai'
 import { github } from './github'
 import { google } from './google'
 import { launcher } from './launcher'
@@ -27,13 +28,16 @@ export type { BuildResult } from './web'
 export const COMMANDS: readonly CommandModule[] = [
   google,
   launcher,
+  ai,
   youtube,
   maps,
   github,
   translate,
   notes,
   reminders,
-  pomodoro
+  pomodoro,
+  summarize,
+  explain
 ]
 
 export function findCommandById(id: string): CommandModule | undefined {

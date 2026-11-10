@@ -4,7 +4,10 @@
  * - Sin texto: la lista de comandos disponibles.
  * - Con texto sin prefijo: destinos web (Google primero) mezclados con apps.
  *   Si una app encaja muy bien ("spoti" -> Spotify), va la primera.
+ *   Si es una frase y la IA está lista, se ofrece "Interpretar con IA"
+ *   justo debajo de Google (solo consulta al modelo si se elige).
  */
+import { ai } from './ai'
 import { COMMANDS, findCommandById } from './index'
 import type { CommandContext, CommandModule, Suggestion } from './types'
 
@@ -19,6 +22,8 @@ export const STRONG_MATCH = 75
 export const MIN_GLOBAL_SCORE = 40
 const MAX_GLOBAL_RANKED = 3
 const MAX_ROWS = 60
+/** Palabras mínimas para ofrecer la interpretación con IA. */
+export const MIN_INTERPRET_WORDS = 3
 
 async function safeSuggest(command: CommandModule, query: string, ctx: CommandContext): Promise<Ranked[]> {
   try {
@@ -59,6 +64,24 @@ export async function suggestFor(commandId: string | null, text: string, ctx: Co
     .sort((a, b) => (b.suggestion.score ?? 0) - (a.suggestion.score ?? 0))
     .slice(0, MAX_GLOBAL_RANKED)
 
+  const words = text.trim().split(/\s+/).length
+  const interpretRows: Ranked[] =
+    words >= MIN_INTERPRET_WORDS && ctx.ai.status().state === 'ready'
+      ? [
+          {
+            command: ai,
+            suggestion: {
+              title: '✨ Interpretar con IA',
+              subtitle: 'La IA elige el comando adecuado y tú lo confirmas',
+              run: () => ctx.ai.interpret(text)
+            }
+          }
+        ]
+      : []
+
   const strong = (rankedRows[0]?.suggestion.score ?? 0) >= STRONG_MATCH
-  return strong ? [...rankedRows, ...webRows] : [...webRows.slice(0, 1), ...rankedRows, ...webRows.slice(1)]
+  const [first, ...restWeb] = webRows
+  return strong
+    ? [...rankedRows, ...(first ? [first] : []), ...interpretRows, ...restWeb]
+    : [...(first ? [first] : []), ...interpretRows, ...rankedRows, ...restWeb]
 }

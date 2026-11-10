@@ -29,8 +29,10 @@ export type Outcome =
   | { kind: 'close'; mood?: 'happy'; toast?: string }
   /** Mantener la barra abierta con un mensaje de error (el robot se confunde). */
   | { kind: 'error'; message: string }
-  /** Fijar otro comando como etiqueta conservando el texto. */
-  | { kind: 'activate'; commandId: string }
+  /** Fijar otro comando como etiqueta (con `text`, sustituye lo escrito). */
+  | { kind: 'activate'; commandId: string; text?: string }
+  /** Pasar al chat con la IA y enviarle esta tarea. */
+  | { kind: 'chat'; task: AiTask; text: string }
   /** Volver a pedir las sugerencias (p. ej. tras borrar una nota). */
   | { kind: 'refresh' }
 
@@ -77,6 +79,26 @@ export interface CommandModule {
 }
 
 // --- Datos que manejan los servicios -------------------------------------------
+
+export type AiTask = 'chat' | 'summarize' | 'explain'
+
+export type AiState =
+  | 'checking' // aún no se ha comprobado
+  | 'ready'
+  | 'not-installed'
+  | 'not-running' // instalado, pero el servidor no responde
+  | 'no-model' // en marcha, pero falta el modelo elegido
+  | 'pulling' // descargando el modelo
+
+export interface AiStatus {
+  state: AiState
+  /** Modelo elegido (p. ej. "gemma3:4b"). */
+  model: string
+  /** Modelos descargados. */
+  models: string[]
+  /** Progreso de la descarga (0-1) cuando state = 'pulling'. */
+  progress?: number
+}
 
 export interface Note {
   id: string
@@ -133,6 +155,18 @@ export interface CommandContext {
     stop(): void
     skip(): void
   }
+  ai: {
+    /** Último estado conocido (se refresca en segundo plano). */
+    status(): AiStatus
+    /** Convierte lenguaje natural en un comando (devuelve `activate` o `chat`). */
+    interpret(text: string): Promise<Outcome>
+    /** Arranca Ollama si está instalado pero parado. */
+    start(): Promise<Outcome>
+    /** Descarga el modelo elegido (el progreso sale en el bocadillo). */
+    pull(): Promise<Outcome>
+  }
+  /** Texto actual del portapapeles. */
+  clipboardText(): Promise<string>
   launcher: {
     search(query: string, limit: number): Promise<LaunchTarget[]>
     favorites(): Promise<LaunchTarget[]>

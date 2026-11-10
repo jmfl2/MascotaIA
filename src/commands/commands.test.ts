@@ -168,3 +168,45 @@ describe('puntuación de coincidencias', () => {
     expect(matchScore('Calculadora', 'xyz')).toBe(0)
   })
 })
+
+describe('IA', () => {
+  it('ofrece interpretar frases solo si la IA está lista', async () => {
+    const { ctx, state } = fakeContext()
+    const rows = await suggestFor(null, 'vídeos para aprender a hacer pan', ctx)
+    expect(rows.map((r) => r.command.id).slice(0, 2)).toEqual(['google', 'ai'])
+    await rows[1].suggestion.run()
+    expect(state.interpreted).toEqual(['vídeos para aprender a hacer pan'])
+
+    expect((await suggestFor(null, 'dos palabras', ctx)).some((r) => r.command.id === 'ai')).toBe(false)
+    state.ai = { state: 'not-running', model: 'gemma3:4b', models: [] }
+    expect((await suggestFor(null, 'vídeos para aprender a hacer pan', ctx)).some((r) => r.command.id === 'ai')).toBe(false)
+  })
+
+  it('explica qué falta cuando la IA no está disponible', async () => {
+    const { ctx, state } = fakeContext()
+    state.ai = { state: 'not-installed', model: 'gemma3:4b', models: [] }
+    expect((await suggestFor('ai', 'hola', ctx))[0].suggestion.title).toBe('La IA local necesita Ollama')
+    state.ai = { state: 'not-running', model: 'gemma3:4b', models: [] }
+    expect((await suggestFor('ai', '', ctx)).map((r) => r.suggestion.title)).toContain('Iniciar Ollama')
+    state.ai = { state: 'no-model', model: 'gemma3:4b', models: ['llama3.2:3b'] }
+    expect((await suggestFor('summarize', '', ctx)).map((r) => r.suggestion.title)).toContain('Descargar gemma3:4b')
+  })
+
+  it('con la IA lista, el chat no tiene filas (la barra muestra la conversación)', async () => {
+    const { ctx } = fakeContext()
+    expect(await suggestFor('ai', 'hola', ctx)).toEqual([])
+  })
+
+  it('resumir usa el portapapeles si no se escribe nada', async () => {
+    const { ctx, state } = fakeContext()
+    state.clipboard = 'Un texto largo copiado de una web sobre la fotosíntesis.'
+    const [row] = await suggestFor('summarize', '', ctx)
+    expect(row.suggestion.title).toBe('Resumir el portapapeles')
+    expect(await row.suggestion.run()).toEqual({ kind: 'chat', task: 'summarize', text: state.clipboard })
+
+    state.clipboard = ''
+    expect((await suggestFor('explain', '', ctx))[0].suggestion.disabled).toBe(true)
+    const [typed] = await suggestFor('explain', 'git rebase -i', ctx)
+    expect(await typed.suggestion.run()).toEqual({ kind: 'chat', task: 'explain', text: 'git rebase -i' })
+  })
+})
