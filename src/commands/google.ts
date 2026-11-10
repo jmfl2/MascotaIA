@@ -1,7 +1,7 @@
-import type { CommandModule } from './types'
+import { webCommand } from './web'
 
 /** Búsqueda en Google. Es el comando por defecto (sin prefijo). */
-export const google: CommandModule = {
+export const google = webCommand({
   id: 'google',
   name: 'Google',
   prefixes: ['g'],
@@ -15,4 +15,4 @@ export const google: CommandModule = {
     url.searchParams.set('q', query)
     return url
   }
-}
+})

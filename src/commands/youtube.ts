@@ -1,7 +1,7 @@
-import type { CommandModule } from './types'
+import { webCommand } from './web'
 
 /** Búsqueda de vídeos en YouTube: "yt receta de tortilla". */
-export const youtube: CommandModule = {
+export const youtube = webCommand({
   id: 'youtube',
   name: 'YouTube',
   prefixes: ['yt'],
@@ -15,4 +15,4 @@ export const youtube: CommandModule = {
     url.searchParams.set('search_query', query)
     return url
   }
-}
+})

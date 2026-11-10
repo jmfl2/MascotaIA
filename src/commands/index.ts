@@ -2,25 +2,39 @@
  * Registro de comandos.
  *
  * Para añadir un comando nuevo:
- *   1. Crea `src/commands/micomando.ts` exportando un `CommandModule`.
+ *   1. Crea `src/commands/micomando.ts` exportando un `CommandModule`
+ *      (o usa `webCommand()` si solo abre una web).
  *   2. Añádelo a la lista `COMMANDS` de abajo.
- * Nada más: la barra lo mostrará y el proceso principal lo validará solo.
+ * La barra lo mostrará y el proceso principal se encargará del resto.
  */
 import { github } from './github'
 import { google } from './google'
+import { launcher } from './launcher'
 import { maps } from './maps'
-import { sanitizeQuery } from './sanitize'
+import { notes } from './notes'
+import { pomodoro } from './pomodoro'
+import { reminders } from './reminders'
 import { translate } from './translate'
-import type { BuildResult, CommandModule } from './types'
+import type { CommandModule } from './types'
+import { buildWebUrl, type BuildResult, type WebCommand } from './web'
 import { youtube } from './youtube'
 
-export type { BuildResult, CommandModule } from './types'
+export type * from './types'
 export { MAX_QUERY_LENGTH, sanitizeQuery } from './sanitize'
+export type { BuildResult } from './web'
 
-/** Orden en el que se muestran en la barra. El primero es el comando por defecto. */
-export const COMMANDS: readonly CommandModule[] = [google, youtube, maps, github, translate]
-
-export const DEFAULT_COMMAND: CommandModule = COMMANDS[0]
+/** Orden en el que se listan en la barra. */
+export const COMMANDS: readonly CommandModule[] = [
+  google,
+  launcher,
+  youtube,
+  maps,
+  github,
+  translate,
+  notes,
+  reminders,
+  pomodoro
+]
 
 export function findCommandById(id: string): CommandModule | undefined {
   return COMMANDS.find((c) => c.id === id)
@@ -45,31 +59,13 @@ export function parseInput(text: string): { command: CommandModule | null; query
   return { command: null, query: text }
 }
 
-/**
- * Construye y valida la URL final. Es la única puerta de salida hacia el
- * navegador: el proceso principal llama aquí antes de `shell.openExternal`.
- */
+function isWeb(c: CommandModule): c is WebCommand {
+  return 'web' in c
+}
+
+/** Construye y valida la URL de un comando web (lo usan el portapapeles y los tests). */
 export function buildCommandUrl(commandId: string, rawQuery: string): BuildResult {
   const command = findCommandById(commandId)
-  if (!command) return { ok: false, error: 'Comando desconocido' }
-
-  const query = sanitizeQuery(rawQuery)
-  if (!query) return { ok: false, error: 'Escribe algo para buscar' }
-
-  let url: URL
-  try {
-    url = command.buildUrl(query)
-  } catch {
-    return { ok: false, error: 'No se pudo construir la dirección' }
-  }
-
-  // Defensa en profundidad: solo https, sin credenciales y solo los dominios declarados.
-  if (url.protocol !== 'https:' || url.username || url.password || url.port) {
-    return { ok: false, error: 'Dirección no permitida' }
-  }
-  if (!command.allowedHosts.includes(url.hostname)) {
-    return { ok: false, error: 'Dominio no permitido' }
-  }
-
-  return { ok: true, url: url.href, command }
+  if (!command || !isWeb(command)) return { ok: false, error: 'Comando desconocido' }
+  return buildWebUrl(command.web, rawQuery)
 }

@@ -1,12 +1,58 @@
 /**
- * Contrato que cumple cada comando de la barra.
+ * Contrato de los comandos de la barra.
  *
- * Los comandos son módulos puros (sin Electron ni Node): los usa el renderer
- * para mostrar sugerencias y el proceso principal para construir y validar
- * la URL final antes de abrirla. Así el renderer nunca decide qué se abre.
+ * Los comandos se ejecutan en el proceso principal, pero no importan Electron:
+ * todo lo que necesitan del sistema (abrir URLs, notas, recordatorios, apps...)
+ * les llega en `CommandContext`. Así son módulos pequeños y fáciles de probar.
+ *
+ * El renderer solo recibe una vista serializable de cada sugerencia. Las
+ * funciones `run` se quedan en el proceso principal y se ejecutan cuando el
+ * usuario elige una fila: el renderer nunca decide qué se abre ni qué se borra.
  */
+
+export interface GlyphIcon {
+  kind: 'glyph'
+  /** Trazado SVG (viewBox 0 0 24 24) dibujado con trazo. */
+  path: string
+  accent: string
+}
+export interface ImageIcon {
+  kind: 'image'
+  /** data:image/png;base64,... (iconos de apps de Windows). */
+  src: string
+}
+export type IconSpec = GlyphIcon | ImageIcon
+
+/** Qué pasa después de ejecutar una sugerencia. */
+export type Outcome =
+  /** Cerrar la barra. `toast` muestra un bocadillo breve junto al robot. */
+  | { kind: 'close'; mood?: 'happy'; toast?: string }
+  /** Mantener la barra abierta con un mensaje de error (el robot se confunde). */
+  | { kind: 'error'; message: string }
+  /** Fijar otro comando como etiqueta conservando el texto. */
+  | { kind: 'activate'; commandId: string }
+  /** Volver a pedir las sugerencias (p. ej. tras borrar una nota). */
+  | { kind: 'refresh' }
+
+export interface Suggestion {
+  title: string
+  subtitle?: string
+  /** Si no se indica, se usa el icono del comando. */
+  icon?: IconSpec
+  /** Texto a la derecha de la fila (p. ej. ★ en favoritos). */
+  badge?: string
+  /** Relevancia (0-100) para mezclar resultados en la búsqueda sin prefijo. */
+  score?: number
+  /** Fila informativa (ayuda de formato, lista vacía...). */
+  disabled?: boolean
+  /** Acción principal (Intro o clic). */
+  run(): Outcome | Promise<Outcome>
+  /** Acción secundaria (tecla Supr), p. ej. borrar. */
+  secondary?: { label: string; run(): Outcome | Promise<Outcome> }
+}
+
 export interface CommandModule {
-  /** Identificador estable, en minúsculas (se envía por IPC). */
+  /** Identificador estable, en minúsculas. */
   readonly id: string
   /** Nombre visible, p. ej. "YouTube". */
   readonly name: string
@@ -18,17 +64,79 @@ export interface CommandModule {
   readonly placeholder: string
   /** Color de acento del icono. */
   readonly accent: string
-  /** Trazado SVG (viewBox 0 0 24 24) del icono, dibujado con trazo. */
+  /** Trazado SVG (viewBox 0 0 24 24) del icono. */
   readonly iconPath: string
-  /** Únicos dominios a los que puede llevar este comando. */
-  readonly allowedHosts: readonly string[]
   /**
-   * Construye la URL de destino. Recibe la consulta ya saneada y no vacía.
-   * Debe usar `URL`/`URLSearchParams` (o `encodeURIComponent`) para codificar.
+   * Participación en la búsqueda sin prefijo:
+   * - 'web': aparece como destino alternativo para el texto (Google, YouTube...).
+   * - 'ranked': aporta resultados con puntuación (apps y carpetas).
    */
-  buildUrl(query: string): URL
+  readonly global?: 'web' | 'ranked'
+  /** Sugerencias para el texto escrito (puede estar vacío). */
+  suggest(query: string, ctx: CommandContext): Suggestion[] | Promise<Suggestion[]>
 }
 
-export type BuildResult =
-  | { ok: true; url: string; command: CommandModule }
-  | { ok: false; error: string }
+// --- Datos que manejan los servicios -------------------------------------------
+
+export interface Note {
+  id: string
+  text: string
+  createdAt: number
+}
+
+export interface Reminder {
+  id: string
+  text: string
+  dueAt: number
+  createdAt: number
+}
+
+export interface PomodoroStatus {
+  phase: 'focus' | 'break'
+  phaseStartedAt: number
+  endsAt: number
+  focusMin: number
+  breakMin: number
+}
+
+export interface LaunchTarget {
+  id: string
+  name: string
+  /** Ruta o tipo ("Aplicación"). */
+  detail: string
+  favorite: boolean
+  score: number
+  /** Icono de Windows como data URL, si se pudo obtener. */
+  icon?: string
+}
+
+/** Servicios del sistema que el proceso principal pone a disposición de los comandos. */
+export interface CommandContext {
+  now(): number
+  /** Abre una URL https ya validada en el navegador predeterminado. */
+  openUrl(url: string): Promise<Outcome>
+  /** Copia texto al portapapeles (sin que el robot lo "ofrezca" de vuelta). */
+  copyText(text: string): void
+  notes: {
+    all(): Note[]
+    add(text: string): Note
+    remove(id: string): boolean
+  }
+  reminders: {
+    all(): Reminder[]
+    add(text: string, dueAt: number): Reminder
+    remove(id: string): boolean
+  }
+  pomodoro: {
+    status(): PomodoroStatus | null
+    start(focusMin: number, breakMin: number): void
+    stop(): void
+    skip(): void
+  }
+  launcher: {
+    search(query: string, limit: number): Promise<LaunchTarget[]>
+    favorites(): Promise<LaunchTarget[]>
+    open(id: string): Promise<Outcome>
+    removeFavorite(id: string): boolean
+  }
+}

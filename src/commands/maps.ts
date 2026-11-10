@@ -1,7 +1,7 @@
-import type { CommandModule } from './types'
+import { webCommand } from './web'
 
 /** Lugares y direcciones en Google Maps: "maps cafetería cerca". */
-export const maps: CommandModule = {
+export const maps = webCommand({
   id: 'maps',
   name: 'Google Maps',
   prefixes: ['maps', 'map'],
@@ -17,4 +17,4 @@ export const maps: CommandModule = {
     url.searchParams.set('query', query)
     return url
   }
-}
+})

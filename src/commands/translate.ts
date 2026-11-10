@@ -1,4 +1,4 @@
-import type { CommandModule } from './types'
+import { webCommand } from './web'
 
 /** Idioma de destino por defecto. */
 const DEFAULT_TARGET = 'es'
@@ -18,7 +18,7 @@ export function parseTranslation(query: string): { target: string; text: string 
 }
 
 /** Traducción con Google Translate (idioma de origen automático). */
-export const translate: CommandModule = {
+export const translate = webCommand({
   id: 'translate',
   name: 'Traductor',
   prefixes: ['trad', 'tr'],
@@ -36,4 +36,4 @@ export const translate: CommandModule = {
     url.searchParams.set('op', 'translate')
     return url
   }
-}
+})

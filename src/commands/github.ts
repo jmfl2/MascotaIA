@@ -1,4 +1,4 @@
-import type { CommandModule } from './types'
+import { webCommand } from './web'
 
 /** Nombre de usuario u organización / repositorio válidos en GitHub. */
 const REPO_PATTERN = /^([A-Za-z0-9](?:[A-Za-z0-9-]{0,38}))\/([A-Za-z0-9._-]{1,100})$/
@@ -7,7 +7,7 @@ const REPO_PATTERN = /^([A-Za-z0-9](?:[A-Za-z0-9-]{0,38}))\/([A-Za-z0-9._-]{1,10
  * GitHub: "gh electron/electron" abre el repositorio directamente;
  * cualquier otra cosa ("gh spring animation") busca repositorios.
  */
-export const github: CommandModule = {
+export const github = webCommand({
   id: 'github',
   name: 'GitHub',
   prefixes: ['gh'],
@@ -28,4 +28,4 @@ export const github: CommandModule = {
     url.searchParams.set('type', 'repositories')
     return url
   }
-}
+})
