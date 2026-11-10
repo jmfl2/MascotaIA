@@ -1,0 +1,113 @@
+@import '../shared/theme.css';
+
+:root {
+  /* Curva de muelle en CSS puro (generada simulando stiffness 260, damping 20). */
+  --spring-bouncy: linear(0, 0.065, 0.199, 0.365, 0.535, 0.691, 0.822, 0.924, 0.997, 1.044, 1.07, 1.08, 1.078, 1.07, 1.057, 1.043, 1.029, 1.018, 1.009, 1.002, 0.998, 0.995, 0.994, 0.994, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 1, 1, 1);
+  --spring-bouncy-duration: 700ms;
+}
+
+.robot {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  overflow: visible;
+}
+
+/* Colores de los degradados desde los tokens (así el modo oscuro y las futuras skins funcionan) */
+.stop-body-top { stop-color: var(--body-top); }
+.stop-body-bottom { stop-color: var(--body-bottom); }
+.stop-screen-top { stop-color: var(--screen-top); }
+.stop-screen-bottom { stop-color: var(--screen-bottom); }
+.stop-shadow { stop-color: var(--robot-shadow); }
+.stop-eye { stop-color: var(--eye); }
+
+.part-edge {
+  stroke: var(--body-edge);
+  stroke-width: 0.75;
+  stroke-opacity: 0.6;
+}
+
+.antenna-stem {
+  stroke: var(--body-bottom);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.eye-fill { fill: var(--eye); }
+
+.eye-happy {
+  fill: none;
+  stroke: var(--eye);
+  stroke-width: 4.5;
+  stroke-linecap: round;
+}
+
+.cheek { fill: var(--cheek); }
+
+#hit {
+  fill: transparent;
+  pointer-events: all;
+  cursor: grab;
+}
+#hit:active { cursor: grabbing; }
+
+/* --- Decoraciones de estado (CSS con curva de muelle) --- */
+
+.thinking-dots circle {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: opacity 200ms ease;
+}
+.is-thinking .thinking-dots circle {
+  opacity: 0.9;
+  animation: dot 1s ease-in-out infinite;
+}
+.is-thinking .thinking-dots circle:nth-child(2) { animation-delay: 0.15s; }
+.is-thinking .thinking-dots circle:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes dot {
+  0%, 100% { transform: translateY(0); opacity: 0.35; }
+  40% { transform: translateY(-3px); opacity: 1; }
+}
+
+.zzz text,
+.question {
+  font-family: var(--font);
+  font-weight: 700;
+  fill: var(--text-2);
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(0.4);
+  transition:
+    opacity 250ms ease,
+    transform var(--spring-bouncy-duration) var(--spring-bouncy);
+}
+.zzz text { font-size: 13px; }
+.zzz text:nth-child(2) { font-size: 16px; }
+.zzz text:nth-child(3) { font-size: 20px; }
+.question { font-size: 26px; fill: var(--eye); }
+
+.is-sleeping .zzz text {
+  opacity: 1;
+  transform: scale(1);
+  animation: float-z 3s ease-in-out infinite;
+}
+.is-sleeping .zzz text:nth-child(2) { animation-delay: 0.5s; }
+.is-sleeping .zzz text:nth-child(3) { animation-delay: 1s; }
+
+@keyframes float-z {
+  0%, 100% { translate: 0 0; opacity: 0.25; }
+  50% { translate: 3px -5px; opacity: 1; }
+}
+
+.is-confused .question {
+  opacity: 1;
+  transform: scale(1) rotate(12deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-thinking .thinking-dots circle,
+  .is-sleeping .zzz text { animation: none; }
+}
