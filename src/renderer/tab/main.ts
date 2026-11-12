@@ -76,6 +76,30 @@ for (const button of document.querySelectorAll<HTMLButtonElement>('.ctl')) {
   })
 }
 
+// Arrastrar archivos: al pasar por encima, el robot baja a recogerlos; también se pueden soltar aquí.
+const hasFiles = (e: DragEvent) => !!e.dataTransfer?.types.includes('Files')
+let lastDragPing = 0
+window.addEventListener('dragover', (e) => {
+  if (!hasFiles(e)) return
+  e.preventDefault()
+  e.dataTransfer!.dropEffect = 'copy'
+  pill.classList.add('is-drop')
+  // Un aviso cada medio segundo basta para que el robot siga esperando.
+  if (performance.now() - lastDragPing > 500) {
+    lastDragPing = performance.now()
+    api.dragOver()
+  }
+})
+window.addEventListener('dragleave', (e) => {
+  if (e.relatedTarget === null) pill.classList.remove('is-drop')
+})
+window.addEventListener('drop', (e) => {
+  e.preventDefault()
+  pill.classList.remove('is-drop')
+  const files = Array.from(e.dataTransfer?.files ?? [])
+  if (files.length) api.dropFiles(files)
+})
+
 // Solo el botón principal: el derecho abre el menú.
 pill.addEventListener('click', (e) => {
   if (e.button === 0) api.click()

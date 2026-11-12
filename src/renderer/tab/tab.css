@@ -102,6 +102,14 @@ body {
   display: none;
 }
 
+/* Arrastrando un archivo encima: se abre del todo y se ilumina. */
+.pill.is-drop {
+  --near: 1 !important;
+  box-shadow:
+    0 0 0 2px var(--accent),
+    0 8px 24px rgba(15, 23, 42, 0.22);
+}
+
 /* Progreso del pomodoro: una línea en el borde de abajo. */
 .pomo {
   position: absolute;

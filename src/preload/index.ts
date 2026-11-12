@@ -66,6 +66,14 @@ const api: MascotaApi = {
     onInfo: (cb) => listen<TabInfo>(IPC.tabInfo, cb),
     onPomodoro: (cb) => listen<PomodoroView>(IPC.tabPomodoro, cb),
     onMedia: (cb) => listen<TabMediaView>(IPC.tabMedia, cb),
+    dragOver: () => ipcRenderer.send(IPC.tabDragOver),
+    dropFiles: (files) => {
+      const paths = files
+        .slice(0, 10)
+        .map((f) => webUtils.getPathForFile(f))
+        .filter(Boolean)
+      if (paths.length) ipcRenderer.send(IPC.tabDrop, paths)
+    },
     mediaAction: (action) => ipcRenderer.send(IPC.tabMediaAction, action)
   },
   settings: {

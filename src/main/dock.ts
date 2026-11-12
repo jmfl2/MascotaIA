@@ -10,7 +10,7 @@ import { enterDocked, getRobotWindow, isRobotVisible, leaveDocked, placeFree, se
 import { getConfig, setConfig } from './store'
 import { getTabWindow, hideTab, showTab } from './tabWindow'
 
-export type PresenceReason = 'bar' | 'bubble'
+export type PresenceReason = 'bar' | 'bubble' | 'drop'
 
 /** Cuánto se queda fuera cuando ya no hace falta (para que no parezca que huye). */
 const LINGER_MS = 900
@@ -43,6 +43,30 @@ export function needRobot(reason: PresenceReason, on: boolean): void {
       if (!reasons.size) leaveDocked()
     }, LINGER_MS)
   }
+}
+
+/** Cuánto espera el robot fuera a que le sueltes algo después de acercarlo a la pestaña. */
+const DROP_WAIT_MS = 6000
+let dropTimer: NodeJS.Timeout | null = null
+
+/**
+ * Se está arrastrando un archivo sobre la pestaña: el robot baja a recogerlo y
+ * espera un rato (cada nuevo aviso alarga la espera).
+ */
+export function dropIncoming(): void {
+  needRobot('drop', true)
+  if (dropTimer) clearTimeout(dropTimer)
+  dropTimer = setTimeout(() => {
+    dropTimer = null
+    needRobot('drop', false)
+  }, DROP_WAIT_MS)
+}
+
+/** Ya se soltó (en el robot o en la pestaña): deja de esperar; el bocadillo lo mantiene fuera. */
+export function dropDone(): void {
+  if (dropTimer) clearTimeout(dropTimer)
+  dropTimer = null
+  needRobot('drop', false)
 }
 
 /** ¿Se ve la mascota? (el robot en modo libre, la pestaña en modo pestaña). */

@@ -6,8 +6,9 @@
  * claude://claude.ai/new?q=… abre un chat nuevo con la pregunta en la caja
  * para revisarla y enviarla (no la envía sola).
  */
-import { shell } from 'electron'
+import { app, shell } from 'electron'
 import { spawnSync } from 'node:child_process'
+import { join } from 'node:path'
 import { buildWebUrl } from '../commands/web'
 import { claudeWeb } from '../commands/claude'
 import type { Outcome } from '../commands'
@@ -18,14 +19,26 @@ import { getConfig } from './store'
 /** Por encima de esto (o con saltos de línea) la pregunta se recortaría: mejor pegarla. */
 export const MAX_PREFILL = 500
 
-let installed: boolean | null = null
+/** Solo se recuerda el "sí": si la app se instala después, se detecta sin reiniciar. */
+let installed = false
 
-/** ¿Está registrada la app de escritorio de Claude (esquema claude://)? */
+/**
+ * ¿Está instalada la app de escritorio de Claude? Se le pregunta a Windows qué
+ * programa abre los enlaces claude:// (la app de la Microsoft Store también
+ * cuenta). Si eso no responde, se mira el registro.
+ */
 export function claudeAppInstalled(): boolean {
-  if (installed !== null) return installed
-  if (process.platform !== 'win32') return (installed = false)
+  if (installed || process.platform !== 'win32') return installed
+  try {
+    if (app.getApplicationNameForProtocol('claude://')) return (installed = true)
+  } catch {
+    /* sigue con el registro */
+  }
   installed = ['HKCU', 'HKLM'].some((hive) => {
-    const r = spawnSync('reg.exe', ['query', `${hive}\\Software\\Classes\\claude\\shell\\open\\command`], { windowsHide: true, timeout: 3000 })
+    const r = spawnSync(join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'reg.exe'), ['query', `${hive}\\Software\\Classes\\claude\\shell\\open\\command`], {
+      windowsHide: true,
+      timeout: 3000
+    })
     return r.status === 0
   })
   return installed

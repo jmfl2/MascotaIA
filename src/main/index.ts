@@ -36,7 +36,7 @@ import {
   onRobotMoved
 } from './robotWindow'
 import { denyAllPermissions, isFrom } from './security'
-import { isDocked, mascotVisible, needRobot, setDocked, setMascotVisible, showInitialTab } from './dock'
+import { dropDone, dropIncoming, isDocked, mascotVisible, needRobot, setDocked, setMascotVisible, showInitialTab } from './dock'
 import { createTabWindow, getTabWindow, setTabInfo } from './tabWindow'
 import { applySettingsPatch, getSettingsView, notifySettingsChanged, onSettingsChange } from './settings'
 import { closeSettings, getSettingsWindow, openSettings } from './settingsWindow'
@@ -190,7 +190,9 @@ function registerIpc(): void {
     if (isFrom(event, robot())) toggleBar()
   })
   ipcMain.on(IPC.robotDrop, (event, paths: unknown) => {
-    if (isFrom(event, robot())) handleDroppedPaths(paths)
+    if (!isFrom(event, robot())) return
+    dropDone()
+    handleDroppedPaths(paths)
   })
   ipcMain.on(IPC.robotContextMenu, (event) => {
     const win = getRobotWindow()
@@ -209,6 +211,14 @@ function registerIpc(): void {
   const tab = () => getTabWindow()?.webContents
   ipcMain.on(IPC.tabClick, (event) => {
     if (isFrom(event, tab())) toggleBar()
+  })
+  ipcMain.on(IPC.tabDragOver, (event) => {
+    if (isFrom(event, tab())) dropIncoming()
+  })
+  ipcMain.on(IPC.tabDrop, (event, paths: unknown) => {
+    if (!isFrom(event, tab())) return
+    dropDone()
+    handleDroppedPaths(paths)
   })
   ipcMain.on(IPC.tabMediaAction, (event, action: unknown) => {
     if (isFrom(event, tab())) musicAction(action)

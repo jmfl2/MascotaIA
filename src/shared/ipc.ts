@@ -161,6 +161,8 @@ export const IPC = {
   tabPomodoro: 'tab:pomodoro',
   tabContextMenu: 'tab:context-menu',
   tabMedia: 'tab:media',
+  tabDragOver: 'tab:drag-over',
+  tabDrop: 'tab:drop',
   tabMediaAction: 'tab:media-action',
   // Ajustes
   settingsGet: 'settings:get',
@@ -234,6 +236,10 @@ export interface MascotaApi {
     onPomodoro(cb: (view: PomodoroView) => void): Unsubscribe
     /** Lo que suena (Spotify, el navegador...). */
     onMedia(cb: (view: TabMediaView) => void): Unsubscribe
+    /** Se arrastra un archivo encima: que baje el robot a recogerlo. */
+    dragOver(): void
+    /** Archivos soltados directamente en la pestaña. */
+    dropFiles(files: File[]): void
     mediaAction(action: MediaAction): void
   }
   settings: {
