@@ -16,7 +16,6 @@ import { sendPomodoro } from './robotWindow'
 import { sendTabPomodoro } from './tabWindow'
 import { translateTarget, type OfferDecision } from './services/clipboardFilter'
 import { clipboardWatcher } from './services/clipboardWatcher'
-import { addFavorites } from './services/launcher'
 import { notesService } from './services/notes'
 import { pomodoroService } from './services/pomodoro'
 import { remindersService } from './services/reminders'
@@ -25,6 +24,8 @@ import { IPC } from '../shared/ipc'
 import { t } from '../shared/i18n'
 import { assistantName } from '../shared/assistants'
 import { askAssistant } from './askAssistant'
+import { showDropMenu } from './dropMenu'
+import { isAbsolute } from 'node:path'
 
 const SNOOZE_MS = 10 * 60_000
 const LATE_THRESHOLD_MS = 60_000
@@ -75,7 +76,8 @@ function startPomodoro(): void {
       if (!status || progress < 0.5) halfSaid = false
     },
     phaseEnd: (ended, status) => {
-      robotMood.flash('happy')
+      // Terminar un bloque de concentración de verdad (25 min o más) merece una celebración.
+      robotMood.flash(ended === 'focus' && status && status.focusMin >= 25 ? 'excited' : 'happy')
       if (ended === 'focus' && status) {
         showBubble({
           kind: 'pomodoro',
@@ -131,7 +133,7 @@ const saveNote = (text: string) => ({
   label: t('Guardar nota', 'Save note'),
   run: () => {
     notesService.add(text)
-    robotMood.flash('happy')
+    robotMood.flash('wink')
     toast(t('Nota guardada', 'Note saved'))
   }
 })
@@ -263,22 +265,11 @@ export function setLinkGuard(enabled: boolean): void {
 
 // --- Favoritos soltados sobre el robot --------------------------------------------
 
+/** Lo soltado encima del robot: un bocadillo con qué hacer (ver dropMenu.ts). */
 export function handleDroppedPaths(paths: unknown): void {
   if (!Array.isArray(paths)) return
-  const valid = paths.filter((p): p is string => typeof p === 'string' && p.length > 0 && p.length < 1000).slice(0, 10)
-  const added = addFavorites(valid)
-  if (added.length) {
-    robotMood.flash('happy')
-    showBubble({
-      kind: 'favorite',
-      title: added.length === 1 ? t('⭐ Añadido a favoritos', '⭐ Added to favorites') : t(`⭐ ${added.length} favoritos nuevos`, `⭐ ${added.length} new favorites`),
-      text: `${snippet(added.join(', '), 90)}\n${t(`Ábrelo con «abrir ${snippet(added[0], 20)}».`, `Open it with "open ${snippet(added[0], 20)}".`)}`,
-      timeoutMs: 4000
-    })
-  } else {
-    robotMood.flash('confused')
-    toast(t('Ya estaba en favoritos', 'Already in favorites'))
-  }
+  const valid = paths.filter((p): p is string => typeof p === 'string' && p.length > 0 && p.length < 1000 && isAbsolute(p)).slice(0, 10)
+  if (valid.length) showDropMenu(valid)
 }
 
 export function startFeatures(): void {

@@ -7,6 +7,7 @@
 import { t } from '../../shared/i18n'
 import type { AiTask } from '../../commands'
 import { chatSystemPrompt, taskDisplay, taskPrompt } from '../../ai/prompts'
+import type Anthropic from '@anthropic-ai/sdk'
 import { getClaudeKey } from '../claudeKey'
 import { ClaudeError, streamClaude } from './claudeClient'
 import { OllamaError, type ChatMessage } from '../../ai/ollama'
@@ -24,6 +25,8 @@ interface Message {
   display: string
   /** Lo que se envía al modelo. */
   content: string
+  /** Con Claude: archivos adjuntos (imágenes, PDF, texto) además del texto. */
+  blocks?: Anthropic.Beta.BetaContentBlockParam[]
   error?: boolean
 }
 
@@ -125,13 +128,33 @@ export async function sendToAi(task: AiTask, rawText: string, which: ChatProvide
   }
 }
 
-/** Historial para el modelo: sin errores ni la respuesta vacía que se está rellenando. */
-function historyForModel(): Array<{ role: 'user' | 'assistant'; content: string }> {
+/** Historial para Claude: sin errores ni la respuesta vacía que se está rellenando. */
+function historyForModel(): Anthropic.Beta.BetaMessageParam[] {
   return messages
     .slice(0, -1)
-    .filter((m) => !m.error && m.content)
+    .filter((m) => !m.error && (m.content || m.blocks))
     .slice(-MAX_HISTORY)
-    .map((m) => ({ role: m.role, content: m.content }))
+    .map((m) => ({ role: m.role, content: m.blocks ?? m.content }))
+}
+
+/**
+ * Manda archivos a Claude (por la API) con una pregunta; la respuesta sale en la
+ * conversación de la barra, y se puede seguir preguntando sobre ellos.
+ */
+export async function sendFilesToClaude(blocks: Anthropic.Beta.BetaContentBlockParam[], names: string[], prompt: string): Promise<void> {
+  stopAi()
+  if (provider !== 'claude') {
+    provider = 'claude'
+    messages = []
+  }
+  messages.push({ role: 'user', display: `📎 ${names.join(', ')}\n${prompt}`, content: prompt, blocks: [...blocks, { type: 'text', text: prompt }] })
+  const answer: Message = { role: 'assistant', display: '', content: '' }
+  messages.push(answer)
+  const index = messages.length - 1
+  const myController = new AbortController()
+  controller = myController
+  broadcast()
+  await answerWithClaude(answer, index, myController)
 }
 
 async function answerWithClaude(answer: Message, index: number, myController: AbortController): Promise<void> {

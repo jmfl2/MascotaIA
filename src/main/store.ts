@@ -45,6 +45,8 @@ export interface Config {
   askAi: Assistant
   /** Buscar e instalar actualizaciones de GitHub solo. */
   autoUpdate: boolean
+  /** Dónde abrir Claude sin clave de API (null = la app si está instalada). */
+  claudeOpenIn: 'web' | 'app' | null
 }
 
 export const DEFAULT_SHORTCUT = 'Control+Space'
@@ -65,7 +67,8 @@ const DEFAULTS: Config = {
   nowPlaying: true,
   claudeKeyEnc: null,
   askAi: 'claude',
-  autoUpdate: true
+  autoUpdate: true,
+  claudeOpenIn: null
 }
 
 let cache: Config | null = null
@@ -94,6 +97,7 @@ function validate(raw: unknown): Config {
   if (typeof r.nowPlaying === 'boolean') cfg.nowPlaying = r.nowPlaying
   if (isAssistant(r.askAi)) cfg.askAi = r.askAi
   if (typeof r.autoUpdate === 'boolean') cfg.autoUpdate = r.autoUpdate
+  if (r.claudeOpenIn === 'web' || r.claudeOpenIn === 'app') cfg.claudeOpenIn = r.claudeOpenIn
   if (typeof r.claudeKeyEnc === 'string' && /^[A-Za-z0-9+/]+={0,2}$/.test(r.claudeKeyEnc) && r.claudeKeyEnc.length < 4000) {
     cfg.claudeKeyEnc = r.claudeKeyEnc
   }

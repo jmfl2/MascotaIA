@@ -356,6 +356,7 @@ h2 {
   transition: color 150ms ease;
 }
 .segment[aria-checked='true'] { color: var(--text); font-weight: 600; }
+.segment:disabled { opacity: 0.4; }
 
 /* Interruptor estilo iOS */
 .switch {

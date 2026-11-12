@@ -42,12 +42,12 @@ describe('preguntar a otras IAs', () => {
 })
 
 describe('Claude', () => {
-  it('sin clave: abre claude.ai con la pregunta y ofrece poner la clave', async () => {
+  it('sin clave: abre Claude con la pregunta y ofrece poner la clave', async () => {
     const { ctx, state } = fakeContext()
     const rows = await suggestFor('claude', '¿por qué el cielo es azul?', ctx)
     expect(rows).toHaveLength(2)
     await rows[0].suggestion.run()
-    expect(state.opened).toEqual(['https://claude.ai/new?q=%C2%BFpor+qu%C3%A9+el+cielo+es+azul%3F'])
+    expect(state.opened).toEqual(['claude:¿por qué el cielo es azul?'])
     await rows[1].suggestion.run()
     expect(state.opened).toContain('ajustes')
   })

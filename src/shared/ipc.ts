@@ -9,7 +9,7 @@ import type { Lang } from './i18n'
 
 export type { IconSpec }
 
-export type RobotState = 'idle' | 'listening' | 'thinking' | 'happy' | 'confused' | 'sleeping' | 'alert'
+export type RobotState = 'idle' | 'listening' | 'thinking' | 'happy' | 'confused' | 'sleeping' | 'alert' | 'wink' | 'excited'
 
 /** Posición del cursor relativa al centro de la cara del robot, en píxeles. */
 export interface CursorOffset {
@@ -152,6 +152,7 @@ export const IPC = {
   robotAppearance: 'robot:appearance',
   robotContextMenu: 'robot:context-menu',
   robotEnter: 'robot:enter',
+  robotMusic: 'robot:music',
   robotLeave: 'robot:leave',
   // Pestaña de arriba (modo pestaña)
   tabClick: 'tab:click',
@@ -221,6 +222,8 @@ export interface MascotaApi {
     /** Modo pestaña: baja desde la pestaña / vuelve a subir. */
     onEnter(cb: () => void): Unsubscribe
     onLeave(cb: () => void): Unsubscribe
+    /** Suena música: el robot se mueve al ritmo. */
+    onMusic(cb: (playing: boolean) => void): Unsubscribe
   }
   tab: {
     click(): void

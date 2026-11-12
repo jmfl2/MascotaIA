@@ -33,7 +33,11 @@ const EXPRESSIONS: Record<RobotState, Expression> = {
   happy: { open: 1, size: 1.06, happy: 1, asym: 0, tilt: 0, glow: 0.9, cheeks: 1 },
   confused: { open: 1, size: 1, happy: 0, asym: 0.45, tilt: 8, glow: 0.3, cheeks: 0 },
   sleeping: { open: 0.08, size: 1, happy: 0, asym: 0, tilt: 3, glow: 0, cheeks: 0 },
-  alert: { open: 1.18, size: 1.14, happy: 0, asym: 0, tilt: 0, glow: 1, cheeks: 0 }
+  alert: { open: 1.18, size: 1.14, happy: 0, asym: 0, tilt: 0, glow: 1, cheeks: 0 },
+  /** Guiño: cierra el ojo derecho y ladea la cabeza (al guardar algo). */
+  wink: { open: 1.04, size: 1.04, happy: 0, asym: 1, tilt: 7, glow: 0.8, cheeks: 0.7 },
+  /** Emocionado: ojos felices, todo encendido y saltitos (al lograr algo). */
+  excited: { open: 1.15, size: 1.14, happy: 1, asym: 0, tilt: 0, glow: 1, cheeks: 1 }
 }
 
 /** Colores de la barrita del pomodoro. */
@@ -45,7 +49,9 @@ const POMODORO_MIN_WIDTH = 6
 const ALERT_HOP_MS = 1400
 
 /** Estados pasajeros: duran un rato y vuelven al estado base. */
-const TRANSIENT_MS: Partial<Record<RobotState, number>> = { happy: 1700, confused: 1900 }
+const TRANSIENT_MS: Partial<Record<RobotState, number>> = { happy: 1700, confused: 1900, wink: 1200, excited: 2600 }
+/** Ritmo al que se mueve con la música (pulsos por segundo, unos 110 por minuto). */
+const MUSIC_BEAT_HZ = 110 / 60
 /** Sin mover el ratón durante este tiempo, el robot se duerme. */
 const SLEEP_AFTER_MS = 3 * 60 * 1000
 /** Distancia (px) a la que la mirada alcanza su máximo desvío. */
@@ -112,6 +118,7 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
   let dragMoving = false
   let dropHover = false
   let lastHop = 0
+  let music = false
   let lastActivity = performance.now()
   const cursorGaze = { x: 0, y: 0 }
 
@@ -135,6 +142,16 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
     svg.classList.toggle('is-thinking', state === 'thinking')
     svg.classList.toggle('is-sleeping', state === 'sleeping')
     svg.classList.toggle('is-confused', state === 'confused')
+    svg.classList.toggle('is-excited', state === 'excited')
+    svg.classList.toggle('is-music', music && state !== 'sleeping')
+  }
+
+  /** Suena música: se mueve al ritmo y le salen notas (dormido, no). */
+  function setMusic(playing: boolean): void {
+    if (playing === music) return
+    music = playing
+    if (playing) s.lift.kick(-80)
+    refresh()
   }
 
   function setState(state: RobotState): void {
@@ -151,6 +168,18 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
         s.lift.kick(-260)
         s.squashY.kick(2.2)
         s.squashX.kick(-1.2)
+      } else if (state === 'excited') {
+        // Tres saltitos seguidos, cada uno un poco más bajo.
+        ;[0, 360, 720].forEach((delay, n) =>
+          window.setTimeout(() => {
+            s.lift.kick(-300 + n * 50)
+            s.squashY.kick(2.4)
+            s.squashX.kick(-1.4)
+          }, delay)
+        )
+      } else if (state === 'wink') {
+        s.tilt.kick(90)
+        s.size.kick(1.5)
       } else {
         s.tilt.kick(-120)
       }
@@ -200,7 +229,7 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
     window.setTimeout(
       () => {
         const state = current()
-        if (state !== 'sleeping' && state !== 'happy' && !dragMoving) {
+        if (state !== 'sleeping' && state !== 'happy' && state !== 'excited' && state !== 'wink' && !dragMoving) {
           blink()
           if (Math.random() < 0.2) window.setTimeout(blink, 220) // a veces, doble parpadeo
         }
@@ -354,10 +383,14 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
     const period = state === 'sleeping' ? 4.8 : 3.4
     const breath = Math.sin((t * 2 * Math.PI) / period)
     const floatY = breath * (state === 'sleeping' ? 1.2 : 2.6)
-    const y = floatY + s.lift.value
+    // Con música: un botecito y un balanceo a cada pulso (no mientras se arrastra).
+    const grooving = music && state !== 'sleeping' && !dragging
+    const beat = grooving ? Math.sin(t * Math.PI * 2 * MUSIC_BEAT_HZ) : 0
+    const bounce = grooving ? -Math.abs(Math.sin(t * Math.PI * MUSIC_BEAT_HZ * 2)) * 2.4 : 0
+    const y = floatY + s.lift.value + bounce
     const sx = s.squashX.value * (1 - breath * 0.006)
     const sy = s.squashY.value * (1 + breath * 0.014)
-    const lean = s.gazeX.value * 3 // se inclina hacia donde mira
+    const lean = s.gazeX.value * 3 + beat * 3.5 // se inclina hacia donde mira (y se balancea con la música)
 
     rig.setAttribute(
       'transform',
@@ -438,5 +471,5 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
     s.lift.target = -230
   }
 
-  return { setState, setCursor, setHover, setPomodoro, onDragMoving, enter, leave }
+  return { setState, setCursor, setHover, setPomodoro, onDragMoving, enter, leave, setMusic }
 }

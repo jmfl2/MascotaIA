@@ -80,6 +80,8 @@ export async function streamClaude(req: ClaudeChatRequest): Promise<ClaudeResult
         betas: ['server-side-fallback-2026-07-01'],
         fallbacks: 'default',
         output_config: { effort: 'low' },
+        // Caché automática: al seguir preguntando sobre lo mismo (p. ej. un PDF) no se paga entero cada vez.
+        cache_control: { type: 'ephemeral' },
         system: req.system,
         messages: req.messages
       },

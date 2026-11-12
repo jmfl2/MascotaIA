@@ -17,6 +17,8 @@ import { tabAnchor } from './tabWindow'
 
 /** Tamaño de la ventana en DIP. Deja margen para sombra, rebotes y el "asomarse". */
 export const ROBOT_SIZE = { width: 200, height: 200 }
+/** ¿Suena música? (para mandarlo de nuevo si la página se recarga). */
+let music = false
 /** Centro de la cara del robot dentro de la ventana (coincide con el SVG). */
 const FACE_CENTER = { x: 0.5, y: 0.51 }
 /** Silueta sensible al ratón, igual que #hit en robot.html. */
@@ -131,7 +133,10 @@ export function createRobotWindow(): BrowserWindow {
     if (robotVisible && !dockTop) win?.showInactive()
   })
   // Al cargar (y en cada recarga en desarrollo) se le envía su skin.
-  win.webContents.on('did-finish-load', () => sendAppearance(getConfig().appearance))
+  win.webContents.on('did-finish-load', () => {
+    sendAppearance(getConfig().appearance)
+    win?.webContents.send(IPC.robotMusic, music)
+  })
   win.on('show', startCursorTracking)
   win.on('hide', stopCursorTracking)
   win.on('closed', () => {
@@ -202,6 +207,11 @@ export function sendRobotState(state: RobotState): void {
 
 export function sendAppearance(appearance: Appearance): void {
   getRobotWindow()?.webContents.send(IPC.robotAppearance, appearance)
+}
+
+export function sendRobotMusic(playing: boolean): void {
+  music = playing
+  getRobotWindow()?.webContents.send(IPC.robotMusic, playing)
 }
 
 export function sendPomodoro(view: PomodoroView): void {

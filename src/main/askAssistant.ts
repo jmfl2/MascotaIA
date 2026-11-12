@@ -17,6 +17,8 @@ import { sendToAi } from './ai/aiChat'
 import { getBarWindow, openBar } from './barWindow'
 import { toast } from './bubbleWindow'
 import { getClaudeKey } from './claudeKey'
+import { claudeOpenIn, openClaude } from './claudeApp'
+import { shell } from 'electron'
 import { openExternalUrl } from './commandRunner'
 import { robotMood } from './robotMood'
 
@@ -41,11 +43,30 @@ export function prefillUrl(assistant: Assistant, text: string): string | null {
   return built.ok ? built.url : null
 }
 
+/** Abre la IA sin pregunta (para pegar archivos o un texto largo). Devuelve si se abrió. */
+export async function openAssistantHome(assistant: Assistant): Promise<boolean> {
+  if (assistant === 'claude' && claudeOpenIn() === 'app') {
+    try {
+      await shell.openExternal('claude://claude.ai/new')
+      return true
+    } catch {
+      /* al navegador */
+    }
+  }
+  return (await openExternalUrl(HOME[assistant])).kind === 'close'
+}
+
 export async function askAssistant(assistant: Assistant, text: string): Promise<void> {
   if (assistant === 'claude' && getClaudeKey()) {
     void sendToAi('chat', text, 'claude')
     openBar()
     getBarWindow()?.webContents.send(IPC.barEnterChat, 'claude')
+    return
+  }
+  if (assistant === 'claude') {
+    const outcome = await openClaude(text, true)
+    robotMood.flash(outcome.kind === 'close' ? 'happy' : 'confused')
+    if (outcome.kind === 'close' && outcome.toast) toast(outcome.toast)
     return
   }
   const url = prefillUrl(assistant, text)

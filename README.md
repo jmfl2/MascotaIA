@@ -31,6 +31,8 @@ que se ejecuta íntegramente en tu equipo.
   guardarlo, resumirlo o preguntárselo a una IA, e ignora contraseñas y claves.
 - **Se actualiza sola:** descarga las versiones nuevas de GitHub y comprueba su
   huella antes de instalarlas.
+- **Suelta archivos en el robot:** pregúntale a una IA por ellos, resúmelos,
+  comprímelos en un .zip, añádelos a favoritos o copia su ruta.
 - **Música en la pestaña:** como la isla del iPhone, la pestaña de arriba
   muestra lo que suena en Spotify, el navegador u otras apps, con carátula y
   botones de anterior, pausa y siguiente.

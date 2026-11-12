@@ -272,6 +272,9 @@ export interface SettingsView {
   claudeKeyError?: 'invalid' | 'no-encryption'
   /** IA a la que mandar lo que copias. */
   askAi: Assistant
+  /** Dónde se abre Claude sin clave de API, y si la app de escritorio está instalada. */
+  claudeOpenIn: 'web' | 'app'
+  claudeAppInstalled: boolean
   autoUpdate: boolean
   /** Versión instalada y estado de las actualizaciones (solo para mostrar). */
   version: string
@@ -286,7 +289,7 @@ export type UpdateView =
   | { state: 'error'; message: string }
 
 /** Cambios que manda la ventana de ajustes. `claudeApiKey`: clave nueva ('' la borra). */
-export type SettingsPatch = Partial<Omit<SettingsView, 'claudeKey' | 'claudeKeyError' | 'version' | 'update'>> & {
+export type SettingsPatch = Partial<Omit<SettingsView, 'claudeKey' | 'claudeKeyError' | 'version' | 'update' | 'claudeAppInstalled'>> & {
   claudeApiKey?: string
   /** Botones de las actualizaciones. */
   checkUpdates?: true

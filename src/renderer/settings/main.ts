@@ -296,6 +296,28 @@ const setAskAi = segmented(el('ask-ai'), ASSISTANTS, (id) => {
   api.update({ askAi: id })
 })
 
+const CLAUDE_TARGETS = [
+  { id: 'app', name: { es: 'App de escritorio', en: 'Desktop app' } },
+  { id: 'web', name: { es: 'Navegador', en: 'Browser' } }
+] as const
+const setClaudeOpen = segmented(el('claude-open'), CLAUDE_TARGETS, (id) => {
+  if (!view || view.claudeOpenIn === id) return
+  if (id === 'app' && !view.claudeAppInstalled) return
+  view = { ...view, claudeOpenIn: id }
+  render()
+  api.update({ claudeOpenIn: id })
+})
+
+function renderClaudeOpen(): void {
+  if (!view) return
+  setClaudeOpen(view.claudeOpenIn)
+  const appButton = el('claude-open').querySelector<HTMLButtonElement>('.segment')
+  if (appButton) appButton.disabled = !view.claudeAppInstalled
+  el<HTMLParagraphElement>('claude-open-hint').textContent = view.claudeAppInstalled
+    ? t('La app se abre con la pregunta escrita para que la revises y la envíes.', 'The app opens with the question typed so you can review and send it.')
+    : t('La app de escritorio de Claude no está instalada: se usa el navegador.', "The Claude desktop app isn't installed: the browser is used.")
+}
+
 // --- Actualizaciones --------------------------------------------------------------------
 const updateAction = el<HTMLButtonElement>('update-action')
 updateAction.addEventListener('click', () => {
@@ -404,13 +426,13 @@ function render(): void {
   toneHint.textContent = tone ? tx(tone.hint) : ''
   setLanguage(view.language)
   setAskAi(view.askAi)
+  renderClaudeOpen()
   renderKey()
   renderUpdate()
   el<HTMLInputElement>('autoUpdate').checked = view.autoUpdate
 
   el<HTMLInputElement>('dockTop').checked = view.dockTop
   el<HTMLInputElement>('nowPlaying').checked = view.nowPlaying
-  el<HTMLInputElement>('nowPlaying').disabled = !view.dockTop
   el<HTMLInputElement>('linkGuard').checked = view.linkGuard
   el<HTMLInputElement>('clipboardEnabled').checked = view.clipboardEnabled
   el<HTMLInputElement>('startWithWindows').checked = view.startWithWindows

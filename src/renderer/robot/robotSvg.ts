@@ -374,6 +374,18 @@ export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" ar
       <text x="170" y="30">Z</text>
     </g>
     <text class="question" x="152" y="56" aria-hidden="true">?</text>
+    <!-- Notas que flotan mientras suena música -->
+    <g class="notes" aria-hidden="true">
+      <text x="154" y="74">♪</text>
+      <text x="164" y="54">♫</text>
+      <text x="30" y="66">♪</text>
+    </g>
+    <!-- Destellos cuando está emocionado -->
+    <g class="sparkles" aria-hidden="true">
+      <path d="M38 40 l2.4 6 l6 2.4 l-6 2.4 l-2.4 6 l-2.4 -6 l-6 -2.4 l6 -2.4 z" />
+      <path d="M160 30 l1.8 4.6 l4.6 1.8 l-4.6 1.8 l-1.8 4.6 l-1.8 -4.6 l-4.6 -1.8 l4.6 -1.8 z" />
+      <path d="M170 84 l1.6 4 l4 1.6 l-4 1.6 l-1.6 4 l-1.6 -4 l-4 -1.6 l4 -1.6 z" />
+    </g>
   </g>
 
   <!-- Zona sensible al ratón: fuera de ella los clics llegan al escritorio -->

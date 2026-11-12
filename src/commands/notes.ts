@@ -40,7 +40,7 @@ export const notes: CommandModule = {
         icon: { kind: 'glyph', path: PLUS_ICON, accent: ACCENT },
         run: () => {
           ctx.notes.add(q)
-          return { kind: 'close', mood: 'happy', toast: t('Nota guardada', 'Note saved') }
+          return { kind: 'close', mood: 'wink', toast: t('Nota guardada', 'Note saved') }
         }
       })
     }

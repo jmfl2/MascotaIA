@@ -28,7 +28,8 @@ export const robotMood = {
     thinking = on
     sendBase()
   },
-  flash(mood: 'happy' | 'confused'): void {
+  /** Reacciones breves: contento, confundido, guiño (algo guardado) o emocionado (logro). */
+  flash(mood: 'happy' | 'confused' | 'wink' | 'excited'): void {
     sendRobotState(mood)
   }
 }

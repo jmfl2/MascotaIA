@@ -29,7 +29,13 @@ export function fakeContext(now = new Date(2026, 10, 10, 12, 0, 0).getTime()) {
     },
     copyText: (text) => void state.copied.push(text),
     clipboardText: async () => state.clipboard,
-    claude: { ready: () => state.claudeKey },
+    claude: {
+      ready: () => state.claudeKey,
+      open: async (text) => {
+        state.opened.push(`claude:${text}`)
+        return { kind: 'close', mood: 'happy' }
+      }
+    },
     openSettings: () => void state.opened.push('ajustes'),
     links: {
       expand: async (url) => ({ kind: 'activate', commandId: 'link', text: `expandido:${url}` }),

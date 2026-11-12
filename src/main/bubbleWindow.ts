@@ -146,6 +146,11 @@ export function updateBubble(id: string, patch: { title?: string; text?: string 
   getWin()?.webContents.send(IPC.bubbleUpdate, { id, ...patch })
 }
 
+/** Cierra el bocadillo solo si sigue siendo ese (p. ej. un "Comprimiendo…" que ya terminó). */
+export function closeBubbleIf(id: string): void {
+  if (active?.view.id === id) closeBubble()
+}
+
 /** Cierra el bocadillo actual con animación. */
 export function closeBubble(): void {
   const w = getWin()

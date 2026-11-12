@@ -2,12 +2,13 @@
  * Preguntar a Claude:
  * - Con una clave de API en los ajustes, Claude responde dentro de la barra
  *   (como la IA local; el chat lo lleva el proceso principal).
- * - Sin clave, se abre claude.ai con la pregunta ya escrita, con tu cuenta.
+ * - Sin clave, se abre Claude con la pregunta ya escrita, con tu cuenta: en la
+ *   app de escritorio si está instalada (o en claude.ai, según los ajustes).
  */
 import { t } from '../shared/i18n'
 import { sanitizeQuery } from './sanitize'
 import type { CommandModule, Suggestion } from './types'
-import { buildWebUrl, type WebCommandDef } from './web'
+import type { WebCommandDef } from './web'
 
 /** Asterisco de ocho puntas (genérico, no es el logotipo de nadie). */
 export const CLAUDE_ICON = 'M12 3.5v17 M3.5 12h17 M6 6l12 12 M18 6L6 18'
@@ -61,7 +62,7 @@ export const claude: CommandModule = {
       return [
         {
           title: t('Escribe tu pregunta', 'Type your question'),
-          subtitle: t('Se abre claude.ai con ella ya escrita, con tu cuenta', 'claude.ai opens with it already typed, using your account'),
+          subtitle: t('Se abre Claude con ella ya escrita, con tu cuenta', 'Claude opens with it already typed, using your account'),
           disabled: true,
           run: () => ({ kind: 'error', message: t('Escribe la pregunta primero', 'Type the question first') })
         },
@@ -71,11 +72,8 @@ export const claude: CommandModule = {
     return [
       {
         title: q,
-        subtitle: t('Claude · abrir en claude.ai', 'Claude · open on claude.ai'),
-        run: async () => {
-          const result = buildWebUrl(claudeWeb, q)
-          return result.ok ? ctx.openUrl(result.url) : { kind: 'error', message: result.error }
-        }
+        subtitle: t('Claude · abrir con la pregunta escrita', 'Claude · open with the question typed'),
+        run: () => ctx.claude.open(q)
       },
       keyHint
     ]

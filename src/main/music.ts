@@ -3,11 +3,11 @@
  *
  * Se enseña mientras suena. Al pausar se queda un minuto (por si se reanuda) y
  * luego desaparece. Con una canción nueva, la píldora se asoma abierta un
- * momento. Solo en modo pestaña y si está activado en los ajustes.
+ * momento. El robot, además, se mueve al ritmo mientras suena.
  */
-import { isDocked } from './dock'
 import { MEDIA_ACTIONS, mediaAction, onNowPlayingChange, setNowPlayingEnabled, type MediaAction, type NowPlaying } from './services/nowPlaying'
 import { getConfig } from './store'
+import { sendRobotMusic } from './robotWindow'
 import { setTabMedia } from './tabWindow'
 
 /** Cuánto se queda a la vista una canción en pausa. */
@@ -19,6 +19,7 @@ let lastTrack = ''
 function show(now: NowPlaying | null): void {
   if (pausedTimer) clearTimeout(pausedTimer)
   pausedTimer = null
+  sendRobotMusic(!!now?.playing)
   if (!now) {
     lastTrack = ''
     setTabMedia(null)
@@ -41,9 +42,12 @@ export function startMusic(): void {
   syncMusic()
 }
 
-/** Enciende o apaga el seguimiento según los ajustes (y el modo pestaña). */
+/**
+ * Enciende o apaga el seguimiento según los ajustes. Funciona en los dos modos:
+ * en modo pestaña se ve la isla y, en cualquier modo, el robot baila.
+ */
 export function syncMusic(): void {
-  setNowPlayingEnabled(getConfig().nowPlaying && isDocked())
+  setNowPlayingEnabled(getConfig().nowPlaying)
 }
 
 export function musicAction(raw: unknown): void {

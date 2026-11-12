@@ -26,7 +26,7 @@ export type IconSpec = GlyphIcon | ImageIcon
 /** Qué pasa después de ejecutar una sugerencia. */
 export type Outcome =
   /** Cerrar la barra. `toast` muestra un bocadillo breve junto al robot. */
-  | { kind: 'close'; mood?: 'happy'; toast?: string }
+  | { kind: 'close'; mood?: 'happy' | 'wink'; toast?: string }
   /** Mantener la barra abierta con un mensaje de error (el robot se confunde). */
   | { kind: 'error'; message: string }
   /** Fijar otro comando como etiqueta (con `text`, sustituye lo escrito). */
@@ -170,6 +170,8 @@ export interface CommandContext {
   claude: {
     /** Hay clave de API: Claude responde dentro de la barra. */
     ready(): boolean
+    /** Abre Claude con la pregunta escrita (app de escritorio o claude.ai, según los ajustes). */
+    open(text: string): Promise<Outcome>
   }
   /** Texto actual del portapapeles. */
   clipboardText(): Promise<string>
