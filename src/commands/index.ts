@@ -9,6 +9,9 @@
  */
 import { t } from '../shared/i18n'
 import { ai, explain, summarize } from './ai'
+import { chatgpt, gemini, perplexity } from './assistants'
+import { calc } from './calc'
+import { claude } from './claude'
 import { github } from './github'
 import { google } from './google'
 import { launcher } from './launcher'
@@ -32,6 +35,10 @@ export const COMMANDS: readonly CommandModule[] = [
   google,
   launcher,
   ai,
+  claude,
+  chatgpt,
+  perplexity,
+  gemini,
   link,
   youtube,
   maps,
@@ -40,6 +47,7 @@ export const COMMANDS: readonly CommandModule[] = [
   notes,
   reminders,
   pomodoro,
+  calc,
   summarize,
   explain,
   settings

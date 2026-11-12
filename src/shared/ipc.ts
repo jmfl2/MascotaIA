@@ -125,7 +125,12 @@ export interface ChatMessageView {
   error?: boolean
 }
 
+/** Quién responde en el chat de la barra. */
+export type ChatProvider = 'local' | 'claude'
+
 export interface ChatSnapshot {
+  /** De quién es esta conversación (cambiar de proveedor empieza una nueva). */
+  provider: ChatProvider
   messages: ChatMessageView[]
   /** La IA está escribiendo la última respuesta. */
   streaming: boolean
@@ -245,12 +250,12 @@ export interface MascotaApi {
     reportError(): void
     onOpen(cb: () => void): Unsubscribe
     onClose(cb: () => void): Unsubscribe
-    /** El proceso principal pide pasar al chat (p. ej. "Resumir" desde el bocadillo). */
-    onEnterChat(cb: () => void): Unsubscribe
+    /** El proceso principal pide pasar al chat de un comando ('ai' o 'claude'). */
+    onEnterChat(cb: (commandId: string) => void): Unsubscribe
     getInfo(): Promise<AppInfo | null>
   }
   ai: {
-    send(text: string): void
+    send(text: string, provider: ChatProvider): void
     stop(): void
     reset(): void
     copy(index: number): void

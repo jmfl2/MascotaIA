@@ -167,6 +167,10 @@ export interface CommandContext {
     /** Descarga el modelo elegido (el progreso sale en el bocadillo). */
     pull(): Promise<Outcome>
   }
+  claude: {
+    /** Hay clave de API: Claude responde dentro de la barra. */
+    ready(): boolean
+  }
   /** Texto actual del portapapeles. */
   clipboardText(): Promise<string>
   links: {

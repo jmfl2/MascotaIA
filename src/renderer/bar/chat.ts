@@ -60,7 +60,7 @@ export interface ChatView {
 }
 
 export function createChatView(root: HTMLElement, onCopy: (index: number) => void, onChange: () => void): ChatView {
-  let state: ChatSnapshot = { messages: [], streaming: false }
+  let state: ChatSnapshot = { provider: 'local', messages: [], streaming: false }
   let pending = false
 
   function paint(): void {
@@ -73,9 +73,17 @@ export function createChatView(root: HTMLElement, onCopy: (index: number) => voi
       empty.className = 'chat-empty'
       const title = document.createElement('p')
       title.className = 'chat-empty-title'
-      title.textContent = t('Pregúntame lo que quieras', 'Ask me anything')
       const sub = document.createElement('p')
-      sub.textContent = t('Funciono en tu PC con Ollama: lo que escribas no sale de aquí.', 'I run on your PC with Ollama: what you type never leaves it.')
+      if (state.provider === 'claude') {
+        title.textContent = t('Pregúntale a Claude', 'Ask Claude')
+        sub.textContent = t(
+          'Responde Claude con tu clave de API: lo que escribas se envía a Anthropic.',
+          'Claude answers with your API key: what you type is sent to Anthropic.'
+        )
+      } else {
+        title.textContent = t('Pregúntame lo que quieras', 'Ask me anything')
+        sub.textContent = t('Funciono en tu PC con Ollama: lo que escribas no sale de aquí.', 'I run on your PC with Ollama: what you type never leaves it.')
+      }
       empty.append(title, sub)
       root.append(empty)
     }

@@ -10,6 +10,7 @@
 import { t } from '../shared/i18n'
 import { looksLikeUrl } from '../security'
 import { ai } from './ai'
+import { calc, calcSuggestion } from './calc'
 import { launcher } from './launcher'
 import { link } from './link'
 import { COMMANDS, findCommandById } from './index'
@@ -90,6 +91,10 @@ export async function suggestFor(commandId: string | null, text: string, ctx: Co
     return [...(await mostUsedRows(ctx)), ...commandRows]
   }
 
+  // Si es una cuenta o una conversión ("12*7", "5 km en millas"), el resultado va el primero.
+  const calcRow = calcSuggestion(text, (s) => ctx.copyText(s))
+  const calcRows: Ranked[] = calcRow ? [{ command: calc, suggestion: calcRow }] : []
+
   // Si se pega un enlace, lo primero es ofrecer comprobarlo.
   const linkRows: Ranked[] = looksLikeUrl(text)
     ? [
@@ -133,6 +138,6 @@ export async function suggestFor(commandId: string | null, text: string, ctx: Co
   const strong = (rankedRows[0]?.suggestion.score ?? 0) >= STRONG_MATCH
   const [first, ...restWeb] = webRows
   return strong
-    ? [...linkRows, ...rankedRows, ...(first ? [first] : []), ...interpretRows, ...restWeb]
-    : [...linkRows, ...(first ? [first] : []), ...interpretRows, ...rankedRows, ...restWeb]
+    ? [...calcRows, ...linkRows, ...rankedRows, ...(first ? [first] : []), ...interpretRows, ...restWeb]
+    : [...calcRows, ...linkRows, ...(first ? [first] : []), ...interpretRows, ...rankedRows, ...restWeb]
 }

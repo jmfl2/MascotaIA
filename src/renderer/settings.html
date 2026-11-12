@@ -105,6 +105,46 @@
             </div>
           </div>
 
+          <h2 data-en="Ask an AI">Preguntar a una IA</h2>
+          <div class="group">
+            <div class="row column">
+              <div id="ask-ai" class="segmented" role="radiogroup" aria-label="IA" data-en-aria-label="AI"></div>
+              <p class="hint" data-en="When you copy something, the bubble offers to send it to this AI (“claude”, “gpt”, “pplx” and “gem” also work in the bar)."
+                >Al copiar algo, el bocadillo te ofrece mandárselo a esta IA (en la barra también tienes «claude», «gpt», «pplx» y «gem»).</p
+              >
+            </div>
+          </div>
+
+          <h2 data-en="Claude in the bar">Claude en la barra</h2>
+          <div class="group">
+            <div class="row column">
+              <div class="key-head">
+                <span class="label" data-en="Anthropic API key">Clave de API de Anthropic</span>
+                <span id="key-status" class="key-status"></span>
+              </div>
+              <form id="key-form" class="key-form" autocomplete="off">
+                <input
+                  id="key-input"
+                  class="text-input key-input"
+                  type="password"
+                  spellcheck="false"
+                  placeholder="sk-ant-…"
+                  aria-label="Clave de API"
+                  data-en-aria-label="API key"
+                />
+                <button id="key-save" class="link-button" type="submit" data-en="Save">Guardar</button>
+                <button id="key-remove" class="link-button" type="button" data-en="Remove">Quitar</button>
+              </form>
+              <p id="key-error" class="hint key-error" hidden></p>
+              <p
+                class="hint"
+                data-en="With a key, Claude answers inside the bar (the “claude” command). Without one, claude.ai opens with your question. Each question is billed to your API account, separately from a claude.ai subscription. The key is stored encrypted on this PC; get one at console.anthropic.com."
+              >
+                Con una clave, Claude responde dentro de la barra (comando «claude»). Sin ella, se abre claude.ai con tu pregunta. Cada pregunta se cobra en tu cuenta de la API, aparte de la suscripción de claude.ai. La clave se guarda cifrada en este PC; consíguela en console.anthropic.com.
+              </p>
+            </div>
+          </div>
+
           <h2 data-en="On screen">En pantalla</h2>
           <div class="group">
             <label class="row">
@@ -148,6 +188,26 @@
             <label class="row">
               <span class="label" data-en="Start with Windows">Iniciar con Windows</span>
               <input id="startWithWindows" class="switch" type="checkbox" />
+            </label>
+          </div>
+
+          <h2 data-en="Updates">Actualizaciones</h2>
+          <div class="group">
+            <div class="row">
+              <span class="label-block">
+                <span id="version" class="label">Mascota</span>
+                <span id="update-status" class="hint"></span>
+              </span>
+              <button id="update-action" class="link-button" type="button"></button>
+            </div>
+            <label class="row">
+              <span class="label-block">
+                <span class="label" data-en="Update automatically">Actualizar automáticamente</span>
+                <span class="hint" data-en="Downloads new versions from GitHub and checks them before installing"
+                  >Descarga las versiones nuevas de GitHub y las comprueba antes de instalarlas</span
+                >
+              </span>
+              <input id="autoUpdate" class="switch" type="checkbox" />
             </label>
           </div>
 

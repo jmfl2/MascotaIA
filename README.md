@@ -20,10 +20,17 @@ que se ejecuta íntegramente en tu equipo.
   (`rec mañana 9:00 dentista`) y temporizador Pomodoro.
 - **IA local con Ollama** (opcional): chat, resúmenes, explicaciones y
   comandos en lenguaje natural. Ningún texto sale de tu equipo.
+- **Claude, ChatGPT, Perplexity y Gemini:** pregúntales desde la barra o desde
+  lo que copias; se abre su web con la pregunta escrita. Con una clave de API
+  de Anthropic (opcional), Claude responde dentro de la barra.
+- **Calculadora y conversiones:** escribe `12*7+3`, `20% de 85` o
+  `5 km en millas` y el resultado aparece el primero.
 - **Detector de enlaces sospechosos:** analiza en local los enlaces que copias
   y avisa de suplantaciones, homógrafos y acortadores.
 - **Portapapeles inteligente:** al copiar un texto ofrece buscarlo, traducirlo,
-  guardarlo o resumirlo, e ignora contraseñas y claves.
+  guardarlo, resumirlo o preguntárselo a una IA, e ignora contraseñas y claves.
+- **Se actualiza sola:** descarga las versiones nuevas de GitHub y comprueba su
+  huella antes de instalarlas.
 - **Música en la pestaña:** como la isla del iPhone, la pestaña de arriba
   muestra lo que suena en Spotify, el navegador u otras apps, con carátula y
   botones de anterior, pausa y siguiente.
@@ -87,6 +94,11 @@ coinciden. Con un prefijo seguido de un espacio se usa un comando concreto:
 | `ia`, `ai`, `chat`, `?`     | Chat con la IA     | `ia ¿qué es una API REST?`                                 |
 | `resumir`, `explicar`       | Resumir o explicar | Sin texto, usa el contenido del portapapeles               |
 | `link`, `enlace`, `url`     | Comprobar enlace   | `link https://bit.ly/...`                                  |
+| `claude`, `cl`              | Claude             | `claude ¿por qué el cielo es azul?`                        |
+| `gpt`, `chatgpt`            | ChatGPT            | `gpt ideas para una cena`                                  |
+| `pplx`, `perplexity`        | Perplexity         | `pplx mejores portátiles 2026`                             |
+| `gem`, `gemini`             | Gemini             | Copia la pregunta y abre Gemini para pegarla               |
+| `=`, `calc`                 | Calculadora        | `= 12*7+3` · `calc 30 c en f` (sin prefijo también)        |
 | `ajustes`, `config`, `skin` | Ajustes            | Abre la ventana de ajustes                                 |
 
 Los recordatorios aceptan `10m`, `45s`, `2h`, `1h30m`, `en 20 minutos`,
@@ -234,6 +246,12 @@ decisiones de diseño están documentados en
 3. En GitHub, crea una release con la etiqueta `v<versión>` y adjunta
    `Mascota-Setup.exe`. El botón de descarga de este README apunta siempre a la
    última release, así que no hay que cambiar el enlace.
+
+Las copias instaladas (desde la 0.3.0) encuentran la release nueva solas: la
+descargan, comprueban que su huella SHA-256 coincide con la que publica GitHub
+y la instalan en silencio. Para eso la release no puede ser un borrador ni una
+versión previa, la etiqueta debe ser `vX.Y.Z` y el instalador debe llamarse
+`Mascota-Setup.exe`.
 
 Tecnologías: Electron, TypeScript, Vite y Motion.
 

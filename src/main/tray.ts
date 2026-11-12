@@ -1,6 +1,7 @@
 /** Icono de la bandeja del sistema: el único control visible de la app. */
 import { Menu, nativeImage, Tray, type MenuItemConstructorOptions } from 'electron'
 import type { AiStatus } from '../commands'
+import type { UpdateView } from '../shared/appearance'
 import { formatAccelerator } from '../shared/accelerator'
 import { t } from '../shared/i18n'
 import { assetPath } from './paths'
@@ -24,6 +25,9 @@ export interface TrayActions {
   pullModel(): void
   freeAiMemory(): void
   openSettings(): void
+  updateState(): UpdateView
+  checkForUpdates(): void
+  installUpdate(): void
   robotName(): string
   /** Tras cambiar algo desde el menú (para que la ventana de ajustes se entere). */
   changed(): void
@@ -63,6 +67,23 @@ function aiMenu(actions: TrayActions): MenuItemConstructorOptions[] {
     )
   }
   return items
+}
+
+/** "Buscar actualizaciones" o, si ya hay una descargada, "Reiniciar para actualizar". */
+function updateItems(actions: TrayActions): MenuItemConstructorOptions[] {
+  const u = actions.updateState()
+  switch (u.state) {
+    case 'dev':
+      return []
+    case 'ready':
+      return [{ label: t(`Reiniciar y actualizar a ${u.version}`, `Restart and update to ${u.version}`), click: () => actions.installUpdate() }]
+    case 'downloading':
+      return [{ label: t(`Descargando ${u.version}… ${Math.round(u.progress * 100)} %`, `Downloading ${u.version}… ${Math.round(u.progress * 100)} %`), enabled: false }]
+    case 'checking':
+      return [{ label: t('Buscando actualizaciones…', 'Checking for updates…'), enabled: false }]
+    default:
+      return [{ label: t('Buscar actualizaciones', 'Check for updates'), click: () => actions.checkForUpdates() }]
+  }
 }
 
 let tray: Tray | null = null
@@ -149,6 +170,7 @@ export function createTray(actions: TrayActions): { tray: Tray; rebuild: () => v
         }
       },
       { type: 'separator' },
+      ...updateItems(actions),
       { label: t('Ajustes…', 'Settings…'), click: () => actions.openSettings() },
       { type: 'separator' },
       { label: t('Salir', 'Quit'), click: () => actions.quit() }

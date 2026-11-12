@@ -7,8 +7,10 @@
 import { t } from '../../shared/i18n'
 import type { AiTask } from '../../commands'
 import { chatSystemPrompt, taskDisplay, taskPrompt } from '../../ai/prompts'
+import { getClaudeKey } from '../claudeKey'
+import { ClaudeError, streamClaude } from './claudeClient'
 import { OllamaError, type ChatMessage } from '../../ai/ollama'
-import { IPC, type ChatSnapshot } from '../../shared/ipc'
+import { IPC, type ChatProvider, type ChatSnapshot } from '../../shared/ipc'
 import { getBarWindow } from '../barWindow'
 import { toast } from '../bubbleWindow'
 import { robotMood } from '../robotMood'
@@ -31,6 +33,8 @@ const MAX_INPUT = 20_000
 
 let messages: Message[] = []
 let controller: AbortController | null = null
+/** Quién responde en esta conversación; al cambiar, se empieza otra. */
+let provider: ChatProvider = 'local'
 
 function send(channel: string, payload: unknown): void {
   const wc = getBarWindow()?.webContents
@@ -39,6 +43,7 @@ function send(channel: string, payload: unknown): void {
 
 export function chatSnapshot(): ChatSnapshot {
   return {
+    provider,
     messages: messages.map((m) => ({ role: m.role, text: m.display, error: m.error })),
     streaming: controller !== null
   }
@@ -48,10 +53,14 @@ function broadcast(): void {
   send(IPC.aiUpdate, chatSnapshot())
 }
 
-export async function sendToAi(task: AiTask, rawText: string): Promise<void> {
+export async function sendToAi(task: AiTask, rawText: string, which: ChatProvider = 'local'): Promise<void> {
   const text = rawText.trim().slice(0, MAX_INPUT)
   if (!text) return
   stopAi()
+  if (which !== provider) {
+    provider = which
+    messages = []
+  }
 
   messages.push({ role: 'user', display: taskDisplay(task, text), content: taskPrompt(task, text) })
   const answer: Message = { role: 'assistant', display: '', content: '' }
@@ -60,6 +69,11 @@ export async function sendToAi(task: AiTask, rawText: string): Promise<void> {
   const myController = new AbortController()
   controller = myController
   broadcast()
+
+  if (which === 'claude') {
+    await answerWithClaude(answer, index, myController)
+    return
+  }
 
   const status = await refreshAiStatus()
   if (status.state !== 'ready') {
@@ -101,6 +115,62 @@ export async function sendToAi(task: AiTask, rawText: string): Promise<void> {
       answer.display = answer.content ? `${answer.content} …` : 'Detenido.'
     } else {
       answer.display = err instanceof OllamaError ? err.userMessage : t('La IA falló', 'The AI failed')
+      answer.error = true
+      robotMood.flash('confused')
+    }
+  } finally {
+    if (controller === myController) controller = null
+    robotMood.setThinking(false)
+    broadcast()
+  }
+}
+
+/** Historial para el modelo: sin errores ni la respuesta vacía que se está rellenando. */
+function historyForModel(): Array<{ role: 'user' | 'assistant'; content: string }> {
+  return messages
+    .slice(0, -1)
+    .filter((m) => !m.error && m.content)
+    .slice(-MAX_HISTORY)
+    .map((m) => ({ role: m.role, content: m.content }))
+}
+
+async function answerWithClaude(answer: Message, index: number, myController: AbortController): Promise<void> {
+  const apiKey = getClaudeKey()
+  if (!apiKey) {
+    answer.display = t('Falta la clave de API de Anthropic: ponla en Ajustes → General.', 'The Anthropic API key is missing: add it in Settings → General.')
+    answer.error = true
+    controller = null
+    broadcast()
+    robotMood.flash('confused')
+    return
+  }
+  robotMood.setThinking(true)
+  try {
+    const result = await streamClaude({
+      apiKey,
+      system: chatSystemPrompt(new Date(), getConfig().personality, 'claude'),
+      messages: historyForModel(),
+      signal: myController.signal,
+      onText: (delta) => {
+        answer.content += delta
+        answer.display = answer.content
+        send(IPC.aiDelta, { index, delta })
+      }
+    })
+    if (result === 'refusal') {
+      const note = t('Claude no puede ayudar con esto.', "Claude can't help with this.")
+      answer.display = answer.content ? `${answer.content}\n\n_${note}_` : note
+      answer.error = !answer.content
+    } else if (result === 'max_tokens') {
+      answer.display = `${answer.content} …`
+    }
+    robotMood.flash('happy')
+  } catch (err) {
+    const e = err instanceof ClaudeError ? err : new ClaudeError(t('Claude falló', 'Claude failed'))
+    if (e.aborted) {
+      answer.display = answer.content ? `${answer.content} …` : e.userMessage
+    } else {
+      answer.display = e.userMessage
       answer.error = true
       robotMood.flash('confused')
     }

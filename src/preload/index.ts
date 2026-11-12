@@ -81,11 +81,11 @@ const api: MascotaApi = {
     reportError: () => ipcRenderer.send(IPC.barError),
     onOpen: (cb) => listen<void>(IPC.barOpen, () => cb()),
     onClose: (cb) => listen<void>(IPC.barClose, () => cb()),
-    onEnterChat: (cb) => listen<void>(IPC.barEnterChat, () => cb()),
+    onEnterChat: (cb) => listen<string>(IPC.barEnterChat, (id) => cb(id === 'claude' ? 'claude' : 'ai')),
     getInfo: () => ipcRenderer.invoke(IPC.appInfo)
   },
   ai: {
-    send: (text) => ipcRenderer.send(IPC.aiSend, text),
+    send: (text, provider) => ipcRenderer.send(IPC.aiSend, { text, provider }),
     stop: () => ipcRenderer.send(IPC.aiStop),
     reset: () => ipcRenderer.send(IPC.aiReset),
     copy: (index) => ipcRenderer.send(IPC.aiCopy, index),

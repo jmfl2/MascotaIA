@@ -14,8 +14,13 @@ import { getSettingsWindow } from './settingsWindow'
 import { setStartsWithWindows, startsWithWindows } from './startup'
 import { getTabWindow } from './tabWindow'
 import { getConfig, setConfig } from './store'
+import { claudeKeySource, setClaudeKey } from './claudeKey'
+import { app } from 'electron'
+import { isAssistant } from '../shared/assistants'
+import { checkForUpdates, installUpdate, updateView } from './updater'
 
 const listeners = new Set<() => void>()
+let claudeKeyError: SettingsView['claudeKeyError']
 
 /** Para refrescar lo que dependa de los ajustes (menú de la bandeja...). */
 export function onSettingsChange(cb: () => void): void {
@@ -32,7 +37,13 @@ export function getSettingsView(): SettingsView {
     startWithWindows: startsWithWindows(),
     dockTop: isDocked(),
     nowPlaying: cfg.nowPlaying,
-    language: cfg.language
+    language: cfg.language,
+    claudeKey: claudeKeySource(),
+    askAi: cfg.askAi,
+    autoUpdate: cfg.autoUpdate,
+    version: app.getVersion(),
+    update: updateView(),
+    ...(claudeKeyError ? { claudeKeyError } : {})
   }
 }
 
@@ -54,6 +65,17 @@ export function applySettingsPatch(raw: unknown): void {
   if (typeof patch.startWithWindows === 'boolean') setStartsWithWindows(patch.startWithWindows)
   if (typeof patch.dockTop === 'boolean') setDocked(patch.dockTop)
   if (typeof patch.nowPlaying === 'boolean') setConfig({ nowPlaying: patch.nowPlaying })
+  if (isAssistant(patch.askAi)) setConfig({ askAi: patch.askAi })
+  if (patch.checkUpdates === true) void checkForUpdates(true)
+  if (patch.installUpdate === true) installUpdate()
+  if (typeof patch.autoUpdate === 'boolean') {
+    setConfig({ autoUpdate: patch.autoUpdate })
+    if (patch.autoUpdate) void checkForUpdates()
+  }
+  if (typeof patch.claudeApiKey === 'string' && patch.claudeApiKey.length < 400) {
+    const result = setClaudeKey(patch.claudeApiKey)
+    claudeKeyError = result === 'invalid' || result === 'no-encryption' ? result : undefined
+  }
   if (isLang(patch.language) && patch.language !== cfg.language) {
     setConfig({ language: patch.language })
     setLang(patch.language)

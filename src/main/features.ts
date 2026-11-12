@@ -23,6 +23,8 @@ import { remindersService } from './services/reminders'
 import { getConfig, setConfig } from './store'
 import { IPC } from '../shared/ipc'
 import { t } from '../shared/i18n'
+import { assistantName } from '../shared/assistants'
+import { askAssistant } from './askAssistant'
 
 const SNOOZE_MS = 10 * 60_000
 const LATE_THRESHOLD_MS = 60_000
@@ -121,7 +123,7 @@ async function openOrComplain(commandId: string, query: string): Promise<void> {
 export function askAiAbout(task: AiTask, text: string): void {
   void sendToAi(task, text)
   openBar()
-  getBarWindow()?.webContents.send(IPC.barEnterChat)
+  getBarWindow()?.webContents.send(IPC.barEnterChat, 'ai')
 }
 
 const saveNote = (text: string) => ({
@@ -192,19 +194,28 @@ function offerClipboard(decision: Extract<OfferDecision, { offer: true }>): void
   if (!cfg.clipboardEnabled || cfg.personality.chattiness === 'discreto') return
   const aiReady = aiStatus().state === 'ready'
 
+  // "Preguntar a Claude" (o la IA elegida en los ajustes) con lo que se acaba de copiar.
+  const ask = {
+    id: 'ask',
+    label: `💬 ${t('Preguntar a', 'Ask')} ${assistantName(cfg.askAi)}`,
+    run: () => void askAssistant(cfg.askAi, text)
+  }
+
   if (decision.kind === 'long') {
-    if (!aiReady) return // sin IA no hay nada útil que ofrecer para un texto largo
     const words = text.split(/\s+/).length
     showBubble({
       kind: 'clipboard',
-      title: t('¿Te resumo esto?', 'Want me to summarize this?'),
+      title: aiReady ? t('¿Te resumo esto?', 'Want me to summarize this?') : t('¿Te ayudo con esto?', 'Can I help with this?'),
       text: `${words} ${t('palabras', 'words')} · «${snippet(text, 60)}»`,
       timeoutMs: 6000,
-      actions: [
-        { id: 'summarize', label: t('✨ Resumir', '✨ Summarize'), primary: true, run: () => askAiAbout('summarize', text) },
-        { id: 'explain', label: t('Explicar', 'Explain'), run: () => askAiAbout('explain', text) },
-        saveNote(text)
-      ]
+      actions: aiReady
+        ? [
+            { id: 'summarize', label: t('✨ Resumir', '✨ Summarize'), primary: true, run: () => askAiAbout('summarize', text) },
+            { id: 'explain', label: t('Explicar', 'Explain'), run: () => askAiAbout('explain', text) },
+            ask,
+            saveNote(text)
+          ]
+        : [{ ...ask, primary: true }, saveNote(text)]
     })
     return
   }
@@ -222,6 +233,7 @@ function offerClipboard(decision: Extract<OfferDecision, { offer: true }>): void
         label: target === 'en' ? t('Traducir al inglés', 'Translate to English') : t('Traducir', 'Translate'),
         run: () => void openOrComplain('translate', `${target}: ${text}`)
       },
+      ask,
       saveNote(text),
       ...(aiReady ? [{ id: 'explain', label: t('✨ Explicar', '✨ Explain'), run: () => askAiAbout('explain', text) }] : [])
     ]

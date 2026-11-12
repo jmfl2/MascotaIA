@@ -16,6 +16,8 @@ export interface WebCommandDef {
   iconPath: string
   /** Únicos dominios a los que puede llevar este comando. */
   allowedHosts: readonly string[]
+  /** Si sale como destino alternativo al escribir sin prefijo (por defecto, sí). */
+  global?: boolean
   /**
    * Construye la URL de destino a partir de la consulta ya saneada y no vacía.
    * Debe usar `URL`/`URLSearchParams` (o `encodeURIComponent`) para codificar.
@@ -65,7 +67,7 @@ export function webCommand(def: WebCommandDef): WebCommand {
     },
     accent: def.accent,
     iconPath: def.iconPath,
-    global: 'web',
+    global: def.global === false ? undefined : 'web',
     web: def,
     suggest(query, ctx) {
       const q = sanitizeQuery(query)

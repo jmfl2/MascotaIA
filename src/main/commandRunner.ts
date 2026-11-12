@@ -9,6 +9,7 @@
 import { clipboard, shell } from 'electron'
 import { COMMANDS, type CommandContext, type Outcome } from '../commands'
 import { t } from '../shared/i18n'
+import { getClaudeKey } from './claudeKey'
 import { suggestFor, type Ranked } from '../commands/engine'
 import type { AppInfo, CommandMeta, ExecuteRequest, ExecuteResponse, QueryRequest, QueryResponse, ResultView } from '../shared/ipc'
 import { sendToAi } from './ai/aiChat'
@@ -61,6 +62,7 @@ export async function openLink(url: string): Promise<Outcome> {
 }
 
 export const commandContext: CommandContext = {
+  claude: { ready: () => getClaudeKey() !== null },
   now: () => Date.now(),
   openUrl: openExternalUrl,
   copyText: (text) => clipboardWatcher.copy(text),

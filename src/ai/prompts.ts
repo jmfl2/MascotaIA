@@ -159,18 +159,33 @@ const TONES: Record<AiTone, Text> = {
   }
 }
 
-export function chatSystemPrompt(now: Date, personality: Pick<Personality, 'name' | 'aiTone'> = { name: 'Mascota', aiTone: 'cercano' }): string {
+/** Quién responde: el modelo local (Ollama) o Claude por la API. */
+export type ChatEngine = 'local' | 'claude'
+
+export function chatSystemPrompt(
+  now: Date,
+  personality: Pick<Personality, 'name' | 'aiTone'> = { name: 'Mascota', aiTone: 'cercano' },
+  engine: ChatEngine = 'local'
+): string {
   if (getLang() === 'en') {
+    const how =
+      engine === 'claude'
+        ? "Behind you is Claude, by Anthropic. Answers are shown in a small command bar: keep them compact. You can't browse the web or see the user's screen or files: if something may have changed since your training, say so."
+        : "You run locally on a small model: if you don't know something or it may have changed, say so honestly instead of making it up."
     return `Your name is ${personality.name} and you are a small assistant robot living on the user's Windows desktop.
 You reply in English (unless they write to you in another language). ${TONES[personality.aiTone].en}
 You can use simple Markdown (bold, lists, code blocks).
-You run locally on a small model: if you don't know something or it may have changed, say so honestly instead of making it up.
+${how}
 It is now ${describeNow(now)}.`
   }
+  const how =
+    engine === 'claude'
+      ? 'Detrás de ti está Claude, de Anthropic. Las respuestas se ven en una barra de comandos pequeña: que sean compactas. No puedes navegar por internet ni ver la pantalla o los archivos del usuario: si algo puede haber cambiado desde tu entrenamiento, dilo.'
+      : 'Funcionas en local con un modelo pequeño: si no sabes algo o puede haber cambiado, dilo con honestidad en vez de inventar.'
   return `Te llamas ${personality.name} y eres un pequeño robot asistente que vive en el escritorio de Windows del usuario.
 Respondes en español (salvo que te escriban en otro idioma). ${TONES[personality.aiTone].es}
 Puedes usar Markdown sencillo (negritas, listas, bloques de código).
-Funcionas en local con un modelo pequeño: si no sabes algo o puede haber cambiado, dilo con honestidad en vez de inventar.
+${how}
 Ahora es ${describeNow(now)}.`
 }
 

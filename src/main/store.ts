@@ -11,6 +11,7 @@ import {
 } from '../shared/appearance'
 import { isLang, langFromLocale, type Lang } from '../shared/i18n'
 import { readJson, writeJson } from './services/jsonFile'
+import { isAssistant, type Assistant } from '../shared/assistants'
 
 export interface Config {
   /** Posición de la ventana del robot (esquina superior izquierda, en DIP). */
@@ -38,6 +39,12 @@ export interface Config {
   language: Lang
   /** Enseñar en la pestaña de arriba la canción que suena. */
   nowPlaying: boolean
+  /** Clave de API de Anthropic cifrada con safeStorage (base64), o null. */
+  claudeKeyEnc: string | null
+  /** IA a la que mandar lo que copias ("Preguntar a…" en el bocadillo). */
+  askAi: Assistant
+  /** Buscar e instalar actualizaciones de GitHub solo. */
+  autoUpdate: boolean
 }
 
 export const DEFAULT_SHORTCUT = 'Control+Space'
@@ -55,7 +62,10 @@ const DEFAULTS: Config = {
   appearance: DEFAULT_APPEARANCE,
   personality: DEFAULT_PERSONALITY,
   language: 'es',
-  nowPlaying: true
+  nowPlaying: true,
+  claudeKeyEnc: null,
+  askAi: 'claude',
+  autoUpdate: true
 }
 
 let cache: Config | null = null
@@ -82,6 +92,11 @@ function validate(raw: unknown): Config {
   if (r.personality !== undefined) cfg.personality = validatePersonality(r.personality)
   if (isLang(r.language)) cfg.language = r.language
   if (typeof r.nowPlaying === 'boolean') cfg.nowPlaying = r.nowPlaying
+  if (isAssistant(r.askAi)) cfg.askAi = r.askAi
+  if (typeof r.autoUpdate === 'boolean') cfg.autoUpdate = r.autoUpdate
+  if (typeof r.claudeKeyEnc === 'string' && /^[A-Za-z0-9+/]+={0,2}$/.test(r.claudeKeyEnc) && r.claudeKeyEnc.length < 4000) {
+    cfg.claudeKeyEnc = r.claudeKeyEnc
+  }
   return cfg
 }
 

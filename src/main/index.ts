@@ -46,6 +46,7 @@ import { registerShortcut } from './shortcut'
 import { getConfig } from './store'
 import { createTray } from './tray'
 import { musicAction, startMusic, stopMusic, syncMusic } from './music'
+import { checkForUpdates, installOnQuit, installUpdate, onUpdateChange, startUpdater, updateView } from './updater'
 import { setLang, t } from '../shared/i18n'
 
 // Una sola instancia: si se lanza otra vez, abrimos la barra de la que ya corre.
@@ -69,6 +70,7 @@ app.on('will-quit', () => {
   globalShortcut.unregisterAll()
   shutdownAi()
   stopMusic()
+  installOnQuit()
 })
 
 function start(): void {
@@ -108,6 +110,7 @@ function start(): void {
     setTimeout(() => {
       startFeatures()
       startChatter()
+      startUpdater()
     }, 600)
   )
   // Indexa las apps del menú Inicio (y sus iconos) en segundo plano, cuando el
@@ -134,11 +137,18 @@ function start(): void {
     pullModel: () => void pullModel(),
     freeAiMemory: () => void freeAiMemory(),
     openSettings,
+    updateState: updateView,
+    checkForUpdates: () => void checkForUpdates(true),
+    installUpdate: () => installUpdate(),
     robotName: () => getConfig().personality.name,
     changed: notifySettingsChanged,
     quit: () => app.quit()
   })
   onAiStatusChange(() => tray.rebuild())
+  onUpdateChange(() => {
+    tray.rebuild()
+    notifySettingsChanged()
+  })
   onSettingsChange(() => tray.rebuild())
 }
 
@@ -270,8 +280,10 @@ function registerIpc(): void {
   })
 
   // --- Chat con la IA (desde la barra) ---
-  ipcMain.on(IPC.aiSend, (event, text: unknown) => {
-    if (isFrom(event, bar()) && isShortString(text, 20_000)) void sendToAi('chat', text)
+  ipcMain.on(IPC.aiSend, (event, payload: unknown) => {
+    const p = (payload ?? {}) as Record<string, unknown>
+    const provider = p.provider === 'claude' ? 'claude' : 'local'
+    if (isFrom(event, bar()) && isShortString(p.text, 20_000)) void sendToAi('chat', p.text, provider)
   })
   ipcMain.on(IPC.aiStop, (event) => {
     if (isFrom(event, bar())) stopAi()

@@ -23,6 +23,7 @@ import {
   toggleAccessory,
   type SettingsView
 } from '../../shared/appearance'
+import { ASSISTANTS } from '../../shared/assistants'
 import { LANGUAGES, t, tx, type Localized } from '../../shared/i18n'
 import { applyAppearance } from '../robot/appearance'
 import { createRobot } from '../robot/robot'
@@ -288,8 +289,79 @@ nameInput.addEventListener('input', () => {
   nameTimer = window.setTimeout(() => updatePersonality({ name: nameInput.value }), 400)
 })
 
-for (const key of ['dockTop', 'nowPlaying', 'linkGuard', 'clipboardEnabled', 'startWithWindows'] as const) {
+const setAskAi = segmented(el('ask-ai'), ASSISTANTS, (id) => {
+  if (!view || view.askAi === id) return
+  view = { ...view, askAi: id }
+  render()
+  api.update({ askAi: id })
+})
+
+// --- Actualizaciones --------------------------------------------------------------------
+const updateAction = el<HTMLButtonElement>('update-action')
+updateAction.addEventListener('click', () => {
+  if (view?.update.state === 'ready') api.update({ installUpdate: true })
+  else api.update({ checkUpdates: true })
+})
+
+function renderUpdate(): void {
+  if (!view) return
+  const u = view.update
+  el<HTMLSpanElement>('version').textContent = `Mascota ${view.version}`
+  const status = el<HTMLSpanElement>('update-status')
+  status.textContent =
+    u.state === 'dev'
+      ? t('Versión de desarrollo: no se actualiza', 'Development build: no updates')
+      : u.state === 'checking'
+        ? t('Buscando…', 'Checking…')
+        : u.state === 'up-to-date'
+          ? t('Tienes la última versión', "You're up to date")
+          : u.state === 'downloading'
+            ? t(`Descargando la ${u.version}… ${Math.round(u.progress * 100)} %`, `Downloading ${u.version}… ${Math.round(u.progress * 100)} %`)
+            : u.state === 'ready'
+              ? t(`La ${u.version} está lista para instalar`, `${u.version} is ready to install`)
+              : u.state === 'error'
+                ? `${t('No se pudo comprobar', "Couldn't check")}: ${u.message}`
+                : t('Se comprueba al poco de arrancar y cada 6 horas', 'Checked shortly after start and every 6 hours')
+  updateAction.hidden = u.state === 'dev' || u.state === 'downloading' || u.state === 'checking'
+  updateAction.textContent = u.state === 'ready' ? t('Reiniciar y actualizar', 'Restart and update') : t('Buscar ahora', 'Check now')
+}
+
+for (const key of ['dockTop', 'nowPlaying', 'linkGuard', 'clipboardEnabled', 'startWithWindows', 'autoUpdate'] as const) {
   el<HTMLInputElement>(key).addEventListener('change', (e) => api.update({ [key]: (e.target as HTMLInputElement).checked }))
+}
+
+// --- Clave de API de Claude ----------------------------------------------------------
+const keyForm = el<HTMLFormElement>('key-form')
+const keyInput = el<HTMLInputElement>('key-input')
+keyForm.addEventListener('submit', (e) => {
+  e.preventDefault()
+  const key = keyInput.value.trim()
+  if (!key) return
+  api.update({ claudeApiKey: key })
+  keyInput.value = '' // la clave no se queda en la página
+})
+el<HTMLButtonElement>('key-remove').addEventListener('click', () => api.update({ claudeApiKey: '' }))
+
+function renderKey(): void {
+  if (!view) return
+  const status = el<HTMLSpanElement>('key-status')
+  status.textContent =
+    view.claudeKey === 'settings'
+      ? t('✓ Guardada', '✓ Saved')
+      : view.claudeKey === 'env'
+        ? t('✓ De ANTHROPIC_API_KEY', '✓ From ANTHROPIC_API_KEY')
+        : t('Sin clave', 'No key')
+  status.classList.toggle('is-set', view.claudeKey !== null)
+  el<HTMLButtonElement>('key-remove').hidden = view.claudeKey !== 'settings'
+  keyInput.placeholder = view.claudeKey === 'settings' ? t('Pega otra para cambiarla', 'Paste another to replace it') : 'sk-ant-…'
+  const error = el<HTMLParagraphElement>('key-error')
+  error.hidden = !view.claudeKeyError
+  error.textContent =
+    view.claudeKeyError === 'invalid'
+      ? t('Esa clave no tiene la forma de una de Anthropic (sk-ant-…).', "That doesn't look like an Anthropic key (sk-ant-…).")
+      : view.claudeKeyError === 'no-encryption'
+        ? t('Windows no deja cifrarla aquí: no se ha guardado.', "Windows can't encrypt it here: it wasn't saved.")
+        : ''
 }
 
 // --- Cambios ---------------------------------------------------------------------------
@@ -331,6 +403,10 @@ function render(): void {
   const tone = AI_TONES.find((c) => c.id === personality.aiTone)
   toneHint.textContent = tone ? tx(tone.hint) : ''
   setLanguage(view.language)
+  setAskAi(view.askAi)
+  renderKey()
+  renderUpdate()
+  el<HTMLInputElement>('autoUpdate').checked = view.autoUpdate
 
   el<HTMLInputElement>('dockTop').checked = view.dockTop
   el<HTMLInputElement>('nowPlaying').checked = view.nowPlaying

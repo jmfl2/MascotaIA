@@ -15,7 +15,8 @@ export function fakeContext(now = new Date(2026, 10, 10, 12, 0, 0).getTime()) {
     clipboard: '',
     ai: { state: 'ready', model: 'gemma3:4b', models: ['gemma3:4b'] } as AiStatus,
     interpretResult: { kind: 'activate', commandId: 'youtube', text: 'pan casero' } as Outcome,
-    interpreted: [] as string[]
+    interpreted: [] as string[],
+    claudeKey: false
   }
   let seq = 0
   const id = () => String(++seq)
@@ -28,6 +29,7 @@ export function fakeContext(now = new Date(2026, 10, 10, 12, 0, 0).getTime()) {
     },
     copyText: (text) => void state.copied.push(text),
     clipboardText: async () => state.clipboard,
+    claude: { ready: () => state.claudeKey },
     openSettings: () => void state.opened.push('ajustes'),
     links: {
       expand: async (url) => ({ kind: 'activate', commandId: 'link', text: `expandido:${url}` }),

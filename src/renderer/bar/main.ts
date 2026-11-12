@@ -11,7 +11,7 @@
 import { animate } from 'motion'
 import { formatAccelerator } from '../../shared/accelerator'
 import { t } from '../../shared/i18n'
-import type { CommandMeta, ExecuteResponse, IconSpec, ResultView } from '../../shared/ipc'
+import type { ChatProvider, ChatSnapshot, CommandMeta, ExecuteResponse, IconSpec, ResultView } from '../../shared/ipc'
 import { animateCrisp } from '../shared/crisp'
 import { localizeDocument } from '../shared/i18nDom'
 import './bar.css'
@@ -22,6 +22,14 @@ const MAX_VISIBLE_ROWS = 6
 const LIST_PADDING = 8
 const DEFAULT_PLACEHOLDER = t('Busca, abre apps o pídeselo a la IA: yt, nota, rec, pomo, ia…', 'Search, open apps or ask the AI: yt, note, rec, pomo, ai…')
 const AI_COMMAND = 'ai'
+/** Comandos que, sin filas que enseñar, pasan a la conversación (y quién responde). */
+const CHAT_COMMANDS: Record<string, ChatProvider> = { ai: 'local', claude: 'claude' }
+const activeProvider = (): ChatProvider | null => (active ? (CHAT_COMMANDS[active.id] ?? null) : null)
+/** La conversación de otro proveedor no se enseña: al escribir se empieza una nueva. */
+function forActive(snapshot: ChatSnapshot): ChatSnapshot {
+  const provider = activeProvider()
+  return provider && snapshot.provider !== provider ? { provider, messages: [], streaming: false } : snapshot
+}
 /** Si una acción tarda más que esto, la fila muestra que está trabajando. */
 const LOADING_DELAY_MS = 150
 
@@ -61,7 +69,7 @@ const chat = createChatView(
   }
 )
 const ai = window.mascota.ai
-ai.onUpdate((snapshot) => chat.render(snapshot))
+ai.onUpdate((snapshot) => chat.render(forActive(snapshot)))
 ai.onDelta(({ index, delta }) => chat.appendDelta(index, delta))
 /** Cambia con cada apertura: invalida cierres que ya estaban en curso. */
 let session = 0
@@ -115,10 +123,10 @@ async function refreshResults(): Promise<void> {
     if (firstEnabled >= 0) selected = firstEnabled
   }
   const wasChat = chatMode
-  chatMode = active?.id === AI_COMMAND && items.length === 0
+  chatMode = activeProvider() !== null && items.length === 0
   if (chatMode && !wasChat) {
     const snapshot = await ai.snapshot()
-    if (snapshot) chat.render(snapshot)
+    if (snapshot) chat.render(forActive(snapshot))
   }
   render()
 }
@@ -301,8 +309,9 @@ function chatKeydown(e: KeyboardEvent): boolean {
   if (e.key === 'Enter') {
     e.preventDefault()
     const text = input.value.trim()
-    if (text && !streaming) {
-      ai.send(text)
+    const provider = activeProvider()
+    if (text && !streaming && provider) {
+      ai.send(text, provider)
       input.value = ''
     }
     return true
@@ -376,9 +385,9 @@ backdrop.addEventListener('mousedown', (e) => {
 })
 
 // El proceso principal pide pasar al chat (p. ej. "Resumir" desde el bocadillo).
-api.onEnterChat(() => {
-  const command = commands.find((c) => c.id === AI_COMMAND)
-  if (command && active?.id !== AI_COMMAND) activate(command, '')
+api.onEnterChat((commandId) => {
+  const command = commands.find((c) => c.id === (commandId in CHAT_COMMANDS ? commandId : AI_COMMAND))
+  if (command && active?.id !== command.id) activate(command, '')
 })
 
 // --- Abrir y cerrar (los pide el proceso principal) -------------------------------

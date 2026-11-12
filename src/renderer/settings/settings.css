@@ -121,6 +121,7 @@ body {
 .link-button:hover { background: var(--selection); }
 .link-button:active { transform: scale(0.94); }
 .link-button:disabled { opacity: 0.4; pointer-events: none; }
+.link-button[hidden] { display: none; }
 
 /* --- Pestañas --- */
 .tabs-wrap {
@@ -385,6 +386,40 @@ h2 {
 .switch:checked::after { transform: translateX(18px); }
 .switch:disabled { opacity: 0.4; }
 .switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Clave de API */
+.key-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.key-status {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.key-status.is-set {
+  color: #34c759;
+}
+.key-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.key-input {
+  flex: 1;
+  width: auto;
+  text-align: left;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 13px;
+}
+.key-form .link-button[hidden] {
+  display: none;
+}
+.key-error {
+  color: var(--danger);
+}
 
 .footnote {
   margin: 18px 0 0;

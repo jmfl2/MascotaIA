@@ -2,6 +2,7 @@
  * Skins, accesorios y personalidad del robot. Única fuente de verdad: la usan
  * el robot, la ventana de ajustes y el proceso principal (para validar).
  */
+import type { Assistant } from './assistants'
 import type { Lang, Text } from './i18n'
 
 export interface SkinColors {
@@ -265,6 +266,29 @@ export interface SettingsView {
   /** Enseñar en la pestaña la canción que suena. */
   nowPlaying: boolean
   language: Lang
+  /** De dónde sale la clave de API de Claude (la clave nunca llega a la página). */
+  claudeKey: 'settings' | 'env' | null
+  /** Resultado del último intento de guardar la clave. */
+  claudeKeyError?: 'invalid' | 'no-encryption'
+  /** IA a la que mandar lo que copias. */
+  askAi: Assistant
+  autoUpdate: boolean
+  /** Versión instalada y estado de las actualizaciones (solo para mostrar). */
+  version: string
+  update: UpdateView
 }
 
-export type SettingsPatch = Partial<SettingsView>
+/** Estado de las actualizaciones para la ventana de ajustes. */
+export type UpdateView =
+  | { state: 'idle' | 'checking' | 'up-to-date' | 'dev' }
+  | { state: 'downloading'; version: string; progress: number }
+  | { state: 'ready'; version: string }
+  | { state: 'error'; message: string }
+
+/** Cambios que manda la ventana de ajustes. `claudeApiKey`: clave nueva ('' la borra). */
+export type SettingsPatch = Partial<Omit<SettingsView, 'claudeKey' | 'claudeKeyError' | 'version' | 'update'>> & {
+  claudeApiKey?: string
+  /** Botones de las actualizaciones. */
+  checkUpdates?: true
+  installUpdate?: true
+}
