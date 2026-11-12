@@ -19,6 +19,8 @@ import { tabAnchor } from './tabWindow'
 export const ROBOT_SIZE = { width: 200, height: 200 }
 /** ¿Suena música? (para mandarlo de nuevo si la página se recarga). */
 let music = false
+/** Fecha especial activa (id), para mandarla de nuevo si la página se recarga. */
+let season: string | null = null
 /** Centro de la cara del robot dentro de la ventana (coincide con el SVG). */
 const FACE_CENTER = { x: 0.5, y: 0.51 }
 /** Silueta sensible al ratón, igual que #hit en robot.html. */
@@ -136,6 +138,7 @@ export function createRobotWindow(): BrowserWindow {
   win.webContents.on('did-finish-load', () => {
     sendAppearance(getConfig().appearance)
     win?.webContents.send(IPC.robotMusic, music)
+    win?.webContents.send(IPC.robotSeason, season)
   })
   win.on('show', startCursorTracking)
   win.on('hide', stopCursorTracking)
@@ -207,6 +210,11 @@ export function sendRobotState(state: RobotState): void {
 
 export function sendAppearance(appearance: Appearance): void {
   getRobotWindow()?.webContents.send(IPC.robotAppearance, appearance)
+}
+
+export function sendRobotSeason(id: string | null): void {
+  season = id
+  getRobotWindow()?.webContents.send(IPC.robotSeason, id)
 }
 
 export function sendRobotMusic(playing: boolean): void {

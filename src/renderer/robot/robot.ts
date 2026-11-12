@@ -104,7 +104,7 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
     return {
       g,
       x: i === 0 ? 82 : 118,
-      open: g.querySelector<SVGRectElement>('.eye-open')!,
+      open: g.querySelector<SVGGElement>('.eye-shape')!,
       halo: g.querySelector<SVGEllipseElement>('.eye-halo')!,
       happy: g.querySelector<SVGPathElement>('.eye-happy')!
     }

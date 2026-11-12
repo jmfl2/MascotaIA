@@ -82,6 +82,9 @@ body {
   width: 128px;
   height: 128px;
   cursor: pointer;
+  /* Al ampliar una parte del cuerpo, el robot no se sale de su caja. */
+  overflow: hidden;
+  border-radius: 16px;
 }
 .preview .robot-host {
   width: 100%;
@@ -309,6 +312,117 @@ h2 {
   color: #fff;
 }
 .chip[aria-pressed='true'] .chip-slot { color: rgba(255, 255, 255, 0.75); }
+
+/* Formas de los ojos */
+.shape-cards {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+.shape-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 4px 6px;
+  border: 0;
+  border-radius: 12px;
+  background: #11131a;
+  color: rgba(255, 255, 255, 0.7);
+  font: 500 11px var(--font);
+  transition: transform 300ms var(--spring-bouncy), box-shadow 200ms ease;
+}
+.shape-card svg {
+  width: 40px;
+  height: 24px;
+  fill: var(--eye-preview, #7ef0ff);
+  filter: drop-shadow(0 0 3px var(--eye-preview, #7ef0ff));
+}
+.shape-card:active { transform: scale(0.94); }
+.shape-card[aria-checked='true'] {
+  color: #fff;
+  box-shadow: 0 0 0 2.5px var(--glass-bg), 0 0 0 4.5px var(--accent);
+}
+
+/* Partes del cuerpo */
+.slot-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.slot-tab {
+  position: relative;
+  height: 30px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 15px;
+  background: var(--kbd-bg);
+  color: var(--text-2);
+  font: 600 12.5px var(--font);
+  transition: background 150ms ease, color 150ms ease, transform 300ms var(--spring-bouncy);
+}
+.slot-tab:hover { color: var(--text); }
+.slot-tab:active { transform: scale(0.94); }
+.slot-tab[aria-selected='true'] {
+  background: var(--accent);
+  color: #fff;
+}
+/* Puntito: esa parte ya lleva algo. */
+.slot-dot {
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34c759;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+.slot-tab.has-acc .slot-dot { opacity: 1; }
+
+/* Tarjetas de accesorios con miniatura */
+.acc-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.acc-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+  padding: 6px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--kbd-bg);
+  color: var(--text);
+  transition: background 150ms ease, transform 300ms var(--spring-bouncy), box-shadow 200ms ease;
+}
+.acc-card:hover { background: var(--selection); }
+.acc-card:active { transform: scale(0.95); }
+.acc-card[aria-pressed='true'] {
+  box-shadow: 0 0 0 2px var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--kbd-bg));
+}
+.acc-thumb {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  background: radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.5), transparent 70%), var(--selection);
+  overflow: hidden;
+}
+.acc-thumb .robot {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.acc-name {
+  font: 600 11.5px/1.2 var(--font);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 /* Texto */
 .text-input {

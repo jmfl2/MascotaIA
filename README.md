@@ -38,9 +38,11 @@ que se ejecuta íntegramente en tu equipo.
   botones de anterior, pausa y siguiente.
 - **Discreto:** vive escondido en una pestaña en el borde superior de la
   pantalla y apenas consume recursos en reposo.
-- **Personalizable:** ocho colores, veinticinco accesorios agrupados por tema
-  (básicos, videojuegos, anime y terror), color propio para los ojos y los
-  accesorios, nombre, nivel de conversación y tono de la IA.
+- **Personalizable:** quince colores, cuarenta y siete accesorios por partes del
+  cuerpo (con vista ampliada de cada parte), cinco formas de ojos, color propio
+  para los ojos y los accesorios, nombre, nivel de conversación y tono de la IA.
+- **Fechas especiales:** en Navidad, Año Nuevo, Halloween y San Valentín se
+  disfraza solo, con nieve, confeti, murciélagos o corazones.
 - **En español e inglés:** el idioma se elige en los ajustes; la primera vez se
   usa el de Windows.
 

@@ -67,6 +67,45 @@ const PIXEL_GLASSES = pixels(
   { f: 'acc-main', k: '#06070b', w: '#ffffff' }
 )
 
+
+/** Florecita de cinco pétalos (corona de flores). */
+function flower(cx: number, cy: number, color: string): string {
+  const petals = [0, 72, 144, 216, 288]
+    .map((deg) => {
+      const r = (deg * Math.PI) / 180
+      return `<circle cx="${(cx + Math.cos(r) * 4.2).toFixed(1)}" cy="${(cy + Math.sin(r) * 4.2).toFixed(1)}" r="3.6" fill="${color}" />`
+    })
+    .join('')
+  return `${petals}<circle cx="${cx}" cy="${cy}" r="2.6" fill="#ffe066" />`
+}
+const FLOWER_CROWN = [
+  [58, 64, '#ff8fab'], [75, 54, '#ffd166'], [92, 49, '#cdb4ff'], [109, 49, '#ff8fab'], [126, 54, '#ffd166'], [142, 64, '#cdb4ff']
+]
+  .map(([x, y, c], i) => `<ellipse cx="${(x as number) + 8}" cy="${(y as number) + (i < 3 ? -1 : 1)}" rx="5" ry="2.4" fill="#5cb85c" transform="rotate(${i < 3 ? -25 : 25} ${(x as number) + 8} ${y})" />${flower(x as number, y as number, c as string)}`)
+  .join('')
+
+/** Collar de perlas: un arco de bolitas bajo la pantalla. */
+const PEARLS = Array.from({ length: 11 }, (_, i) => {
+  const x = 64 + (72 * i) / 10
+  const y = 135 + 11 * Math.sin((Math.PI * i) / 10)
+  return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.3" fill="#fbf7ef" stroke="#d9d2c3" stroke-width="0.8" /><circle cx="${(x - 1).toFixed(1)}" cy="${(y - 1.1).toFixed(1)}" r="0.9" fill="#fff" />`
+}).join('')
+
+/** Corazón centrado en 0,0 (unos 24x18). */
+const HEART = 'M0 8 C-12 0 -11 -10 -5 -10 C-2 -10 0 -7 0 -5 C0 -7 2 -10 5 -10 C11 -10 12 0 0 8 Z'
+/** Estrella de cinco puntas centrada en 0,0. */
+const STAR = 'M0 -11 L3 -3.5 L11 -3.4 L4.8 1.6 L7 9.5 L0 5 L-7 9.5 L-4.8 1.6 L-11 -3.4 L-3 -3.5 Z'
+
+/** Partículas de las fechas especiales (nieve, murciélagos, confeti, corazones). */
+const FX = [
+  ...[18, 46, 74, 104, 132, 160, 182, 60].map((x, i) => `<circle class="fx-snow" cx="${x}" cy="-6" r="${i % 3 === 0 ? 3.2 : 2.3}" style="animation-delay:${(i * 0.55).toFixed(2)}s" />`),
+  ...[0, 1, 2].map((i) => `<path class="fx-bat" d="M0 0 C-4 -5 -9 -5 -13 -2 C-10 -1 -9 1 -9 3 C-6 1 -3 2 0 4 C3 2 6 1 9 3 C9 1 10 -1 13 -2 C9 -5 4 -5 0 0 Z" style="animation-delay:${(i * 1.6).toFixed(1)}s" />`),
+  ...['#ff4d6d', '#ffd166', '#06d6a0', '#4cc9f0', '#b388ff', '#ff9f1c', '#ff4d6d', '#4cc9f0', '#ffd166', '#06d6a0'].map(
+    (c, i) => `<rect class="fx-confetti" x="${12 + i * 19}" y="-8" width="5" height="8.5" rx="1.2" fill="${c}" style="animation-delay:${(i * 0.37).toFixed(2)}s" />`
+  ),
+  ...[30, 70, 130, 170, 100].map((x, i) => `<path class="fx-heart" d="${HEART}" transform="translate(${x} 190) scale(0.75)" style="animation-delay:${(i * 0.8).toFixed(1)}s" />`)
+].join('')
+
 export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" aria-label="${t('Robot mascota', 'Mascot robot')}" role="img">
   <defs>
     <linearGradient id="g-body" x1="0" y1="0" x2="0" y2="1">
@@ -120,6 +159,24 @@ export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" ar
       <circle cx="98" cy="29" r="2.2" fill="#fff" opacity="0.9" />
     </g>
 
+    <!-- Accesorio: capa (detrás del cuerpo: se ve por los lados) -->
+    <g id="acc-capa" class="acc">
+      <path d="M46 74 C30 110 24 150 30 182 Q100 192 170 182 C176 150 170 110 154 74 Z" class="acc-main" />
+      <path d="M52 84 C40 120 36 150 40 178 Q100 186 160 178 C164 150 160 120 148 84 Z" fill="#000" opacity="0.22" />
+    </g>
+
+    <!-- Accesorio: alas (detrás del cuerpo) -->
+    <g id="acc-alas" class="acc">
+      <g>
+        <path d="M48 96 C30 76 8 78 4 92 C14 94 16 100 8 106 C20 108 22 114 14 120 C28 122 38 118 46 110 Z" fill="#ffffff" stroke="#cfd6e3" stroke-width="1.5" />
+        <path d="M44 100 C34 96 22 96 12 100 M44 106 C36 106 28 108 20 112" fill="none" stroke="#cfd6e3" stroke-width="1.2" />
+      </g>
+      <g transform="translate(200 0) scale(-1 1)">
+        <path d="M48 96 C30 76 8 78 4 92 C14 94 16 100 8 106 C20 108 22 114 14 120 C28 122 38 118 46 110 Z" fill="#ffffff" stroke="#cfd6e3" stroke-width="1.5" />
+        <path d="M44 100 C34 96 22 96 12 100 M44 106 C36 106 28 108 20 112" fill="none" stroke="#cfd6e3" stroke-width="1.2" />
+      </g>
+    </g>
+
     <!-- Accesorio: espada a la espalda (detrás del cuerpo) -->
     <g id="acc-espada" class="acc" transform="translate(150 54) rotate(36)">${SWORD}</g>
 
@@ -161,6 +218,9 @@ export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" ar
       <rect x="95.5" y="158.5" width="9" height="9" rx="3" fill="#000" opacity="0.2" />
     </g>
 
+    <!-- Accesorio: collar de perlas -->
+    <g id="acc-collar" class="acc">${PEARLS}</g>
+
     <!-- Pantalla (cara) -->
     <rect x="54" y="68" width="92" height="68" rx="30" fill="url(#g-screen)" />
     <g clip-path="url(#c-screen)">
@@ -170,12 +230,20 @@ export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" ar
         <g>
           <g id="eye-l" transform="translate(82 100)">
             <ellipse class="eye-halo" rx="15" ry="19" fill="url(#g-glow)" opacity="0.5" />
-            <rect class="eye-open eye-fill" x="-8" y="-11" width="16" height="22" rx="8" />
+            <g class="eye-shape">
+              <rect class="eye-open eye-fill" x="-8" y="-11" width="16" height="22" rx="8" />
+              <path class="eye-heart eye-fill" d="${HEART}" transform="scale(1.05)" />
+              <path class="eye-star eye-fill" d="${STAR}" />
+            </g>
             <path class="eye-happy" d="M -9 3 Q 0 -8 9 3" opacity="0" />
           </g>
           <g id="eye-r" transform="translate(118 100)">
             <ellipse class="eye-halo" rx="15" ry="19" fill="url(#g-glow)" opacity="0.5" />
-            <rect class="eye-open eye-fill" x="-8" y="-11" width="16" height="22" rx="8" />
+            <g class="eye-shape">
+              <rect class="eye-open eye-fill" x="-8" y="-11" width="16" height="22" rx="8" />
+              <path class="eye-heart eye-fill" d="${HEART}" transform="scale(1.05)" />
+              <path class="eye-star eye-fill" d="${STAR}" />
+            </g>
             <path class="eye-happy" d="M -9 3 Q 0 -8 9 3" opacity="0" />
           </g>
         </g>
@@ -191,6 +259,25 @@ export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" ar
           <ellipse cx="118" cy="100" rx="13.5" ry="14.5" fill="#121317" />
           <ellipse cx="114" cy="94" rx="5" ry="3" fill="#fff" opacity="0.12" />
         </g>
+        <!-- Accesorio: gafas de sol -->
+        <g id="acc-gafas-sol" class="acc">
+          <ellipse cx="82" cy="101" rx="14.5" ry="12.5" fill="#15181f" opacity="0.94" stroke="#c9a227" stroke-width="2" />
+          <ellipse cx="118" cy="101" rx="14.5" ry="12.5" fill="#15181f" opacity="0.94" stroke="#c9a227" stroke-width="2" />
+          <path d="M96.5 97 Q100 94 103.5 97" fill="none" stroke="#c9a227" stroke-width="2" />
+          <path d="M74 96 q4 -4 9 -4 M110 96 q4 -4 9 -4" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="2" stroke-linecap="round" />
+        </g>
+        <!-- Accesorio: monóculo en el ojo derecho -->
+        <g id="acc-monoculo" class="acc">
+          <circle cx="118" cy="100" r="14.5" fill="#fff" fill-opacity="0.12" stroke="#d4af37" stroke-width="2.6" />
+          <path d="M131 107 C138 118 142 126 146 140" fill="none" stroke="#d4af37" stroke-width="1.3" stroke-dasharray="2.2 1.6" />
+          <path d="M110 92 q4 -3 9 -3" fill="none" stroke="#fff" stroke-opacity="0.4" stroke-width="1.6" stroke-linecap="round" />
+        </g>
+        <!-- Accesorio: gafas de corazón -->
+        <g id="acc-gafas-corazon" class="acc">
+          <path d="${HEART}" transform="translate(82 102) scale(1.6)" fill="#ff4d8d" fill-opacity="0.88" stroke="#c2185b" stroke-width="1.1" />
+          <path d="${HEART}" transform="translate(118 102) scale(1.6)" fill="#ff4d8d" fill-opacity="0.88" stroke="#c2185b" stroke-width="1.1" />
+          <path d="M97 96 Q100 93.5 103 96" fill="none" stroke="#c2185b" stroke-width="2" />
+        </g>
         <!-- Accesorio: gafas pixeladas -->
         <g id="acc-gafas-pixel" class="acc">${PIXEL_GLASSES}</g>
         <ellipse id="cheek-l" cx="70" cy="117" rx="6" ry="3.5" class="cheek" opacity="0" />
@@ -202,6 +289,21 @@ export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" ar
         </g>
       </g>
       <rect x="54" y="68" width="92" height="30" fill="url(#g-screen-gloss)" />
+    </g>
+
+    <!-- Accesorio: bigote -->
+    <g id="acc-bigote" class="acc">
+      <path d="M100 116 C94 111 84 111 78 117 C74 121 68 121 64 117 C67 128 82 129 100 121 C118 129 133 128 136 117 C132 121 126 121 122 117 C116 111 106 111 100 116 Z" fill="#d9a066" />
+      <path d="M84 116 C90 114 95 115 99 118" fill="none" stroke="#fff" stroke-opacity="0.3" stroke-width="1.4" stroke-linecap="round" />
+    </g>
+
+    <!-- Accesorio: bufanda -->
+    <g id="acc-bufanda" class="acc">
+      <path d="M46 126 Q100 146 154 126 L156 140 Q100 162 44 140 Z" class="acc-main" />
+      <path d="M60 133 L58 147 M80 138 L79 151 M100 140 V153 M120 138 L121 151 M140 133 L142 147" stroke="#000" stroke-opacity="0.14" stroke-width="3.5" />
+      <path d="M46 127 Q100 147 154 127" fill="none" stroke="#fff" stroke-opacity="0.25" stroke-width="2" />
+      <path d="M126 140 L140 170 L128 176 L118 146 Z" class="acc-main" />
+      <path d="M126 140 L140 170 L128 176 L118 146 Z" fill="#000" opacity="0.16" />
     </g>
 
     <!-- Accesorio: máscara de gas (respirador sobre la parte baja de la pantalla) -->
@@ -233,6 +335,81 @@ export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" ar
       <rect x="44" y="53" width="112" height="14" rx="7" class="acc-main" />
       <rect x="44" y="53" width="112" height="14" rx="7" fill="#000" opacity="0.14" />
       <circle cx="100" cy="21" r="9.5" fill="#fff" stroke="#000" stroke-opacity="0.15" stroke-width="1.5" />
+    </g>
+
+    <!-- Accesorio: gorra con visera -->
+    <g id="acc-gorra" class="acc">
+      <path d="M54 62 C54 24 146 24 146 62 Z" class="acc-main" />
+      <path d="M100 26 V60 M74 32 C80 44 82 52 82 62 M126 32 C120 44 118 52 118 62" fill="none" stroke="#000" stroke-opacity="0.15" stroke-width="1.6" />
+      <path d="M120 56 Q156 50 178 62 Q160 70 124 64 Z" class="acc-main" />
+      <path d="M120 56 Q156 50 178 62 Q160 70 124 64 Z" fill="#000" opacity="0.22" />
+      <circle cx="100" cy="26" r="4.5" class="acc-main" />
+      <path d="M66 46 C70 36 80 30 90 28" fill="none" stroke="#fff" stroke-opacity="0.3" stroke-width="3" stroke-linecap="round" />
+    </g>
+
+    <!-- Accesorio: chistera -->
+    <g id="acc-chistera" class="acc">
+      <ellipse cx="100" cy="58" rx="54" ry="9" fill="#1c1c24" />
+      <path d="M68 58 L72 10 Q100 4 128 10 L132 58 Z" fill="#23232d" />
+      <ellipse cx="100" cy="10" rx="28" ry="5" fill="#2e2e3a" />
+      <path d="M70 43 L130 43 L131 54 L69 54 Z" class="acc-main" />
+      <path d="M78 16 L76 38" stroke="#fff" stroke-opacity="0.16" stroke-width="4" stroke-linecap="round" />
+    </g>
+
+    <!-- Accesorio: orejas de gato -->
+    <g id="acc-orejas-gato" class="acc">
+      <path d="M50 70 L56 22 L90 50 Z" class="acc-main" />
+      <path d="M58 58 L61 34 L80 50 Z" fill="#ffb3c7" />
+      <path d="M150 70 L144 22 L110 50 Z" class="acc-main" />
+      <path d="M142 58 L139 34 L120 50 Z" fill="#ffb3c7" />
+    </g>
+
+    <!-- Accesorio: corona de flores -->
+    <g id="acc-corona-flores" class="acc">${FLOWER_CROWN}</g>
+
+    <!-- Accesorio: sombrero de mago -->
+    <g id="acc-sombrero-mago" class="acc">
+      <ellipse cx="100" cy="58" rx="56" ry="9" class="acc-main" />
+      <path d="M62 58 L96 -2 Q100 -6 104 0 L138 58 Z" class="acc-main" />
+      <path d="M100 -3 L104 0 L138 58 L100 58 Z" fill="#000" opacity="0.16" />
+      <path d="M70 46 L130 46 L134 54 L66 54 Z" fill="#ffe066" opacity="0.92" />
+      <path d="${STAR}" transform="translate(90 30) scale(0.42)" fill="#ffe066" />
+      <path d="${STAR}" transform="translate(112 38) scale(0.32)" fill="#ffe066" />
+      <path d="${STAR}" transform="translate(102 16) scale(0.26)" fill="#ffe066" />
+    </g>
+
+    <!-- Accesorio: casco vikingo (genérico) -->
+    <g id="acc-casco-vikingo" class="acc">
+      <path d="M30 40 C26 26 30 14 38 6 C40 18 46 28 60 34 L56 46 C44 46 34 46 30 40 Z" fill="#f1e4c3" />
+      <path d="M30 40 C26 26 30 14 38 6 C40 18 46 28 60 34 L56 46 C44 46 34 46 30 40 Z" transform="translate(200 0) scale(-1 1)" fill="#f1e4c3" />
+      <path d="M52 62 C52 24 148 24 148 62 Z" fill="#a3acb6" />
+      <path d="M100 27 C120 27 140 40 146 58" fill="none" stroke="#fff" stroke-opacity="0.28" stroke-width="3" />
+      <rect x="48" y="54" width="104" height="10" rx="5" fill="#6d7681" />
+      <circle cx="60" cy="59" r="1.8" fill="#c9d0d8" /><circle cx="80" cy="59" r="1.8" fill="#c9d0d8" /><circle cx="100" cy="59" r="1.8" fill="#c9d0d8" /><circle cx="120" cy="59" r="1.8" fill="#c9d0d8" /><circle cx="140" cy="59" r="1.8" fill="#c9d0d8" />
+    </g>
+
+    <!-- Accesorio: gorro de Navidad -->
+    <g id="acc-gorro-navidad" class="acc">
+      <path d="M54 60 C56 30 86 14 116 18 C140 22 158 36 166 58 L158 62 C150 46 138 36 126 34 C134 44 140 52 146 60 Z" fill="#d62839" />
+      <path d="M62 50 C72 32 92 24 112 24" fill="none" stroke="#fff" stroke-opacity="0.25" stroke-width="3" stroke-linecap="round" />
+      <rect x="44" y="52" width="112" height="14" rx="7" fill="#fbfbfb" />
+      <circle cx="164" cy="62" r="8.5" fill="#fbfbfb" />
+    </g>
+
+    <!-- Accesorio: sombrero de bruja -->
+    <g id="acc-sombrero-bruja" class="acc">
+      <ellipse cx="100" cy="60" rx="60" ry="10" fill="#2a2133" />
+      <path d="M66 60 C74 40 84 22 92 8 C96 2 106 0 114 6 C118 10 124 10 130 6 C126 16 118 14 112 14 C114 30 124 46 134 60 Z" fill="#33283f" />
+      <path d="M70 48 L130 48 L134 56 L66 56 Z" fill="#8a5cf6" />
+      <rect x="94" y="46" width="12" height="12" rx="2" fill="none" stroke="#ffd166" stroke-width="2.5" />
+    </g>
+
+    <!-- Accesorio: gorro de fiesta -->
+    <g id="acc-gorro-fiesta" class="acc" transform="rotate(-10 100 56)">
+      <path d="M78 58 L100 8 L122 58 Z" class="acc-main" />
+      <path d="M86 40 L112 33 M82 51 L118 43 M93 24 L106 20" stroke="#fff" stroke-width="3" opacity="0.7" />
+      <circle cx="100" cy="8" r="6" fill="#ffd166" />
+      <path d="M76 58 Q100 64 124 58" fill="none" stroke="#fff" stroke-width="3" opacity="0.6" />
     </g>
 
     <!-- Accesorio: auriculares -->
@@ -357,6 +534,52 @@ export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" ar
       <rect x="-6" y="-15" width="2.4" height="28" rx="1.2" fill="#fff" opacity="0.6" />
     </g>
 
+    <!-- Accesorio: taza de café -->
+    <g id="acc-taza" class="acc" transform="translate(38 152)">
+      <path d="M-12 -8 h22 v16 a7 7 0 0 1 -7 7 h-8 a7 7 0 0 1 -7 -7 z" fill="#fbfbfb" />
+      <path d="M10 -4 a6 6 0 0 1 0 12" fill="none" stroke="#fbfbfb" stroke-width="3" />
+      <ellipse cx="-1" cy="-8" rx="11" ry="2.6" fill="#6b3e1e" />
+      <rect x="-12" y="0" width="22" height="5" class="acc-main" />
+      <path class="steam" d="M-5 -14 q-3 -4 0 -8 M2 -14 q-3 -4 0 -8" stroke="#cfd6e3" stroke-width="1.8" fill="none" stroke-linecap="round" />
+    </g>
+
+    <!-- Accesorio: globo -->
+    <g id="acc-globo" class="acc">
+      <path d="M40 160 C30 140 34 124 26 110" fill="none" stroke="#9aa3ae" stroke-width="1.2" />
+      <ellipse cx="24" cy="92" rx="14" ry="17" class="acc-main" />
+      <path d="M21.5 108.5 l2.5 4 l2.5 -4 z" class="acc-main" />
+      <ellipse cx="19" cy="85" rx="4" ry="6" fill="#fff" opacity="0.35" />
+    </g>
+
+    <!-- Accesorio: calabaza -->
+    <g id="acc-calabaza" class="acc" transform="translate(38 152)">
+      <ellipse cx="-8" cy="2" rx="9" ry="13" fill="#e56a12" />
+      <ellipse cx="8" cy="2" rx="9" ry="13" fill="#e56a12" />
+      <ellipse cx="0" cy="2" rx="9" ry="14" fill="#ff8a1f" />
+      <path d="M-1 -11 C-1 -16 2 -19 5 -20" stroke="#3f7a2e" stroke-width="3" fill="none" stroke-linecap="round" />
+      <path d="M-9 -2 l4 -4 l4 4 z M1 -2 l4 -4 l4 4 z M-8 6 q8 6 16 0 l-3 0 l-2 2 l-2 -2 l-2 2 l-2 -2 z" fill="#3a1f05" />
+    </g>
+
+    <!-- Accesorio: aureola -->
+    <g id="acc-aureola" class="acc">
+      <ellipse cx="100" cy="12" rx="26" ry="6" fill="none" stroke="#ffe27a" stroke-width="9" opacity="0.25" />
+      <ellipse cx="100" cy="12" rx="26" ry="6" fill="none" stroke="#ffe27a" stroke-width="4.5" />
+    </g>
+
+    <!-- Accesorio: nubecita encima -->
+    <g id="acc-nube" class="acc">
+      <circle cx="134" cy="22" r="9" fill="#f4f7fb" /><circle cx="146" cy="15" r="11" fill="#f4f7fb" /><circle cx="160" cy="22" r="9" fill="#f4f7fb" />
+      <rect x="134" y="20" width="26" height="11" rx="5.5" fill="#f4f7fb" />
+      <path class="rain" d="M138 36 l-2 6 M147 36 l-2 6 M156 36 l-2 6" stroke="#7cc6ff" stroke-width="1.8" stroke-linecap="round" />
+    </g>
+
+    <!-- Accesorio: corazones encima -->
+    <g id="acc-corazones" class="acc">
+      <path class="float" d="${HEART}" transform="translate(64 26) scale(1.1)" fill="#ff4d6d" />
+      <path class="float" d="${HEART}" transform="translate(100 12) scale(1.3)" fill="#ff8fab" />
+      <path class="float" d="${HEART}" transform="translate(136 26) scale(1.1)" fill="#ff4d6d" />
+    </g>
+
     <!-- Accesorio: gancho colgando de una cadena, al lado -->
     <g id="acc-gancho" class="acc">
       <path d="M181 14 V58" stroke="#6b7078" stroke-width="3" stroke-dasharray="5 2.5" />
@@ -387,6 +610,9 @@ export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" ar
       <path d="M170 84 l1.6 4 l4 1.6 l-4 1.6 l-1.6 4 l-1.6 -4 l-4 -1.6 l4 -1.6 z" />
     </g>
   </g>
+
+  <!-- Fechas especiales: nieve, murciélagos, confeti, corazones -->
+  <g id="fx" aria-hidden="true">${FX}</g>
 
   <!-- Zona sensible al ratón: fuera de ella los clics llegan al escritorio -->
   <rect id="hit" x="26" y="20" width="148" height="152" rx="56" />

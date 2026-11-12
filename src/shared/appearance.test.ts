@@ -16,7 +16,8 @@ describe('ajustes: validación', () => {
       skin: 'menta',
       accessories: ['gorro', 'gafas'],
       eyeColor: null,
-      accessoryColor: null
+      accessoryColor: null,
+      eyeShape: 'normal'
     })
     expect(validateAppearance({ skin: '../../evil' })).toEqual(DEFAULT_APPEARANCE)
     expect(validateAppearance(null)).toEqual(DEFAULT_APPEARANCE)

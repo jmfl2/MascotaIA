@@ -43,6 +43,7 @@
           <h2 data-en="Eyes">Ojos</h2>
           <div class="group">
             <div class="row column">
+              <div id="eye-shapes" class="shape-cards" role="radiogroup" aria-label="Forma de los ojos" data-en-aria-label="Eye shape"></div>
               <div id="eye-colors" class="dots" role="radiogroup" aria-label="Color de ojos" data-en-aria-label="Eye color"></div>
             </div>
           </div>
@@ -53,16 +54,26 @@
           </div>
           <div class="group">
             <div class="row column">
-              <div id="acc-themes" class="segmented small" role="radiogroup" aria-label="Tema" data-en-aria-label="Theme"></div>
-              <div id="accessories" class="chips" role="group" aria-label="Accesorios" data-en-aria-label="Accessories"></div>
-              <p class="hint" data-en="Only one per zone: putting on a hat takes off the one you were wearing."
-                >Solo uno por zona: al ponerle un gorro se quita el que llevara.</p
+              <div id="slot-tabs" class="slot-tabs" role="tablist" aria-label="Parte del cuerpo" data-en-aria-label="Body part"></div>
+              <div id="accessories" class="acc-grid" role="group" aria-label="Accesorios" data-en-aria-label="Accessories"></div>
+              <p class="hint" data-en="Pick a body part to see it up close on the robot. Only one per part: a new hat replaces the old one."
+                >Elige una parte del cuerpo para verla de cerca en el robot. Solo uno por parte: un gorro nuevo sustituye al anterior.</p
               >
             </div>
             <div class="row column">
               <span class="label" data-en="Accessory color">Color de los accesorios</span>
               <div id="acc-colors" class="dots" role="radiogroup" aria-label="Color de los accesorios" data-en-aria-label="Accessory color"></div>
             </div>
+          </div>
+          <h2 data-en="Special dates">Fechas especiales</h2>
+          <div class="group">
+            <label class="row">
+              <span class="label-block">
+                <span class="label" data-en="Dress up for special dates">Ambientarse en fechas especiales</span>
+                <span id="season-hint" class="hint"></span>
+              </span>
+              <input id="seasonal" class="switch" type="checkbox" />
+            </label>
           </div>
         </section>
 

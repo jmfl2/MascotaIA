@@ -47,6 +47,7 @@ import { getConfig } from './store'
 import { createTray } from './tray'
 import { musicAction, startMusic, stopMusic, syncMusic } from './music'
 import { checkForUpdates, installOnQuit, installUpdate, onUpdateChange, startUpdater, updateView } from './updater'
+import { activeSeason, onSeasonChange, startSeasons } from './seasons'
 import { setLang, t } from '../shared/i18n'
 
 // Una sola instancia: si se lanza otra vez, abrimos la barra de la que ya corre.
@@ -81,9 +82,10 @@ function start(): void {
   const robotWin = createRobotWindow()
   const tabWin = createTabWindow()
   tabWin.once('ready-to-show', showInitialTab)
-  const refreshTabInfo = () => setTabInfo(getConfig().personality.name, getConfig().shortcut)
+  const refreshTabInfo = () => setTabInfo(getConfig().personality.name, getConfig().shortcut, activeSeason()?.emoji)
   refreshTabInfo()
   onSettingsChange(refreshTabInfo)
+  onSeasonChange(refreshTabInfo)
   // La música, cuando la pestaña ya está cargada (y al cambiar los ajustes o el modo).
   tabWin.webContents.once('did-finish-load', startMusic)
   onSettingsChange(syncMusic)
@@ -111,6 +113,7 @@ function start(): void {
       startFeatures()
       startChatter()
       startUpdater()
+      startSeasons()
     }, 600)
   )
   // Indexa las apps del menú Inicio (y sus iconos) en segundo plano, cuando el

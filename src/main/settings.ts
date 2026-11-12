@@ -19,6 +19,7 @@ import { app } from 'electron'
 import { isAssistant } from '../shared/assistants'
 import { checkForUpdates, installUpdate, updateView } from './updater'
 import { claudeAppInstalled, claudeOpenIn } from './claudeApp'
+import { refreshSeason, todaysSeason } from './seasons'
 
 const listeners = new Set<() => void>()
 let claudeKeyError: SettingsView['claudeKeyError']
@@ -41,6 +42,8 @@ export function getSettingsView(): SettingsView {
     language: cfg.language,
     claudeKey: claudeKeySource(),
     askAi: cfg.askAi,
+    seasonal: cfg.seasonal,
+    season: todaysSeason()?.id ?? null,
     claudeOpenIn: claudeOpenIn(),
     claudeAppInstalled: claudeAppInstalled(),
     autoUpdate: cfg.autoUpdate,
@@ -69,6 +72,10 @@ export function applySettingsPatch(raw: unknown): void {
   if (typeof patch.dockTop === 'boolean') setDocked(patch.dockTop)
   if (typeof patch.nowPlaying === 'boolean') setConfig({ nowPlaying: patch.nowPlaying })
   if (isAssistant(patch.askAi)) setConfig({ askAi: patch.askAi })
+  if (typeof patch.seasonal === 'boolean') {
+    setConfig({ seasonal: patch.seasonal })
+    refreshSeason()
+  }
   if (patch.claudeOpenIn === 'web' || patch.claudeOpenIn === 'app') setConfig({ claudeOpenIn: patch.claudeOpenIn })
   if (patch.checkUpdates === true) void checkForUpdates(true)
   if (patch.installUpdate === true) installUpdate()

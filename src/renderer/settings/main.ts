@@ -9,7 +9,12 @@
 import { animate } from 'motion'
 import {
   ACCESSORIES,
-  ACCESSORY_THEMES,
+  EYE_SHAPES,
+  FULL_VIEWBOX,
+  SLOTS,
+  slotOf,
+  type EyeShape,
+  type SlotId,
   AI_TONES,
   CHATTINESS,
   COLOR_PRESETS,
@@ -18,12 +23,12 @@ import {
   SKINS,
   SLOT_NAMES,
   type AccessoryId,
-  type AccessoryTheme,
   type Appearance,
   toggleAccessory,
   type SettingsView
 } from '../../shared/appearance'
 import { ASSISTANTS } from '../../shared/assistants'
+import { SEASONS } from '../../shared/seasons'
 import { LANGUAGES, t, tx, type Localized } from '../../shared/i18n'
 import { applyAppearance } from '../robot/appearance'
 import { createRobot } from '../robot/robot'
@@ -220,34 +225,166 @@ function colorRow(root: HTMLElement, key: 'eyeColor' | 'accessoryColor') {
 const renderEyeColors = colorRow(el('eye-colors'), 'eyeColor')
 const renderAccColors = colorRow(el('acc-colors'), 'accessoryColor')
 
-// --- Accesorios por tema -----------------------------------------------------------------
-type ThemeFilter = AccessoryTheme | 'todos'
-const THEME_FILTERS: readonly { id: ThemeFilter; name: Localized }[] = [{ id: 'todos', name: { es: 'Todos', en: 'All' } }, ...ACCESSORY_THEMES]
-let themeFilter: ThemeFilter = 'todos'
-
-const accessoriesEl = el<HTMLDivElement>('accessories')
-const chips = ACCESSORIES.map((acc) => {
-  const chip = h('button', 'chip')
-  chip.type = 'button'
-  chip.dataset.id = acc.id
-  chip.dataset.theme = acc.theme
-  chip.append(h('span', 'chip-name', tx(acc.name)), h('span', 'chip-slot', tx(SLOT_NAMES[acc.slot])))
-  chip.addEventListener('click', () => {
+// --- Forma de los ojos ---------------------------------------------------------------------
+/** Dibujito de un par de ojos con cada forma. */
+function eyesIcon(shape: EyeShape): string {
+  const one = (x: number) => {
+    switch (shape) {
+      case 'redondos':
+        return `<circle cx="${x}" cy="12" r="5.5" />`
+      case 'finos':
+        return `<rect x="${x - 2.5}" y="5" width="5" height="14" rx="2.5" />`
+      case 'corazones':
+        return `<path transform="translate(${x} 12) scale(0.55)" d="M0 8 C-12 0 -11 -10 -5 -10 C-2 -10 0 -7 0 -5 C0 -7 2 -10 5 -10 C11 -10 12 0 0 8 Z" />`
+      case 'estrellas':
+        return `<path transform="translate(${x} 12) scale(0.55)" d="M0 -11 L3 -3.5 L11 -3.4 L4.8 1.6 L7 9.5 L0 5 L-7 9.5 L-4.8 1.6 L-11 -3.4 L-3 -3.5 Z" />`
+      default:
+        return `<rect x="${x - 4}" y="5" width="8" height="14" rx="4" />`
+    }
+  }
+  return `<svg viewBox="0 0 40 24" aria-hidden="true">${one(13)}${one(27)}</svg>`
+}
+const eyeShapesEl = el<HTMLDivElement>('eye-shapes')
+const shapeButtons = EYE_SHAPES.map((shape) => {
+  const b = h('button', 'shape-card')
+  b.type = 'button'
+  b.setAttribute('role', 'radio')
+  b.dataset.id = shape.id
+  b.innerHTML = eyesIcon(shape.id) // texto fijo del propio código
+  b.append(h('span', '', tx(shape.name)))
+  b.addEventListener('click', () => {
     if (!view) return
-    updateAppearance({ ...view.appearance, accessories: toggleAccessory(view.appearance.accessories, acc.id) })
+    updateAppearance({ ...view.appearance, eyeShape: shape.id })
     robot.setState('happy')
   })
-  accessoriesEl.append(chip)
-  return chip
+  eyeShapesEl.append(b)
+  return b
 })
 
-const setThemePill = segmented(el('acc-themes'), THEME_FILTERS, (id) => {
-  themeFilter = id
-  setThemePill(id)
-  filterChips()
+// --- Accesorios por parte del cuerpo --------------------------------------------------------
+type SlotFilter = SlotId | 'todo'
+let slotFilter: SlotFilter = 'todo'
+
+/** Vista previa ampliada: el robot se acerca a la parte elegida. */
+let currentBox = FULL_VIEWBOX.split(' ').map(Number)
+function zoomPreview(box: string): void {
+  const from = [...currentBox]
+  const to = box.split(' ').map(Number)
+  animate(0, 1, {
+    type: 'spring',
+    visualDuration: 0.45,
+    bounce: 0.12,
+    onUpdate: (p: number) => {
+      currentBox = from.map((f, i) => f + (to[i] - f) * p)
+      svg.setAttribute('viewBox', currentBox.map((n) => n.toFixed(2)).join(' '))
+    }
+  })
+}
+
+const slotTabsEl = el<HTMLDivElement>('slot-tabs')
+const SLOT_TABS: readonly { id: SlotFilter; name: Localized }[] = [{ id: 'todo', name: { es: 'Todo', en: 'All' } }, ...SLOTS.map((s) => ({ id: s.id, name: SLOT_NAMES[s.id] }))]
+const slotTabs = SLOT_TABS.map((slot) => {
+  const b = h('button', 'slot-tab')
+  b.type = 'button'
+  b.setAttribute('role', 'tab')
+  b.dataset.id = slot.id
+  b.append(h('span', '', tx(slot.name)), h('span', 'slot-dot'))
+  b.addEventListener('click', () => selectSlot(slot.id))
+  slotTabsEl.append(b)
+  return b
 })
-function filterChips(): void {
-  for (const chip of chips) chip.hidden = themeFilter !== 'todos' && chip.dataset.theme !== themeFilter
+
+function selectSlot(id: SlotFilter): void {
+  slotFilter = id
+  for (const b of slotTabs) b.setAttribute('aria-selected', String(b.dataset.id === id))
+  zoomPreview(id === 'todo' ? FULL_VIEWBOX : SLOTS.find((s) => s.id === id)!.viewBox)
+  showCards()
+}
+
+interface Card {
+  el: HTMLButtonElement
+  host: HTMLDivElement
+  /** Lo que se dibuja en la miniatura. */
+  accessories: AccessoryId[]
+  box: string
+  thumb?: SVGSVGElement
+}
+const accGrid = el<HTMLDivElement>('accessories')
+const cards = new Map<string, Card>()
+const boxOf = (slot: string) => SLOTS.find((s) => s.id === slot)?.viewBox ?? FULL_VIEWBOX
+
+/** Las miniaturas se dibujan al verse (cada una es un robot entero). */
+const thumbObserver = new IntersectionObserver(
+  (entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue
+      const card = [...cards.values()].find((c) => c.el === entry.target)
+      if (card && !card.thumb) paintThumb(card)
+      thumbObserver.unobserve(entry.target)
+    }
+  },
+  { root: el('scroll'), rootMargin: '120px' }
+)
+
+function paintThumb(card: Card): void {
+  card.thumb = mountRobot(card.host)
+  card.thumb.removeAttribute('id')
+  card.thumb.classList.add('thumb')
+  card.thumb.setAttribute('viewBox', card.box)
+  if (view) applyAppearance(card.thumb, { ...view.appearance, accessories: card.accessories })
+}
+
+function makeCard(key: string, label: string, accessories: AccessoryId[], box: string, onPick: () => void): Card {
+  const b = h('button', 'acc-card')
+  b.type = 'button'
+  const host = h('div', 'acc-thumb')
+  b.append(host, h('span', 'acc-name', label))
+  b.addEventListener('click', onPick)
+  const card: Card = { el: b, host, accessories, box }
+  cards.set(key, card)
+  thumbObserver.observe(b)
+  return card
+}
+
+for (const acc of ACCESSORIES) {
+  makeCard(acc.id, tx(acc.name), [acc.id], boxOf(acc.slot), () => {
+    if (!view) return
+    updateAppearance({ ...view.appearance, accessories: toggleAccessory(view.appearance.accessories, acc.id) })
+    robot.setState(acc.slot === 'cuerpo' || acc.slot === 'cuello' ? 'happy' : 'wink')
+  })
+}
+for (const slot of SLOTS) {
+  makeCard(`none-${slot.id}`, t('Nada', 'None'), [], slot.viewBox, () => {
+    if (!view) return
+    updateAppearance({ ...view.appearance, accessories: view.appearance.accessories.filter((a) => slotOf(a) !== slot.id) })
+  })
+}
+
+/** Enseña las tarjetas de la parte elegida ("Todo": todas, sin las de "Nada"). */
+function showCards(): void {
+  const list =
+    slotFilter === 'todo'
+      ? ACCESSORIES.map((a) => cards.get(a.id)!)
+      : [cards.get(`none-${slotFilter}`)!, ...ACCESSORIES.filter((a) => a.slot === slotFilter).map((a) => cards.get(a.id)!)]
+  accGrid.replaceChildren(...list.map((c) => c.el))
+  for (const c of list) thumbObserver.observe(c.el)
+}
+
+let paintedAppearance = ''
+function renderAccessories(appearance: Appearance): void {
+  for (const acc of ACCESSORIES) cards.get(acc.id)!.el.setAttribute('aria-pressed', String(appearance.accessories.includes(acc.id)))
+  for (const slot of SLOTS) {
+    const used = appearance.accessories.some((a) => slotOf(a) === slot.id)
+    cards.get(`none-${slot.id}`)!.el.setAttribute('aria-pressed', String(!used))
+    slotTabs.find((b) => b.dataset.id === slot.id)?.classList.toggle('has-acc', used)
+  }
+  for (const b of shapeButtons) b.setAttribute('aria-checked', String(b.dataset.id === appearance.eyeShape))
+  // Las miniaturas solo se repintan si cambian la skin, los colores o los ojos.
+  const key = JSON.stringify([appearance.skin, appearance.eyeColor, appearance.accessoryColor, appearance.eyeShape])
+  if (key === paintedAppearance) return
+  paintedAppearance = key
+  for (const card of cards.values()) if (card.thumb) applyAppearance(card.thumb, { ...appearance, accessories: card.accessories })
+  eyeShapesEl.style.setProperty('--eye-preview', appearance.eyeColor ?? skinById(appearance.skin).colors.eye)
 }
 
 el<HTMLButtonElement>('clear-acc').addEventListener('click', () => {
@@ -318,6 +455,16 @@ function renderClaudeOpen(): void {
     : t('La app de escritorio de Claude no está instalada: se usa el navegador.', "The Claude desktop app isn't installed: the browser is used.")
 }
 
+// --- Fechas especiales --------------------------------------------------------------------
+function renderSeason(): void {
+  if (!view) return
+  el<HTMLInputElement>('seasonal').checked = view.seasonal
+  const today = SEASONS.find((s) => s.id === view!.season)
+  el<HTMLSpanElement>('season-hint').textContent = today
+    ? t(`Hoy toca ${tx(today.name)} ${today.emoji}: el robot ya va de ${tx(today.name).toLowerCase()}.`, `It's ${tx(today.name)} ${today.emoji}: the robot is dressed for it.`)
+    : t('Navidad 🎄, Halloween 🎃, Año Nuevo 🎉 y San Valentín 💘: gorros, nieve, murciélagos…', "Christmas 🎄, Halloween 🎃, New Year's 🎉 and Valentine's 💘: hats, snow, bats…")
+}
+
 // --- Actualizaciones --------------------------------------------------------------------
 const updateAction = el<HTMLButtonElement>('update-action')
 updateAction.addEventListener('click', () => {
@@ -348,7 +495,7 @@ function renderUpdate(): void {
   updateAction.textContent = u.state === 'ready' ? t('Reiniciar y actualizar', 'Restart and update') : t('Buscar ahora', 'Check now')
 }
 
-for (const key of ['dockTop', 'nowPlaying', 'linkGuard', 'clipboardEnabled', 'startWithWindows', 'autoUpdate'] as const) {
+for (const key of ['dockTop', 'nowPlaying', 'linkGuard', 'clipboardEnabled', 'startWithWindows', 'autoUpdate', 'seasonal'] as const) {
   el<HTMLInputElement>(key).addEventListener('change', (e) => api.update({ [key]: (e.target as HTMLInputElement).checked }))
 }
 
@@ -406,7 +553,7 @@ function render(): void {
   const { appearance, personality } = view
   applyAppearance(svg, appearance)
   skinsEl.querySelectorAll<HTMLElement>('.swatch').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.id === appearance.skin)))
-  for (const chip of chips) chip.setAttribute('aria-pressed', String(appearance.accessories.includes(chip.dataset.id as AccessoryId)))
+  renderAccessories(appearance)
   renderEyeColors(appearance)
   renderAccColors(appearance)
   el<HTMLButtonElement>('clear-acc').disabled = !appearance.accessories.length
@@ -429,6 +576,7 @@ function render(): void {
   renderClaudeOpen()
   renderKey()
   renderUpdate()
+  renderSeason()
   el<HTMLInputElement>('autoUpdate').checked = view.autoUpdate
 
   el<HTMLInputElement>('dockTop').checked = view.dockTop
@@ -454,7 +602,7 @@ api.onChanged((next) => {
 })
 
 showTab(savedTab(), false)
-setThemePill(themeFilter)
+selectSlot('todo')
 
 void api.get().then((initial) => {
   if (!initial) return

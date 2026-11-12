@@ -149,8 +149,8 @@ export function tabAnchor(): { centerX: number; bottom: number } {
   return { centerX: b.x + b.width / 2, bottom: b.y + openPill().height }
 }
 
-export function setTabInfo(name: string, accelerator: string): void {
-  info = { name, shortcut: formatAccelerator(accelerator) }
+export function setTabInfo(name: string, accelerator: string, emoji?: string): void {
+  info = { name, shortcut: formatAccelerator(accelerator), ...(emoji ? { emoji } : {}) }
   getTabWindow()?.webContents.send(IPC.tabInfo, info)
 }
 

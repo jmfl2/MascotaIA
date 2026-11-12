@@ -29,9 +29,9 @@ function updateLabel(): void {
   )
 }
 
-api.onInfo(({ name, shortcut }) => {
+api.onInfo(({ name, shortcut, emoji }) => {
   robotName = name
-  nameEl.textContent = name
+  nameEl.textContent = emoji ? `${emoji} ${name}` : name
   shortcutEl.textContent = shortcut
   updateLabel()
 })

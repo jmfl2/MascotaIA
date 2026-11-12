@@ -57,7 +57,8 @@ const api: MascotaApi = {
     contextMenu: () => ipcRenderer.send(IPC.robotContextMenu),
     onEnter: (cb) => listen<void>(IPC.robotEnter, () => cb()),
     onLeave: (cb) => listen<void>(IPC.robotLeave, () => cb()),
-    onMusic: (cb) => listen<boolean>(IPC.robotMusic, (playing) => cb(playing === true))
+    onMusic: (cb) => listen<boolean>(IPC.robotMusic, (playing) => cb(playing === true)),
+    onSeason: (cb) => listen<string | null>(IPC.robotSeason, (id) => cb(typeof id === 'string' ? id : null))
   },
   tab: {
     click: () => ipcRenderer.send(IPC.tabClick),

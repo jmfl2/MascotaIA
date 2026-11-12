@@ -47,6 +47,10 @@ export interface Config {
   autoUpdate: boolean
   /** Dónde abrir Claude sin clave de API (null = la app si está instalada). */
   claudeOpenIn: 'web' | 'app' | null
+  /** Ambientarse solo en fechas especiales (Navidad, Halloween...). */
+  seasonal: boolean
+  /** Última felicitación dada ("navidad-2026"), para no repetirla. */
+  lastSeasonGreeting: string | null
 }
 
 export const DEFAULT_SHORTCUT = 'Control+Space'
@@ -68,7 +72,9 @@ const DEFAULTS: Config = {
   claudeKeyEnc: null,
   askAi: 'claude',
   autoUpdate: true,
-  claudeOpenIn: null
+  claudeOpenIn: null,
+  seasonal: true,
+  lastSeasonGreeting: null
 }
 
 let cache: Config | null = null
@@ -98,6 +104,8 @@ function validate(raw: unknown): Config {
   if (isAssistant(r.askAi)) cfg.askAi = r.askAi
   if (typeof r.autoUpdate === 'boolean') cfg.autoUpdate = r.autoUpdate
   if (r.claudeOpenIn === 'web' || r.claudeOpenIn === 'app') cfg.claudeOpenIn = r.claudeOpenIn
+  if (typeof r.seasonal === 'boolean') cfg.seasonal = r.seasonal
+  if (typeof r.lastSeasonGreeting === 'string' && r.lastSeasonGreeting.length < 40) cfg.lastSeasonGreeting = r.lastSeasonGreeting
   if (typeof r.claudeKeyEnc === 'string' && /^[A-Za-z0-9+/]+={0,2}$/.test(r.claudeKeyEnc) && r.claudeKeyEnc.length < 4000) {
     cfg.claudeKeyEnc = r.claudeKeyEnc
   }

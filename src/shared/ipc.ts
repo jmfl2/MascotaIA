@@ -35,6 +35,8 @@ export type MediaAction = 'toggle' | 'next' | 'prev'
 /** Lo que enseña la pestaña al acercarse. */
 export interface TabInfo {
   name: string
+  /** Emoji de la fecha especial, si la hay. */
+  emoji?: string
   /** Atajo ya formateado para mostrar, p. ej. "Ctrl+Espacio". */
   shortcut: string
 }
@@ -153,6 +155,7 @@ export const IPC = {
   robotContextMenu: 'robot:context-menu',
   robotEnter: 'robot:enter',
   robotMusic: 'robot:music',
+  robotSeason: 'robot:season',
   robotLeave: 'robot:leave',
   // Pestaña de arriba (modo pestaña)
   tabClick: 'tab:click',
@@ -226,6 +229,8 @@ export interface MascotaApi {
     onLeave(cb: () => void): Unsubscribe
     /** Suena música: el robot se mueve al ritmo. */
     onMusic(cb: (playing: boolean) => void): Unsubscribe
+    /** Fecha especial de hoy (id de shared/seasons.ts) o null. */
+    onSeason(cb: (id: string | null) => void): Unsubscribe
   }
   tab: {
     click(): void

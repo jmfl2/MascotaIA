@@ -1,4 +1,6 @@
 import './robot.css'
+import type { Appearance } from '../../shared/appearance'
+import { SEASONS, type Season } from '../../shared/seasons'
 import { applyAppearance } from './appearance'
 import { createRobot } from './robot'
 import { mountRobot } from './robotSvg'
@@ -19,7 +21,18 @@ api.onDragMoving(robot.onDragMoving)
 api.onHover(robot.setHover)
 api.onPomodoro(robot.setPomodoro)
 api.onMusic(robot.setMusic)
-api.onAppearance((appearance) => applyAppearance(svg, appearance))
+// La apariencia elegida y, encima, la fecha especial (si la hay).
+let appearance: Appearance | null = null
+let season: Season | null = null
+const repaint = () => appearance && applyAppearance(svg, appearance, season)
+api.onAppearance((next) => {
+  appearance = next
+  repaint()
+})
+api.onSeason((id) => {
+  season = SEASONS.find((s) => s.id === id) ?? null
+  repaint()
+})
 api.onEnter(robot.enter)
 api.onLeave(robot.leave)
 
