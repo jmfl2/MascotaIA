@@ -270,6 +270,7 @@ let currentBox = FULL_VIEWBOX.split(' ').map(Number)
 function zoomPreview(box: string): void {
   const from = [...currentBox]
   const to = box.split(' ').map(Number)
+  preview.classList.toggle('zoomed', box !== FULL_VIEWBOX)
   animate(0, 1, {
     type: 'spring',
     visualDuration: 0.45,

@@ -90,9 +90,8 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
     if (!el) throw new Error(`Falta ${sel} en el SVG del robot`)
     return el
   }
-  const rig = $<SVGGElement>('#rig')
   const face = $<SVGGElement>('#face')
-  const shadow = $<SVGEllipseElement>('#shadow')
+  const shadow = svg.parentElement?.querySelector<HTMLElement>('.robot-shadow') ?? null
   const antennaGlow = $<SVGCircleElement>('#antenna-glow')
   const bellyLight = $<SVGRectElement>('#belly-light')
   const cheeks = [$<SVGEllipseElement>('#cheek-l'), $<SVGEllipseElement>('#cheek-r')]
@@ -349,6 +348,21 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
     return hover || dragging || dropHover || state === 'listening' || state === 'thinking' || state === 'alert'
   }
 
+  /**
+   * Solo se toca el SVG cuando un valor cambia de verdad: cada cambio obliga a
+   * volver a pintar el dibujo, y con el robot quieto no hace falta pintar nada.
+   */
+  const written = new WeakMap<Element, Map<string, string>>()
+  function setAttr(el: Element, name: string, value: string): void {
+    let attrs = written.get(el)
+    if (!attrs) written.set(el, (attrs = new Map()))
+    if (attrs.get(name) === value) return
+    attrs.set(name, value)
+    el.setAttribute(name, value)
+  }
+  let lastBody = ''
+  let lastShadow = ''
+
   let last = performance.now()
   function frame(now: number): void {
     const state = current()
@@ -392,23 +406,30 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
     const sy = s.squashY.value * (1 + breath * 0.014)
     const lean = s.gazeX.value * 3 + beat * 3.5 // se inclina hacia donde mira (y se balancea con la música)
 
-    rig.setAttribute(
-      'transform',
-      `translate(0 ${y.toFixed(2)}) translate(100 168) rotate(${lean.toFixed(2)}) scale(${sx.toFixed(4)} ${sy.toFixed(4)}) translate(-100 -168)`
-    )
+    // El cuerpo: un transform de CSS sobre el SVG entero (en píxeles de pantalla).
+    const px = svg.clientWidth / 200 || 1
+    const body = `translate(0px, ${(y * px).toFixed(2)}px) rotate(${lean.toFixed(2)}deg) scale(${sx.toFixed(4)}, ${sy.toFixed(4)})`
+    if (body !== lastBody) {
+      lastBody = body
+      svg.style.transform = body
+    }
 
     // La sombra se encoge y aclara cuando el robot sube.
-    const up = Math.max(-6, -y)
-    const shadowScale = Math.min(1.1, Math.max(0.55, 1 - up * 0.012))
-    shadow.setAttribute('transform', `translate(100 186) scale(${shadowScale.toFixed(3)} 1) translate(-100 -186)`)
-    // Al bajar o subir de la pestaña (muy arriba) la sombra desaparece del todo.
-    const away = Math.min(1, Math.max(0, 1 + y / 120))
-    shadow.setAttribute('opacity', (Math.min(1, Math.max(0.35, 1 - up * 0.015)) * away).toFixed(3))
+    if (shadow) {
+      const up = Math.max(-6, -y)
+      const shadowScale = Math.min(1.1, Math.max(0.55, 1 - up * 0.012))
+      // Al bajar o subir de la pestaña (muy arriba) la sombra desaparece del todo.
+      const away = Math.min(1, Math.max(0, 1 + y / 120))
+      const opacity = (Math.min(1, Math.max(0.35, 1 - up * 0.015)) * away).toFixed(3)
+      const next = `${shadowScale.toFixed(3)}|${opacity}`
+      if (next !== lastShadow) {
+        lastShadow = next
+        shadow.style.transform = `scaleX(${shadowScale.toFixed(3)})`
+        shadow.style.opacity = opacity
+      }
+    }
 
-    face.setAttribute(
-      'transform',
-      `translate(${(s.gazeX.value * 8).toFixed(2)} ${(s.gazeY.value * 5).toFixed(2)}) rotate(${s.tilt.value.toFixed(2)} 100 102)`
-    )
+    setAttr(face, 'transform', `translate(${(s.gazeX.value * 8).toFixed(2)} ${(s.gazeY.value * 5).toFixed(2)}) rotate(${s.tilt.value.toFixed(2)} 100 102)`)
 
     const happy = Math.min(1, Math.max(0, s.happy.value))
     const open = Math.max(0.05, s.open.value * s.lid.value * (1 - happy * 0.92))
@@ -416,26 +437,27 @@ export function createRobot(svg: SVGSVGElement, cb: RobotCallbacks) {
     eyes.forEach((eye, i) => {
       const asym = i === 1 ? s.asym.value : 0
       const eyeOpen = Math.max(0.05, open * (1 - asym))
-      eye.g.setAttribute('transform', `translate(${eye.x} ${(100 - asym * 4).toFixed(2)})`)
-      eye.open.setAttribute('transform', `scale(${size.toFixed(4)} ${(size * eyeOpen).toFixed(4)})`)
-      eye.open.setAttribute('opacity', (1 - happy).toFixed(3))
-      eye.halo.setAttribute('transform', eye.open.getAttribute('transform')!)
-      eye.halo.setAttribute('opacity', (0.5 * (1 - happy * 0.6) * Math.min(1, eyeOpen * 1.4)).toFixed(3))
-      eye.happy.setAttribute('opacity', happy.toFixed(3))
-      eye.happy.setAttribute('transform', `scale(${size.toFixed(4)})`)
+      const eyeScale = `scale(${size.toFixed(3)} ${(size * eyeOpen).toFixed(3)})`
+      setAttr(eye.g, 'transform', `translate(${eye.x} ${(100 - asym * 4).toFixed(2)})`)
+      setAttr(eye.open, 'transform', eyeScale)
+      setAttr(eye.open, 'opacity', (1 - happy).toFixed(2))
+      setAttr(eye.halo, 'transform', eyeScale)
+      setAttr(eye.halo, 'opacity', (0.5 * (1 - happy * 0.6) * Math.min(1, eyeOpen * 1.4)).toFixed(2))
+      setAttr(eye.happy, 'opacity', happy.toFixed(2))
+      setAttr(eye.happy, 'transform', `scale(${size.toFixed(3)})`)
     })
 
     const glow = Math.max(0, s.glow.value)
     const pulse = state === 'listening' || state === 'thinking' ? 0.85 + 0.15 * Math.sin(t * 6) : 1
-    antennaGlow.setAttribute('opacity', (glow * pulse).toFixed(3))
+    setAttr(antennaGlow, 'opacity', (glow * pulse).toFixed(2))
     const pomoVisible = Math.min(1, Math.max(0, s.pomoVisible.value))
-    bellyLight.setAttribute('opacity', ((0.3 + glow * 0.6) * (1 - pomoVisible)).toFixed(3))
-    pomoGroup.setAttribute('opacity', pomoVisible.toFixed(3))
+    setAttr(bellyLight, 'opacity', ((0.3 + glow * 0.6) * (1 - pomoVisible)).toFixed(2))
+    setAttr(pomoGroup, 'opacity', pomoVisible.toFixed(2))
     // Empieza como un punto (ancho = alto) y crece hasta llenar la pista.
     const pomoProgress = Math.max(0, Math.min(1, s.pomo.value))
-    pomoFill.setAttribute('width', (POMODORO_MIN_WIDTH + pomoProgress * (POMODORO_WIDTH - POMODORO_MIN_WIDTH)).toFixed(2))
-    const cheekOpacity = (Math.max(0, s.cheeks.value) * 0.75).toFixed(3)
-    for (const c of cheeks) c.setAttribute('opacity', cheekOpacity)
+    setAttr(pomoFill, 'width', (POMODORO_MIN_WIDTH + pomoProgress * (POMODORO_WIDTH - POMODORO_MIN_WIDTH)).toFixed(1))
+    const cheekOpacity = (Math.max(0, s.cheeks.value) * 0.75).toFixed(2)
+    for (const c of cheeks) setAttr(c, 'opacity', cheekOpacity)
 
     requestAnimationFrame(frame)
   }

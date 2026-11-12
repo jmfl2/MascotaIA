@@ -148,7 +148,6 @@ export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" ar
     </clipPath>
   </defs>
 
-  <ellipse id="shadow" cx="100" cy="186" rx="46" ry="7" fill="url(#g-shadow)" />
 
   <g id="rig">
     <!-- Antena -->
@@ -618,8 +617,12 @@ export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" ar
   <rect id="hit" x="26" y="20" width="148" height="152" rx="56" />
 </svg>`
 
-/** Inserta el robot dentro de `host` y devuelve su elemento SVG. */
+/**
+ * Inserta el robot dentro de `host` y devuelve su elemento SVG.
+ * La sombra va aparte (un div debajo): el cuerpo se mueve con un transform de
+ * CSS que la GPU aplica sin redibujar, y la sombra no debe moverse con él.
+ */
 export function mountRobot(host: HTMLElement): SVGSVGElement {
-  host.innerHTML = ROBOT_SVG
+  host.innerHTML = `<div class="robot-shadow" aria-hidden="true"></div>${ROBOT_SVG}`
   return host.querySelector<SVGSVGElement>('svg')!
 }

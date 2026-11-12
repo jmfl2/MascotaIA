@@ -7,11 +7,20 @@
 }
 
 .robot-host {
+  position: relative;
   width: 100vw;
   height: 100vh;
 }
 
+/*
+ * El cuerpo entero se mueve (respira, salta, se balancea) con un transform de
+ * CSS: va en su propia capa y la GPU lo mueve sin volver a pintar el dibujo.
+ * El punto de giro es la base del robot (100, 168 en el viewBox de 200).
+ */
 .robot {
+  position: relative;
+  will-change: transform;
+  transform-origin: 50% 84%;
   display: block;
   width: 100%;
   height: 100%;
@@ -111,6 +120,19 @@
 .stop-screen-top { stop-color: var(--screen-top); }
 .stop-screen-bottom { stop-color: var(--screen-bottom); }
 .stop-shadow { stop-color: var(--robot-shadow); }
+
+/* Sombra en el suelo (la elipse de 92x14 centrada en 100,186 del viewBox). */
+.robot-shadow {
+  position: absolute;
+  left: 27%;
+  top: 89.5%;
+  width: 46%;
+  height: 7%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--robot-shadow), transparent);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
 .stop-eye { stop-color: var(--eye); }
 
 .part-edge {
