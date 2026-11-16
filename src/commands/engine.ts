@@ -13,6 +13,7 @@ import { ai } from './ai'
 import { calc, calcSuggestion } from './calc'
 import { launcher } from './launcher'
 import { link } from './link'
+import { terminal } from './terminal'
 import { COMMANDS, findCommandById } from './index'
 import type { CommandContext, CommandModule, LaunchTarget, Suggestion } from './types'
 
@@ -135,9 +136,21 @@ export async function suggestFor(commandId: string | null, text: string, ctx: Co
         ]
       : []
 
+  // Lo escrito también se puede mandar a una terminal (se elige cuál en el comando).
+  const terminalRows: Ranked[] = [
+    {
+      command: terminal,
+      suggestion: {
+        title: t('Ejecutar en la terminal…', 'Run in the terminal…'),
+        subtitle: t('Elige en qué terminal: Windows Terminal, PowerShell, Símbolo del sistema…', 'Pick which one: Windows Terminal, PowerShell, Command Prompt…'),
+        run: () => ({ kind: 'activate', commandId: 'terminal', text: text.trim() })
+      }
+    }
+  ]
+
   const strong = (rankedRows[0]?.suggestion.score ?? 0) >= STRONG_MATCH
   const [first, ...restWeb] = webRows
   return strong
-    ? [...calcRows, ...linkRows, ...rankedRows, ...(first ? [first] : []), ...interpretRows, ...restWeb]
-    : [...calcRows, ...linkRows, ...(first ? [first] : []), ...interpretRows, ...rankedRows, ...restWeb]
+    ? [...calcRows, ...linkRows, ...rankedRows, ...(first ? [first] : []), ...interpretRows, ...restWeb, ...terminalRows]
+    : [...calcRows, ...linkRows, ...(first ? [first] : []), ...interpretRows, ...rankedRows, ...restWeb, ...terminalRows]
 }

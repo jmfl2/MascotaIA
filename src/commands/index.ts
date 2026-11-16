@@ -19,8 +19,10 @@ import { link } from './link'
 import { maps } from './maps'
 import { notes } from './notes'
 import { pomodoro } from './pomodoro'
+import { processes } from './processes'
 import { reminders } from './reminders'
 import { settings } from './settings'
+import { terminal } from './terminal'
 import { translate } from './translate'
 import type { CommandModule } from './types'
 import { buildWebUrl, type BuildResult, type WebCommand } from './web'
@@ -48,6 +50,8 @@ export const COMMANDS: readonly CommandModule[] = [
   reminders,
   pomodoro,
   calc,
+  terminal,
+  processes,
   summarize,
   explain,
   settings

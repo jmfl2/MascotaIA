@@ -240,3 +240,53 @@ describe('enlaces', () => {
     expect(await expand.suggestion.run()).toMatchObject({ kind: 'activate', commandId: 'link' })
   })
 })
+
+describe('terminal', () => {
+  it('"> comando" ofrece cada terminal, con la última usada primero', async () => {
+    const { ctx, state } = fakeContext()
+    const { command, query } = parseInput('> git status')
+    expect(command?.id).toBe('terminal')
+    const rows = await suggestFor('terminal', query, ctx)
+    expect(rows.map((r) => r.suggestion.title)).toEqual(['git status', 'git status'])
+    expect(rows[0].suggestion.subtitle).toContain('Windows Terminal')
+    expect(await rows[1].suggestion.run()).toEqual({ kind: 'close', mood: 'happy' })
+    expect(state.ran).toEqual(['cmd:git status'])
+  })
+
+  it('sin comando solo abre la terminal y une las líneas en una', async () => {
+    const { ctx, state } = fakeContext()
+    const [empty] = await suggestFor('terminal', '  ', ctx)
+    await empty.suggestion.run()
+    const [multi] = await suggestFor('terminal', 'cd x\nnpm test', ctx)
+    await multi.suggestion.run()
+    expect(state.ran).toEqual(['wt:', 'wt:cd x npm test'])
+  })
+
+  it('lo escrito sin prefijo también se puede mandar a la terminal', async () => {
+    const { ctx } = fakeContext()
+    const rows = await suggestFor(null, 'ipconfig', ctx)
+    const row = rows.find((r) => r.command.id === 'terminal')!
+    expect(await row.suggestion.run()).toEqual({ kind: 'activate', commandId: 'terminal', text: 'ipconfig' })
+  })
+})
+
+describe('cerrar programas', () => {
+  it('"cerrar chr" encuentra chrome; Intro cierra y Supr fuerza', async () => {
+    const { ctx, state } = fakeContext()
+    const { command, query } = parseInput('cerrar chr')
+    expect(command?.id).toBe('processes')
+    const rows = await suggestFor('processes', query, ctx)
+    expect(rows.map((r) => r.suggestion.title)).toEqual(['chrome'])
+    expect(rows[0].suggestion.subtitle).toContain('2 procesos')
+    await rows[0].suggestion.run()
+    await rows[0].suggestion.secondary!.run()
+    expect(state.closed).toEqual(['chrome', 'chrome:force'])
+  })
+
+  it('sin texto lista todos y si no encuentra nada lo dice', async () => {
+    const { ctx } = fakeContext()
+    expect((await suggestFor('processes', '', ctx)).length).toBe(2)
+    const [none] = await suggestFor('processes', 'zzz', ctx)
+    expect(none.suggestion.disabled).toBe(true)
+  })
+})

@@ -1,5 +1,5 @@
 /** Contexto falso en memoria para probar los comandos sin Electron. */
-import type { AiStatus, CommandContext, LaunchTarget, Note, Outcome, PomodoroStatus, Reminder } from './types'
+import type { AiStatus, CommandContext, LaunchTarget, Note, Outcome, PomodoroStatus, ProcessGroup, Reminder, TerminalInfo } from './types'
 
 export function fakeContext(now = new Date(2026, 10, 10, 12, 0, 0).getTime()) {
   const state = {
@@ -16,7 +16,17 @@ export function fakeContext(now = new Date(2026, 10, 10, 12, 0, 0).getTime()) {
     ai: { state: 'ready', model: 'gemma3:4b', models: ['gemma3:4b'] } as AiStatus,
     interpretResult: { kind: 'activate', commandId: 'youtube', text: 'pan casero' } as Outcome,
     interpreted: [] as string[],
-    claudeKey: false
+    claudeKey: false,
+    terminals: [
+      { id: 'wt', name: 'Windows Terminal', lastUsed: true },
+      { id: 'cmd', name: 'Símbolo del sistema' }
+    ] as TerminalInfo[],
+    ran: [] as string[],
+    processes: [
+      { name: 'chrome', image: 'chrome.exe', pids: [10, 11], memoryKb: 900_000 },
+      { name: 'notepad', image: 'notepad.exe', pids: [20], memoryKb: 20_000 }
+    ] as ProcessGroup[],
+    closed: [] as string[]
   }
   let seq = 0
   const id = () => String(++seq)
@@ -37,6 +47,20 @@ export function fakeContext(now = new Date(2026, 10, 10, 12, 0, 0).getTime()) {
       }
     },
     openSettings: () => void state.opened.push('ajustes'),
+    processes: {
+      list: async () => state.processes,
+      close: async (group, force) => {
+        state.closed.push(`${group.name}${force ? ':force' : ''}`)
+        return { kind: 'close' }
+      }
+    },
+    terminal: {
+      list: () => state.terminals,
+      run: (termId, command) => {
+        state.ran.push(`${termId}:${command}`)
+        return { kind: 'close', mood: 'happy' }
+      }
+    },
     links: {
       expand: async (url) => ({ kind: 'activate', commandId: 'link', text: `expandido:${url}` }),
       open: async (url) => {

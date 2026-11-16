@@ -121,6 +121,25 @@ export interface PomodoroStatus {
   breakMin: number
 }
 
+export interface TerminalInfo {
+  /** Identificador estable ("wt", "powershell", "cmd"...). */
+  id: string
+  name: string
+  /** La última que se usó (sale la primera). */
+  lastUsed?: boolean
+}
+
+/** Un programa abierto (todas sus ventanas y subprocesos). */
+export interface ProcessGroup {
+  /** Nombre sin ".exe" ("chrome"). */
+  name: string
+  /** Ejecutable ("chrome.exe"). */
+  image: string
+  pids: number[]
+  /** Memoria total en KB. */
+  memoryKb: number
+}
+
 export interface LaunchTarget {
   id: string
   name: string
@@ -183,6 +202,18 @@ export interface CommandContext {
   }
   /** Abre la ventana de ajustes. */
   openSettings(): void
+  processes: {
+    /** Programas abiertos, de más a menos memoria. */
+    list(): Promise<ProcessGroup[]>
+    /** Cierra el programa (`force`: sin preguntar). */
+    close(group: ProcessGroup, force: boolean): Promise<Outcome>
+  }
+  terminal: {
+    /** Terminales instaladas; la última usada, la primera. */
+    list(): TerminalInfo[]
+    /** Abre esa terminal con el comando escrito (vacío = solo abrirla). */
+    run(id: string, command: string): Outcome
+  }
   launcher: {
     search(query: string, limit: number): Promise<LaunchTarget[]>
     favorites(): Promise<LaunchTarget[]>

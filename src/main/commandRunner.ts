@@ -18,13 +18,15 @@ import { aiStatus, interpret, pullModel, refreshAiStatus, startOllama, warmUpMod
 import { expandShortLink } from '../security/expand'
 import { toast } from './bubbleWindow'
 import { openSettings } from './settingsWindow'
-import { getConfig } from './store'
+import { getConfig, setConfig } from './store'
 import { robotMood } from './robotMood'
 import { clipboardWatcher } from './services/clipboardWatcher'
 import { launcherService } from './services/launcher'
 import { notesService } from './services/notes'
 import { pomodoroService } from './services/pomodoro'
 import { remindersService } from './services/reminders'
+import { listTerminals, runInTerminal } from './services/terminals'
+import { closeProcesses, listProcesses } from './services/processes'
 import { currentShortcut } from './shortcut'
 
 /** Abre una URL en el navegador. Los comandos ya la validaron; aquí se comprueba otra vez. */
@@ -78,6 +80,23 @@ export const commandContext: CommandContext = {
     }
   },
   openSettings: () => openSettings(),
+  processes: {
+    list: listProcesses,
+    async close(group, force) {
+      if (await closeProcesses(group.pids, force)) return { kind: 'close', mood: 'wink', toast: t(`${group.name} cerrado`, `${group.name} closed`) }
+      return force
+        ? { kind: 'error', message: t(`No se pudo cerrar ${group.name} (quizá necesita permisos de administrador)`, `Couldn't close ${group.name} (it may need admin rights)`) }
+        : { kind: 'error', message: t(`${group.name} no se cerró del todo: pulsa Supr para forzarlo`, `${group.name} didn't fully close: press Delete to force it`) }
+    }
+  },
+  terminal: {
+    list: () => listTerminals(getConfig().lastTerminal),
+    run(id, command) {
+      if (!runInTerminal(id, command)) return { kind: 'error', message: t('No se pudo abrir esa terminal', "Couldn't open that terminal") }
+      setConfig({ lastTerminal: id })
+      return { kind: 'close', mood: 'happy' }
+    }
+  },
   ai: {
     status: aiStatus,
     interpret,
