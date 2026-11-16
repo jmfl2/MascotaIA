@@ -1,9 +1,11 @@
 @import '../shared/theme.css';
 
-/* La ventana mide 720x440: 20 px de margen alrededor para que quepa la sombra. */
+/* La ventana deja margen alrededor del panel para que la sombra (hasta 66 px por
+   abajo y 48 por los lados) quepa entera: si la ventana la corta, se ve un
+   rectángulo alrededor. Tiene que coincidir con BAR_PAD en barWindow.ts. */
 .backdrop {
   height: 100%;
-  padding: 20px;
+  padding: 32px 52px 72px;
 }
 
 .panel {

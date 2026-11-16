@@ -11,8 +11,10 @@ import { IPC } from '../shared/ipc'
 import { loadPage, PRELOAD_PATH } from './paths'
 import { hardenWebContents, secureWebPreferences } from './security'
 
-/** Panel de 680 px + 20 px de margen por lado para la sombra. */
-const BAR_SIZE = { width: 720, height: 480 }
+/** Margen transparente alrededor del panel para que su sombra no se corte (igual que .backdrop). */
+const BAR_PAD = { top: 32, side: 52, bottom: 72 }
+/** Panel de 680x440 como máximo, más el margen para la sombra. */
+const BAR_SIZE = { width: 680 + BAR_PAD.side * 2, height: 440 + BAR_PAD.top + BAR_PAD.bottom }
 /** Altura a la que aparece, como fracción de la pantalla. */
 const BAR_TOP = 0.2
 /** Modo pestaña: deja sitio arriba para el robot, que cuelga de la pestaña. */
@@ -77,7 +79,8 @@ function placeOnActiveDisplay(w: BrowserWindow): void {
   const top = area.height * BAR_TOP
   w.setBounds({
     x: Math.round(area.x + (area.width - BAR_SIZE.width) / 2),
-    y: Math.round(area.y + Math.max(top, BAR_MIN_TOP_DOCKED)),
+    // El panel queda donde siempre: se descuenta lo que ha crecido el margen de arriba.
+    y: Math.round(area.y + Math.max(top, BAR_MIN_TOP_DOCKED) - (BAR_PAD.top - 20)),
     ...BAR_SIZE
   })
 }
