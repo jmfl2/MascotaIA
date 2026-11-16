@@ -39,6 +39,22 @@
         <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
       </span>
 
+      <!-- Avisos dentro de la isla (como la Dynamic Island): la píldora se agranda -->
+      <div id="alert" class="alert" role="status" aria-live="polite" hidden>
+        <div id="alert-inner" class="alert-inner">
+          <div class="alert-head">
+            <span class="alert-face" aria-hidden="true"><i></i><i></i></span>
+            <p id="alert-title" class="alert-title"></p>
+            <button id="alert-close" class="alert-close" type="button" aria-label="Cerrar" data-en-aria-label="Close">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10 M17 7L7 17" /></svg>
+            </button>
+          </div>
+          <p id="alert-text" class="alert-text"></p>
+          <div id="alert-actions" class="alert-actions"></div>
+        </div>
+        <div id="alert-timer" class="alert-timer" aria-hidden="true"></div>
+      </div>
+
       <span id="pomo" class="pomo" aria-hidden="true"></span>
     </div>
     <script type="module" src="./tab/main.ts"></script>

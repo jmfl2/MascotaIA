@@ -37,7 +37,7 @@ import {
 } from './robotWindow'
 import { denyAllPermissions, isFrom } from './security'
 import { dropDone, dropIncoming, isDocked, mascotVisible, needRobot, revealMascot, setDocked, setMascotVisible, showInitialTab } from './dock'
-import { createTabWindow, getTabWindow, setTabInfo } from './tabWindow'
+import { createTabWindow, getTabWindow, setTabInfo, tabAlertResized } from './tabWindow'
 import { applySettingsPatch, getSettingsView, notifySettingsChanged, onSettingsChange } from './settings'
 import { closeSettings, getSettingsWindow, openSettings } from './settingsWindow'
 import { refreshIndex } from './services/launcher'
@@ -223,6 +223,18 @@ function registerIpc(): void {
   const tab = () => getTabWindow()?.webContents
   ipcMain.on(IPC.tabClick, (event) => {
     if (isFrom(event, tab())) toggleBar()
+  })
+  // Avisos dentro de la isla: las mismas acciones que el bocadillo.
+  ipcMain.on(IPC.tabAlertAction, (event, payload: unknown) => {
+    const p = (payload ?? {}) as Record<string, unknown>
+    if (isFrom(event, tab()) && isShortString(p.bubbleId, 64) && isShortString(p.actionId, 32)) bubbleAction(p.bubbleId, p.actionId)
+  })
+  ipcMain.on(IPC.tabAlertDismiss, (event, id: unknown) => {
+    if (isFrom(event, tab()) && isShortString(id, 64)) bubbleDismissed(id)
+  })
+  ipcMain.on(IPC.tabAlertSize, (event, size: unknown) => {
+    const s = (size ?? {}) as Record<string, unknown>
+    if (isFrom(event, tab()) && typeof s.width === 'number' && typeof s.height === 'number') tabAlertResized(s.width, s.height)
   })
   ipcMain.on(IPC.tabDragOver, (event) => {
     if (isFrom(event, tab())) dropIncoming()

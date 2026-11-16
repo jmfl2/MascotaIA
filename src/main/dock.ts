@@ -2,21 +2,17 @@
  * Dónde vive la mascota: siempre en pantalla (modo libre) o escondida en una
  * pestaña arriba (modo pestaña).
  *
- * En modo pestaña el robot baja cuando hay un motivo (la barra abierta, un
- * bocadillo que enseñar) y vuelve a subir un momento después de que no quede
- * ninguno. En modo libre todo esto no hace nada: el robot está siempre fuera.
+ * En modo pestaña (la isla de arriba, como en el iPhone) el robot no baja a la
+ * pantalla: los avisos salen dentro de la isla (ver bubbleWindow.ts). En modo
+ * libre el robot está siempre fuera.
  */
-import { enterDocked, getRobotWindow, isRobotVisible, leaveDocked, placeFree, setRobotVisible } from './robotWindow'
+import { getRobotWindow, isRobotVisible, leaveDocked, placeFree, setRobotVisible } from './robotWindow'
 import { getConfig, setConfig } from './store'
 import { getTabWindow, hideTab, showTab } from './tabWindow'
 
 export type PresenceReason = 'bar' | 'bubble' | 'drop'
 
-/** Cuánto se queda fuera cuando ya no hace falta (para que no parezca que huye). */
-const LINGER_MS = 900
-
 const reasons = new Set<PresenceReason>()
-let lingerTimer: NodeJS.Timeout | null = null
 
 export function isDocked(): boolean {
   return getConfig().dockTop
@@ -31,18 +27,8 @@ export function robotAvailable(): boolean {
 export function needRobot(reason: PresenceReason, on: boolean): void {
   if (on) reasons.add(reason)
   else reasons.delete(reason)
-  if (!isDocked()) return
-
-  if (reasons.size) {
-    if (lingerTimer) clearTimeout(lingerTimer)
-    lingerTimer = null
-    if (getConfig().robotVisible) enterDocked()
-  } else if (!lingerTimer) {
-    lingerTimer = setTimeout(() => {
-      lingerTimer = null
-      if (!reasons.size) leaveDocked()
-    }, LINGER_MS)
-  }
+  // En la isla el robot se queda arriba: todo pasa dentro de la píldora.
+  if (isDocked() && isRobotVisible()) leaveDocked()
 }
 
 /** Cuánto espera el robot fuera a que le sueltes algo después de acercarlo a la pestaña. */
@@ -80,7 +66,6 @@ export function setMascotVisible(visible: boolean): void {
   setConfig({ robotVisible: visible })
   if (visible) {
     showTab()
-    if (reasons.size) enterDocked()
   } else {
     hideTab()
     getRobotWindow()?.hide()
@@ -97,10 +82,7 @@ export function setDocked(docked: boolean): void {
   if (docked) {
     getRobotWindow()?.hide()
     showTab()
-    if (reasons.size) enterDocked()
   } else {
-    if (lingerTimer) clearTimeout(lingerTimer)
-    lingerTimer = null
     hideTab()
     placeFree()
     setRobotVisible(true)

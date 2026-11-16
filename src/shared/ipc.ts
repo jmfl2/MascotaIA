@@ -165,6 +165,11 @@ export const IPC = {
   tabContextMenu: 'tab:context-menu',
   tabMedia: 'tab:media',
   tabDragOver: 'tab:drag-over',
+  tabAlert: 'tab:alert',
+  tabAlertUpdate: 'tab:alert-update',
+  tabAlertAction: 'tab:alert-action',
+  tabAlertDismiss: 'tab:alert-dismiss',
+  tabAlertSize: 'tab:alert-size',
   tabDrop: 'tab:drop',
   tabMediaAction: 'tab:media-action',
   // Ajustes
@@ -245,6 +250,13 @@ export interface MascotaApi {
     dragOver(): void
     /** Archivos soltados directamente en la pestaña. */
     dropFiles(files: File[]): void
+    /** Aviso dentro de la isla (como la Dynamic Island); null = no hay. */
+    onAlert(cb: (view: BubbleView | null) => void): Unsubscribe
+    onAlertUpdate(cb: (patch: { id: string; title?: string; text?: string }) => void): Unsubscribe
+    alertAction(alertId: string, actionId: string): void
+    alertDismiss(alertId: string): void
+    /** Tamaño de la isla con el aviso (para saber dónde se puede hacer clic). */
+    alertSize(width: number, height: number): void
     mediaAction(action: MediaAction): void
   }
   settings: {

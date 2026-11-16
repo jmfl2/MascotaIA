@@ -4,14 +4,16 @@
  *
  * Cada bocadillo tiene acciones cuyo código se queda aquí, en el proceso
  * principal; el renderer solo envía "pulsé la acción X del bocadillo Y".
- * Si el robot está oculto, los avisos importantes salen como notificación
- * de Windows. En modo pestaña, el robot baja para decirlo y luego vuelve a subir.
+ * Si la mascota está oculta, los avisos importantes salen como notificación
+ * de Windows. En modo pestaña no hay robot en pantalla: el aviso sale dentro de
+ * la isla de arriba (como la Dynamic Island del iPhone), con las mismas acciones.
  */
 import { BrowserWindow, Notification, screen } from 'electron'
 import { IPC, type BubbleAction, type BubbleView } from '../shared/ipc'
 import { newId } from './services/jsonFile'
 import { loadPage, PRELOAD_PATH } from './paths'
-import { needRobot, robotAvailable } from './dock'
+import { isDocked, needRobot, robotAvailable } from './dock'
+import { setTabAlert, tabShowing, updateTabAlert } from './tabWindow'
 import { getRobotBounds, ROBOT_SIZE } from './robotWindow'
 import { hardenWebContents, secureWebPreferences } from './security'
 
@@ -43,6 +45,8 @@ export interface BubbleSpec {
 interface Active {
   view: BubbleView
   spec: BubbleSpec
+  /** Dónde se enseña: el bocadillo junto al robot o la isla de arriba. */
+  inIsland: boolean
 }
 
 let win: BrowserWindow | null = null
@@ -114,8 +118,7 @@ export function showBubble(spec: BubbleSpec): string | null {
     }
     return null
   }
-  // En modo pestaña baja el robot; va antes de elegir el lado, que depende de dónde esté.
-  needRobot('bubble', true)
+  const inIsland = isDocked() && tabShowing()
 
   // Sustituye al anterior (sin llamar a su onDismiss: no lo cerró el usuario).
   active?.spec.onClose?.()
@@ -126,10 +129,17 @@ export function showBubble(spec: BubbleSpec): string | null {
     text: spec.text,
     actions: (spec.actions ?? []).map(({ id, label, primary }) => ({ id, label, primary })),
     timeoutMs: spec.timeoutMs === undefined ? 6000 : spec.timeoutMs,
-    side: chooseSide(),
+    side: inIsland ? 'left' : chooseSide(),
     chime: spec.chime
   }
-  active = { view, spec }
+  const wasBubble = active && !active.inIsland
+  active = { view, spec, inIsland }
+  if (inIsland) {
+    // Si había un bocadillo junto al robot (se cambió de modo), se quita.
+    if (wasBubble) getWin()?.webContents.send(IPC.bubbleHide)
+    setTabAlert(view)
+    return view.id
+  }
   if (hideTimer) {
     clearTimeout(hideTimer)
     hideTimer = null
@@ -143,7 +153,8 @@ export function showBubble(spec: BubbleSpec): string | null {
 export function updateBubble(id: string, patch: { title?: string; text?: string }): void {
   if (!active || active.view.id !== id) return
   active.view = { ...active.view, ...patch }
-  getWin()?.webContents.send(IPC.bubbleUpdate, { id, ...patch })
+  if (active.inIsland) updateTabAlert({ id, ...patch })
+  else getWin()?.webContents.send(IPC.bubbleUpdate, { id, ...patch })
 }
 
 /** Cierra el bocadillo solo si sigue siendo ese (p. ej. un "Comprimiendo…" que ya terminó). */
@@ -153,10 +164,16 @@ export function closeBubbleIf(id: string): void {
 
 /** Cierra el bocadillo actual con animación. */
 export function closeBubble(): void {
-  const w = getWin()
-  if (!active || !w) return
+  if (!active) return
+  const { inIsland } = active
   active.spec.onClose?.()
   active = null
+  if (inIsland) {
+    setTabAlert(null)
+    return
+  }
+  const w = getWin()
+  if (!w) return
   needRobot('bubble', false)
   w.webContents.send(IPC.bubbleHide)
   hideTimer = setTimeout(hideNow, HIDE_TIMEOUT_MS)

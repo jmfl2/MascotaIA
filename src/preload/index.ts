@@ -68,6 +68,11 @@ const api: MascotaApi = {
     onPomodoro: (cb) => listen<PomodoroView>(IPC.tabPomodoro, cb),
     onMedia: (cb) => listen<TabMediaView>(IPC.tabMedia, cb),
     dragOver: () => ipcRenderer.send(IPC.tabDragOver),
+    onAlert: (cb) => listen<BubbleView | null>(IPC.tabAlert, cb),
+    onAlertUpdate: (cb) => listen<{ id: string; title?: string; text?: string }>(IPC.tabAlertUpdate, cb),
+    alertAction: (alertId, actionId) => ipcRenderer.send(IPC.tabAlertAction, { bubbleId: alertId, actionId }),
+    alertDismiss: (alertId) => ipcRenderer.send(IPC.tabAlertDismiss, alertId),
+    alertSize: (width, height) => ipcRenderer.send(IPC.tabAlertSize, { width, height }),
     dropFiles: (files) => {
       const paths = files
         .slice(0, 10)

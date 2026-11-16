@@ -102,6 +102,156 @@ body {
   display: none;
 }
 
+/* --- Avisos dentro de la isla (como la Dynamic Island del iPhone) -------------------
+ * La píldora se agranda con un muelle hasta el tamaño del aviso (--alert-w/--alert-h,
+ * que mide la página) y el contenido aparece cuando ya hay sitio. */
+.pill.has-alert {
+  width: var(--alert-w, 380px);
+  height: var(--alert-h, 80px);
+  border-radius: 0 0 28px 28px;
+  background: #0c0c10;
+  color: #f4f5f7;
+  justify-content: flex-start;
+  align-items: stretch;
+  box-shadow:
+    0 14px 34px rgba(0, 0, 0, 0.32),
+    0 0 0 0.5px rgba(255, 255, 255, 0.08);
+  transition:
+    width 520ms var(--spring-island),
+    height 520ms var(--spring-island),
+    border-radius 300ms ease,
+    background 200ms ease,
+    box-shadow 300ms ease;
+}
+:root {
+  /* Muelle con un rebote corto, como al abrirse la isla del iPhone. */
+  --spring-island: linear(0, 0.12, 0.36, 0.6, 0.79, 0.92, 1, 1.04, 1.05, 1.04, 1.025, 1.01, 1, 0.997, 1);
+}
+.pill.has-alert .content,
+.pill.has-alert .music,
+.pill.has-alert .pomo {
+  display: none;
+}
+.alert {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--alert-w, 380px);
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+.alert[hidden] { display: none; }
+.alert.is-shown {
+  opacity: 1;
+  transition: opacity 220ms ease 140ms;
+}
+.alert-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px 14px;
+}
+.alert.is-quiet .alert-inner { padding: 11px 12px 11px 14px; }
+.alert.is-quiet .alert-title { white-space: nowrap; }
+.alert-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+/* Carita del robot: la mascota sigue estando ahí. */
+.alert-face {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 30px;
+  height: 22px;
+  border-radius: 8px;
+  background: linear-gradient(#2a3142, #10141d);
+}
+.alert-face i {
+  width: 4px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--eye);
+  box-shadow: 0 0 4px var(--eye-glow);
+}
+.alert-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+.alert-close {
+  all: unset;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  transition: background 120ms ease;
+}
+.alert-close:hover { background: rgba(255, 255, 255, 0.18); }
+.alert-close svg {
+  width: 11px;
+  height: 11px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+.alert-text {
+  margin: 0 0 0 40px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: rgba(244, 245, 247, 0.72);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.alert-text[hidden],
+.alert-actions[hidden] { display: none; }
+.alert-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0 0 40px;
+}
+.alert-action {
+  all: unset;
+  height: 28px;
+  padding: 0 13px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #f4f5f7;
+  font: 600 12.5px var(--font);
+  line-height: 28px;
+  transition: background 120ms ease, transform 250ms var(--spring);
+}
+.alert-action:hover { background: rgba(255, 255, 255, 0.2); }
+.alert-action:active { transform: scale(0.94); }
+.alert-action.primary {
+  background: var(--accent);
+  color: #fff;
+}
+.alert-timer {
+  position: absolute;
+  left: 22px;
+  right: 22px;
+  bottom: 0;
+  height: 2px;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.35);
+  transform-origin: left center;
+}
+.alert-timer[hidden] { display: none; }
+
 /* Arrastrando un archivo encima: se abre del todo y se ilumina. */
 .pill.is-drop {
   --near: 1 !important;

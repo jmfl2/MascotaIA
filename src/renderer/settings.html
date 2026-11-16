@@ -169,14 +169,19 @@
 
           <h2 data-en="On screen">En pantalla</h2>
           <div class="group">
+            <div class="row column">
+              <span class="label" data-en="Where the mascot lives">Dónde vive la mascota</span>
+              <div id="mode" class="segmented" role="radiogroup" aria-label="Dónde vive la mascota" data-en-aria-label="Where the mascot lives"></div>
+              <p id="mode-hint" class="hint"></p>
+            </div>
             <label class="row">
               <span class="label-block">
-                <span class="label" data-en="Hide in a tab at the top">Esconder en una pestaña arriba</span>
-                <span class="hint" data-en="The robot comes down from the tab when you click it or when it has something to tell you"
-                  >El robot baja de la pestaña al hacerle clic o cuando tiene algo que decirte</span
+                <span class="label" data-en="Show the mascot">Mostrar la mascota</span>
+                <span class="hint" data-en="Off, nothing shows on screen: it keeps working from the tray icon and the keyboard shortcut"
+                  >Apagado, no se ve nada en pantalla: sigue funcionando desde el icono de la bandeja y el atajo de teclado</span
                 >
               </span>
-              <input id="dockTop" class="switch" type="checkbox" />
+              <input id="visible" class="switch" type="checkbox" />
             </label>
             <label class="row">
               <span class="label-block">

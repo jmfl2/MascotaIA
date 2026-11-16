@@ -513,7 +513,21 @@ function renderUpdate(): void {
   updateAction.textContent = u.state === 'ready' ? t('Reiniciar y actualizar', 'Restart and update') : t('Buscar ahora', 'Check now')
 }
 
-for (const key of ['dockTop', 'nowPlaying', 'linkGuard', 'clipboardEnabled', 'startWithWindows', 'autoUpdate', 'seasonal'] as const) {
+// Dónde vive la mascota: la isla de arriba (como el iPhone) o el robot en el escritorio.
+const MODES = [
+  { id: 'top', name: { es: 'Arriba, como el iPhone', en: 'At the top, like iPhone' } },
+  { id: 'desk', name: { es: 'Robot en el escritorio', en: 'Robot on the desktop' } }
+] as const
+const setMode = segmented(el('mode'), MODES, (id) => {
+  if (!view) return
+  const dockTop = id === 'top'
+  if (view.dockTop === dockTop) return
+  view = { ...view, dockTop, visible: true }
+  render()
+  api.update({ dockTop })
+})
+
+for (const key of ['visible', 'nowPlaying', 'linkGuard', 'clipboardEnabled', 'startWithWindows', 'autoUpdate', 'seasonal'] as const) {
   el<HTMLInputElement>(key).addEventListener('change', (e) => api.update({ [key]: (e.target as HTMLInputElement).checked }))
 }
 
@@ -597,7 +611,11 @@ function render(): void {
   renderSeason()
   el<HTMLInputElement>('autoUpdate').checked = view.autoUpdate
 
-  el<HTMLInputElement>('dockTop').checked = view.dockTop
+  setMode(view.dockTop ? 'top' : 'desk')
+  el<HTMLParagraphElement>('mode-hint').textContent = view.dockTop
+    ? t('Una isla arriba de la pantalla: los avisos, la música y lo demás salen dentro, sin que el robot baje.', 'An island at the top of the screen: alerts, music and the rest show inside it, without the robot coming down.')
+    : t('El robot se queda en una esquina del escritorio; puedes moverlo arrastrándolo.', 'The robot stays in a corner of the desktop; drag it to move it.')
+  el<HTMLInputElement>('visible').checked = view.visible
   el<HTMLInputElement>('nowPlaying').checked = view.nowPlaying
   el<HTMLInputElement>('linkGuard').checked = view.linkGuard
   el<HTMLInputElement>('clipboardEnabled').checked = view.clipboardEnabled

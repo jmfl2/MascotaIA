@@ -9,13 +9,13 @@
  */
 import { BrowserWindow, screen, type Rectangle } from 'electron'
 import { formatAccelerator } from '../shared/accelerator'
-import { IPC, type PomodoroView, type TabInfo, type TabMediaView } from '../shared/ipc'
+import { IPC, type BubbleView, type PomodoroView, type TabInfo, type TabMediaView } from '../shared/ipc'
 import { loadPage, PRELOAD_PATH } from './paths'
 import { distanceToRect, nearness } from './tabGeometry'
 import { hardenWebContents, secureWebPreferences } from './security'
 
-/** Ventana con margen para la sombra de la píldora abierta (la de la música es la más grande). */
-export const TAB_SIZE = { width: 360, height: 76 }
+/** Ventana con margen para la sombra de la isla más grande (con un aviso dentro). */
+export const TAB_SIZE = { width: 460, height: 260 }
 /** Píldora abierta (coincide con tab.css), relativa a la ventana. */
 const OPEN_PILL = { width: 208, height: 34 }
 /** Píldora abierta con música: carátula, título y controles (tab.css, .has-music). */
@@ -34,8 +34,11 @@ let info: TabInfo = { name: 'Mascota', shortcut: '' }
 let pomodoro: PomodoroView = null
 let media: TabMediaView = null
 let peekUntil = 0
+/** Aviso dentro de la isla y su tamaño (lo mide la página). */
+let alert: BubbleView | null = null
+let alertSize = { width: 380, height: 90 }
 
-const openPill = () => (media ? MUSIC_PILL : OPEN_PILL)
+const openPill = () => (alert ? alertSize : media ? MUSIC_PILL : OPEN_PILL)
 
 export function getTabWindow(): BrowserWindow | null {
   return win && !win.isDestroyed() ? win : null
@@ -115,6 +118,7 @@ export function createTabWindow(): BrowserWindow {
     win?.webContents.send(IPC.tabInfo, info)
     win?.webContents.send(IPC.tabPomodoro, pomodoro)
     win?.webContents.send(IPC.tabMedia, media)
+    win?.webContents.send(IPC.tabAlert, alert)
   })
   win.on('show', startPolling)
   win.on('hide', stopPolling)
@@ -152,6 +156,29 @@ export function tabAnchor(): { centerX: number; bottom: number } {
 export function setTabInfo(name: string, accelerator: string, emoji?: string): void {
   info = { name, shortcut: formatAccelerator(accelerator), ...(emoji ? { emoji } : {}) }
   getTabWindow()?.webContents.send(IPC.tabInfo, info)
+}
+
+/** Enseña (o quita, con null) un aviso dentro de la isla. */
+export function setTabAlert(view: BubbleView | null): void {
+  alert = view
+  getTabWindow()?.webContents.send(IPC.tabAlert, view)
+}
+
+export function updateTabAlert(patch: { id: string; title?: string; text?: string }): void {
+  if (alert?.id !== patch.id) return
+  alert = { ...alert, ...patch }
+  getTabWindow()?.webContents.send(IPC.tabAlertUpdate, patch)
+}
+
+/** La página dice cuánto mide la isla con el aviso (para saber dónde se puede hacer clic). */
+export function tabAlertResized(width: number, height: number): void {
+  if (!Number.isFinite(width) || !Number.isFinite(height)) return
+  alertSize = { width: Math.min(Math.max(Math.round(width), 100), TAB_SIZE.width), height: Math.min(Math.max(Math.round(height), 30), TAB_SIZE.height) }
+}
+
+/** ¿Está la isla a la vista (para enseñar ahí los avisos)? */
+export function tabShowing(): boolean {
+  return getTabWindow()?.isVisible() ?? false
 }
 
 /** Canción que enseñar en la pestaña. `peek`: asomarse abierta un momento (canción nueva). */

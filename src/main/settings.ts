@@ -7,7 +7,7 @@ import { isLang, setLang } from '../shared/i18n'
 import { IPC } from '../shared/ipc'
 import { closeBar, getBarWindow } from './barWindow'
 import { closeBubble, getBubbleWebContents } from './bubbleWindow'
-import { isDocked, setDocked } from './dock'
+import { isDocked, setDocked, setMascotVisible } from './dock'
 import { isClipboardEnabled, setClipboardEnabled, setLinkGuard } from './features'
 import { sendAppearance } from './robotWindow'
 import { getSettingsWindow } from './settingsWindow'
@@ -38,6 +38,7 @@ export function getSettingsView(): SettingsView {
     linkGuard: cfg.linkGuard,
     startWithWindows: startsWithWindows(),
     dockTop: isDocked(),
+    visible: cfg.robotVisible,
     nowPlaying: cfg.nowPlaying,
     language: cfg.language,
     claudeKey: claudeKeySource(),
@@ -70,6 +71,7 @@ export function applySettingsPatch(raw: unknown): void {
   if (typeof patch.linkGuard === 'boolean') setLinkGuard(patch.linkGuard)
   if (typeof patch.startWithWindows === 'boolean') setStartsWithWindows(patch.startWithWindows)
   if (typeof patch.dockTop === 'boolean') setDocked(patch.dockTop)
+  if (typeof patch.visible === 'boolean') setMascotVisible(patch.visible)
   if (typeof patch.nowPlaying === 'boolean') setConfig({ nowPlaying: patch.nowPlaying })
   if (isAssistant(patch.askAi)) setConfig({ askAi: patch.askAi })
   if (typeof patch.seasonal === 'boolean') {

@@ -358,8 +358,10 @@ export interface SettingsView {
   clipboardEnabled: boolean
   linkGuard: boolean
   startWithWindows: boolean
-  /** Modo pestaña: el robot se esconde en una pestaña arriba de la pantalla. */
+  /** Modo pestaña: la mascota vive en la isla de arriba de la pantalla. */
   dockTop: boolean
+  /** La mascota se ve (la isla o el robot, según el modo). */
+  visible: boolean
   /** Enseñar en la pestaña la canción que suena. */
   nowPlaying: boolean
   language: Lang
