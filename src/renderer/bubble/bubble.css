@@ -15,8 +15,9 @@ body {
      desenfocar (el escritorio no le llega a Chromium) y cuesta GPU en cada fotograma. */
   border: 1px solid var(--glass-border);
   box-shadow:
-    0 10px 30px rgba(15, 23, 42, 0.2),
-    0 1px 4px rgba(15, 23, 42, 0.08),
+    /* Cabe en los 14 px de margen: si la ventana la corta, se ve un rectángulo. */
+    0 4px 10px rgba(15, 23, 42, 0.16),
+    0 1px 3px rgba(15, 23, 42, 0.08),
     0 0 0 0.5px var(--glass-edge),
     inset 0 1px 0 var(--glass-shine);
   color: var(--text);

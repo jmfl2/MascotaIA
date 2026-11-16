@@ -7,8 +7,10 @@ import { loadPage, PRELOAD_PATH } from './paths'
 import { hardenWebContents, secureWebPreferences } from './security'
 import { t } from '../shared/i18n'
 
-/** Dos columnas: el robot y las secciones a la izquierda, el contenido a la derecha. */
-const SIZE = { width: 880, height: 660 }
+/** Margen transparente para la sombra (igual que el padding del body en settings.css). */
+const PAD = { side: 22, top: 22, bottom: 30 }
+/** Dos columnas (el robot y las secciones a la izquierda, el contenido a la derecha) de 852x632, más el margen. */
+const SIZE = { width: 852 + PAD.side * 2, height: 632 + PAD.top + PAD.bottom }
 
 let win: BrowserWindow | null = null
 

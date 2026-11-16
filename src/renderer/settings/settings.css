@@ -1,8 +1,9 @@
 @import '../robot/robot.css';
 
-/* La ventana deja 14 px alrededor para la sombra. */
+/* La ventana deja margen para que la sombra (--shadow-tight) quepa entera:
+   si se corta, se ve un rectángulo alrededor. Coincide con PAD en settingsWindow.ts. */
 body {
-  padding: 14px;
+  padding: 22px 22px 30px;
 }
 
 .window {
@@ -14,7 +15,7 @@ body {
   /* Sin backdrop-filter: en una ventana transparente no hay nada detrás que
      desenfocar (el escritorio no le llega a Chromium) y cuesta GPU en cada fotograma. */
   border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow), 0 0 0 0.5px var(--glass-edge), inset 0 1px 0 var(--glass-shine);
+  box-shadow: var(--shadow-tight), 0 0 0 0.5px var(--glass-edge), inset 0 1px 0 var(--glass-shine);
   color: var(--text);
   overflow: hidden;
   opacity: 0;
