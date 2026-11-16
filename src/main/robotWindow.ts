@@ -229,8 +229,14 @@ export function sendPomodoro(view: PomodoroView): void {
 export function setRobotVisible(visible: boolean): void {
   const w = getRobotWindow()
   if (!w) return
-  if (visible) w.showInactive()
-  else w.hide()
+  if (visible) {
+    w.showInactive()
+    // Si venía de esconderse en la pestaña, su dibujo se quedó arriba, fuera de
+    // la ventana: que vuelva a bajar (si ya estaba en su sitio, solo da un saltito).
+    w.webContents.send(IPC.robotEnter)
+  } else {
+    w.hide()
+  }
   setConfig({ robotVisible: visible })
 }
 

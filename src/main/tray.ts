@@ -183,8 +183,11 @@ export function createTray(actions: TrayActions): { tray: Tray; rebuild: () => v
   // El menú se rehace al abrirlo, para que refleje el estado actual (pomodoro...).
   tray.on('right-click', rebuild)
   // Clic izquierdo: mostrar u ocultar el robot.
+  // Clic izquierdo: si la mascota está oculta, que aparezca; si se ve, abrir la barra.
+  // (Antes la ocultaba: un clic sin querer y desaparecía.)
   tray.on('click', () => {
-    actions.toggleRobot()
+    if (actions.isRobotVisible()) actions.openBar()
+    else actions.toggleRobot()
     rebuild()
   })
   return { tray, rebuild }

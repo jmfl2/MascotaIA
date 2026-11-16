@@ -87,22 +87,29 @@ export function setMascotVisible(visible: boolean): void {
   }
 }
 
-/** Cambia de modo en caliente. */
+/**
+ * Cambia de modo en caliente. Al cambiar de modo la mascota siempre se ve:
+ * si se había ocultado antes, cambiar de modo y no ver nada parece un fallo.
+ */
 export function setDocked(docked: boolean): void {
   if (docked === isDocked()) return
-  setConfig({ dockTop: docked })
-  const visible = getConfig().robotVisible
+  setConfig({ dockTop: docked, robotVisible: true })
   if (docked) {
     getRobotWindow()?.hide()
-    if (visible) showTab()
-    if (visible && reasons.size) enterDocked()
+    showTab()
+    if (reasons.size) enterDocked()
   } else {
     if (lingerTimer) clearTimeout(lingerTimer)
     lingerTimer = null
     hideTab()
     placeFree()
-    if (visible) getRobotWindow()?.showInactive()
+    setRobotVisible(true)
   }
+}
+
+/** Que la mascota se vea (al abrir la app a mano o desde la bandeja si estaba oculta). */
+export function revealMascot(): void {
+  if (!mascotVisible()) setMascotVisible(true)
 }
 
 /** Al arrancar, cuando la pestaña está lista para pintarse. */

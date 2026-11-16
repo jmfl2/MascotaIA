@@ -36,14 +36,15 @@ import {
   onRobotMoved
 } from './robotWindow'
 import { denyAllPermissions, isFrom } from './security'
-import { dropDone, dropIncoming, isDocked, mascotVisible, needRobot, setDocked, setMascotVisible, showInitialTab } from './dock'
+import { dropDone, dropIncoming, isDocked, mascotVisible, needRobot, revealMascot, setDocked, setMascotVisible, showInitialTab } from './dock'
 import { createTabWindow, getTabWindow, setTabInfo } from './tabWindow'
 import { applySettingsPatch, getSettingsView, notifySettingsChanged, onSettingsChange } from './settings'
 import { closeSettings, getSettingsWindow, openSettings } from './settingsWindow'
 import { refreshIndex } from './services/launcher'
 import { pomodoroService } from './services/pomodoro'
 import { registerShortcut } from './shortcut'
-import { getConfig } from './store'
+import { openedAtLogin, refreshLoginItem } from './startup'
+import { getConfig, setConfig } from './store'
 import { createTray } from './tray'
 import { musicAction, startMusic, stopMusic, syncMusic } from './music'
 import { checkForUpdates, installOnQuit, installUpdate, onUpdateChange, startUpdater, updateView } from './updater'
@@ -54,7 +55,11 @@ import { setLang, t } from '../shared/i18n'
 if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
-  app.on('second-instance', () => openBar())
+  // Abrirla otra vez (menú Inicio, acceso directo): que se vea y abrir la barra.
+  app.on('second-instance', () => {
+    revealMascot()
+    openBar()
+  })
   app.whenReady().then(start)
 }
 
@@ -76,6 +81,10 @@ app.on('will-quit', () => {
 
 function start(): void {
   setLang(getConfig().language)
+  // Abierta a mano (no al iniciar sesión): la mascota se ve aunque se ocultara
+  // antes. Si no, quien la ocultó por error no tendría forma de recuperarla.
+  if (!openedAtLogin() && !getConfig().robotVisible) setConfig({ robotVisible: true })
+  refreshLoginItem()
   denyAllPermissions()
   registerIpc()
 
