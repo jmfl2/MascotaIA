@@ -169,19 +169,23 @@
 
           <h2 data-en="On screen">En pantalla</h2>
           <div class="group">
-            <div class="row column">
-              <span class="label" data-en="Where the mascot lives">Dónde vive la mascota</span>
-              <div id="mode" class="segmented" role="radiogroup" aria-label="Dónde vive la mascota" data-en-aria-label="Where the mascot lives"></div>
-              <p id="mode-hint" class="hint"></p>
-            </div>
             <label class="row">
               <span class="label-block">
                 <span class="label" data-en="Show the mascot">Mostrar la mascota</span>
-                <span class="hint" data-en="Off, nothing shows on screen: it keeps working from the tray icon and the keyboard shortcut"
-                  >Apagado, no se ve nada en pantalla: sigue funcionando desde el icono de la bandeja y el atajo de teclado</span
+                <span class="hint" data-en="An island at the top of the screen, like iPhone. Off, nothing shows: it keeps working from the tray icon and the keyboard shortcut"
+                  >Una isla arriba de la pantalla, como en el iPhone. Apagado, no se ve nada: sigue funcionando desde el icono de la bandeja y el atajo de teclado</span
                 >
               </span>
               <input id="visible" class="switch" type="checkbox" />
+            </label>
+            <label class="row">
+              <span class="label-block">
+                <span class="label" data-en="Come down when the bar opens">Bajar al abrir la barra</span>
+                <span class="hint" data-en="The robot comes down from the island while the command bar is open and goes back up when you close it"
+                  >El robot baja de la isla mientras la barra de comandos está abierta y vuelve a subir al cerrarla</span
+                >
+              </span>
+              <input id="robotWithBar" class="switch" type="checkbox" />
             </label>
             <label class="row">
               <span class="label-block">

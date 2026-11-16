@@ -12,7 +12,7 @@ mascota/
 │   ├── main/            # proceso principal
 │   │   ├── index.ts         # arranque e IPC
 │   │   ├── *Window.ts       # ventanas: robot, pestaña, barra y bocadillo
-│   │   ├── dock.ts          # modo pestaña: cuándo baja y sube el robot
+│   │   ├── dock.ts          # la isla: cuándo baja y sube el robot
 │   │   ├── commandRunner.ts # ejecuta los comandos y guarda sus acciones
 │   │   ├── features.ts      # conecta recordatorios, pomodoro, portapapeles y favoritos
 │   │   ├── ai/              # estado de Ollama, interpretación y conversación
@@ -152,9 +152,10 @@ npx vitest run src/security/expand.integration.test.ts
 - **Cuatro ventanas:** el robot (200×200), la pestaña de arriba, la barra
   centrada como Spotlight y el bocadillo, que se coloca al lado del robot con
   más sitio y lo sigue al moverlo.
-- **Modo pestaña con «motivos»:** el robot está fuera mientras haya algún
-  motivo (barra abierta, bocadillo visible) y sube 0,9 s después de que no
-  quede ninguno. Así, si se cierra la barra y llega un aviso, no sube y baja.
+- **La isla de arriba:** la mascota vive siempre en la isla (no hay robot
+  libre por el escritorio) y los avisos salen dentro de ella. El robot solo
+  baja mientras la barra está abierta, si «Bajar al abrir la barra» está
+  activado, y sube 0,9 s después de cerrarla.
   Escondido, su ventana está oculta y no gasta en animarse. La cercanía del
   ratón a la pestaña la calcula el proceso principal (sondeando más despacio si
   el cursor está lejos), igual que el robot sabe si lo tienes encima.

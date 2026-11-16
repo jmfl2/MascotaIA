@@ -10,7 +10,6 @@ import { BrowserWindow, screen } from 'electron'
 import { IPC } from '../shared/ipc'
 import { loadPage, PRELOAD_PATH } from './paths'
 import { hardenWebContents, secureWebPreferences } from './security'
-import { getConfig } from './store'
 
 /** Panel de 680 px + 20 px de margen por lado para la sombra. */
 const BAR_SIZE = { width: 720, height: 480 }
@@ -78,7 +77,7 @@ function placeOnActiveDisplay(w: BrowserWindow): void {
   const top = area.height * BAR_TOP
   w.setBounds({
     x: Math.round(area.x + (area.width - BAR_SIZE.width) / 2),
-    y: Math.round(area.y + (getConfig().dockTop ? Math.max(top, BAR_MIN_TOP_DOCKED) : top)),
+    y: Math.round(area.y + Math.max(top, BAR_MIN_TOP_DOCKED)),
     ...BAR_SIZE
   })
 }

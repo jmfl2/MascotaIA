@@ -12,7 +12,7 @@ import { BrowserWindow, Notification, screen } from 'electron'
 import { IPC, type BubbleAction, type BubbleView } from '../shared/ipc'
 import { newId } from './services/jsonFile'
 import { loadPage, PRELOAD_PATH } from './paths'
-import { isDocked, needRobot, robotAvailable } from './dock'
+import { needRobot, robotAvailable } from './dock'
 import { setTabAlert, tabShowing, updateTabAlert } from './tabWindow'
 import { getRobotBounds, ROBOT_SIZE } from './robotWindow'
 import { hardenWebContents, secureWebPreferences } from './security'
@@ -118,7 +118,7 @@ export function showBubble(spec: BubbleSpec): string | null {
     }
     return null
   }
-  const inIsland = isDocked() && tabShowing()
+  const inIsland = tabShowing()
 
   // Sustituye al anterior (sin llamar a su onDismiss: no lo cerró el usuario).
   active?.spec.onClose?.()

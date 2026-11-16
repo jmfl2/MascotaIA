@@ -12,7 +12,7 @@ import type { Appearance } from '../shared/appearance'
 import { IPC, type CursorOffset, type PomodoroView, type RobotState } from '../shared/ipc'
 import { loadPage, PRELOAD_PATH } from './paths'
 import { hardenWebContents, secureWebPreferences } from './security'
-import { getConfig, setConfig } from './store'
+import { getConfig } from './store'
 import { tabAnchor } from './tabWindow'
 
 /** Tamaño de la ventana en DIP. Deja margen para sombra, rebotes y el "asomarse". */
@@ -25,10 +25,6 @@ let season: string | null = null
 const FACE_CENTER = { x: 0.5, y: 0.51 }
 /** Silueta sensible al ratón, igual que #hit en robot.html. */
 const HIT = { x: 26, y: 20, width: 148, height: 152, radius: 56 }
-/** Margen respecto al borde de la pantalla al colocarlo por defecto. */
-const EDGE_MARGIN = 24
-/** Píxeles que hay que mover el ratón para que cuente como arrastre y no como clic. */
-const DRAG_THRESHOLD = 4
 /** Modo pestaña: cuánto se mete la ventana bajo la píldora (su parte de arriba es transparente). */
 const DOCK_TUCK = 12
 /** Lo que tarda en subir antes de ocultar la ventana (coincide con el muelle del renderer). */
@@ -42,14 +38,6 @@ let hovering: boolean | null = null
 let onMoved: () => void = () => {}
 let leaveTimer: NodeJS.Timeout | null = null
 
-interface DragState {
-  startCursor: { x: number; y: number }
-  startPos: { x: number; y: number }
-  moved: boolean
-  timer: NodeJS.Timeout
-}
-let drag: DragState | null = null
-
 export function getRobotWindow(): BrowserWindow | null {
   return win && !win.isDestroyed() ? win : null
 }
@@ -57,34 +45,6 @@ export function getRobotWindow(): BrowserWindow | null {
 /** Callback cuando el robot cambia de sitio (el bocadillo lo sigue). */
 export function onRobotMoved(cb: () => void): void {
   onMoved = cb
-}
-
-/** Ajusta una posición para que el robot quede entero dentro de la pantalla más cercana. */
-function clampToDisplay(x: number, y: number): { x: number; y: number } {
-  const center = { x: Math.round(x + ROBOT_SIZE.width / 2), y: Math.round(y + ROBOT_SIZE.height / 2) }
-  const area = screen.getDisplayNearestPoint(center).workArea
-  return {
-    x: Math.round(Math.min(Math.max(x, area.x), area.x + area.width - ROBOT_SIZE.width)),
-    y: Math.round(Math.min(Math.max(y, area.y), area.y + area.height - ROBOT_SIZE.height))
-  }
-}
-
-/** Posición inicial: la guardada (si sigue siendo visible) o abajo a la derecha. */
-function initialPosition(): { x: number; y: number } {
-  const saved = getConfig().robotPosition
-  if (saved) {
-    const visible = screen.getAllDisplays().some((d) => intersects(d.workArea, { ...saved, ...ROBOT_SIZE }))
-    if (visible) return clampToDisplay(saved.x, saved.y)
-  }
-  const area = screen.getPrimaryDisplay().workArea
-  return {
-    x: area.x + area.width - ROBOT_SIZE.width - EDGE_MARGIN,
-    y: area.y + area.height - ROBOT_SIZE.height - EDGE_MARGIN
-  }
-}
-
-function intersects(a: Rectangle, b: Rectangle): boolean {
-  return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height
 }
 
 /** ¿Está el punto (relativo a la ventana) dentro del rectángulo redondeado HIT? */
@@ -103,10 +63,8 @@ function moveTo(x: number, y: number): void {
 }
 
 export function createRobotWindow(): BrowserWindow {
-  const pos = initialPosition()
   win = new BrowserWindow({
     ...ROBOT_SIZE,
-    ...pos,
     show: false,
     frame: false,
     transparent: true,
@@ -129,11 +87,6 @@ export function createRobotWindow(): BrowserWindow {
   win.setIgnoreMouseEvents(true, { forward: true })
   hardenWebContents(win.webContents)
 
-  win.once('ready-to-show', () => {
-    // En modo pestaña empieza escondido: baja cuando se le llama.
-    const { robotVisible, dockTop } = getConfig()
-    if (robotVisible && !dockTop) win?.showInactive()
-  })
   // Al cargar (y en cada recarga en desarrollo) se le envía su skin.
   win.webContents.on('did-finish-load', () => {
     sendAppearance(getConfig().appearance)
@@ -192,14 +145,6 @@ export function leaveDocked(): void {
   }, LEAVE_MS)
 }
 
-/** Al volver al modo libre: a su sitio de siempre. */
-export function placeFree(): void {
-  if (leaveTimer) clearTimeout(leaveTimer)
-  leaveTimer = null
-  const pos = initialPosition()
-  moveTo(pos.x, pos.y)
-}
-
 export function getRobotBounds(): Rectangle | null {
   return getRobotWindow()?.getBounds() ?? null
 }
@@ -226,20 +171,6 @@ export function sendPomodoro(view: PomodoroView): void {
   getRobotWindow()?.webContents.send(IPC.robotPomodoro, view)
 }
 
-export function setRobotVisible(visible: boolean): void {
-  const w = getRobotWindow()
-  if (!w) return
-  if (visible) {
-    w.showInactive()
-    // Si venía de esconderse en la pestaña, su dibujo se quedó arriba, fuera de
-    // la ventana: que vuelva a bajar (si ya estaba en su sitio, solo da un saltito).
-    w.webContents.send(IPC.robotEnter)
-  } else {
-    w.hide()
-  }
-  setConfig({ robotVisible: visible })
-}
-
 export function isRobotVisible(): boolean {
   return getRobotWindow()?.isVisible() ?? false
 }
@@ -252,8 +183,7 @@ function setHovering(value: boolean): void {
   const w = getRobotWindow()
   if (!w || value === hovering) return
   hovering = value
-  // Durante un arrastre siempre capturamos el ratón.
-  if (!drag) w.setIgnoreMouseEvents(!value, { forward: true })
+  w.setIgnoreMouseEvents(!value, { forward: true })
   w.webContents.send(IPC.robotHover, value)
 }
 
@@ -280,49 +210,12 @@ function stopCursorTracking(): void {
   cursorTimer = null
 }
 
-// --- Arrastre ---------------------------------------------------------------
-// No usamos `-webkit-app-region: drag` porque se come los clics y no permite
-// animar al robot mientras se arrastra. En su lugar seguimos el cursor desde aquí.
+// --- Clic ------------------------------------------------------------------
+// El robot cuelga de la isla: no se arrastra. Estas dos llamadas solo sirven
+// para que el renderer distinga el clic (que abre o cierra la barra).
 
-export function dragStart(): void {
-  const w = getRobotWindow()
-  // En modo pestaña el robot cuelga de la pestaña: no se arrastra (el clic sigue funcionando).
-  if (!w || drag || getConfig().dockTop) return
-  const [x, y] = w.getPosition()
-  const state: DragState = {
-    startCursor: screen.getCursorScreenPoint(),
-    startPos: { x, y },
-    moved: false,
-    timer: setInterval(() => {
-      const p = screen.getCursorScreenPoint()
-      const dx = p.x - state.startCursor.x
-      const dy = p.y - state.startCursor.y
-      if (!state.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return
-      if (!state.moved) {
-        state.moved = true
-        w.webContents.send(IPC.robotDragMoving)
-      }
-      moveTo(state.startPos.x + dx, state.startPos.y + dy)
-    }, 8)
-  }
-  drag = state
-  w.setIgnoreMouseEvents(false)
-}
+export function dragStart(): void {}
 
 export function dragEnd(): { moved: boolean } {
-  if (!drag) return { moved: false }
-  clearInterval(drag.timer)
-  const { moved } = drag
-  drag = null
-  const w = getRobotWindow()
-  if (w && moved) {
-    const [x, y] = w.getPosition()
-    const pos = clampToDisplay(x, y)
-    moveTo(pos.x, pos.y)
-    setConfig({ robotPosition: pos })
-  }
-  // Recalcula si el cursor sigue encima al soltar.
-  hovering = null
-  lastCursor = { x: Number.NaN, y: Number.NaN }
-  return { moved }
+  return { moved: false }
 }

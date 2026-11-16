@@ -11,8 +11,8 @@ import { setStartsWithWindows, startsWithWindows } from './startup'
 export interface TrayActions {
   toggleRobot(): void
   isRobotVisible(): boolean
-  isDocked(): boolean
-  setDocked(docked: boolean): void
+  isRobotWithBar(): boolean
+  setRobotWithBar(on: boolean): void
   openBar(): void
   changeShortcut(accelerator: string): boolean
   isClipboardEnabled(): boolean
@@ -99,20 +99,18 @@ export function createTray(actions: TrayActions): { tray: Tray; rebuild: () => v
     const shortcut = currentShortcut()
     const menu = Menu.buildFromTemplate([
       {
-        label: actions.isDocked()
-          ? actions.isRobotVisible() ? t('Ocultar pestaña', 'Hide tab') : t('Mostrar pestaña', 'Show tab')
-          : actions.isRobotVisible() ? t('Ocultar robot', 'Hide robot') : t('Mostrar robot', 'Show robot'),
+        label: actions.isRobotVisible() ? t('Ocultar la mascota', 'Hide the mascot') : t('Mostrar la mascota', 'Show the mascot'),
         click: () => {
           actions.toggleRobot()
           rebuild()
         }
       },
       {
-        label: t('Esconder en una pestaña arriba', 'Hide in a tab at the top'),
+        label: t('Bajar al abrir la barra', 'Come down when the bar opens'),
         type: 'checkbox',
-        checked: actions.isDocked(),
+        checked: actions.isRobotWithBar(),
         click: (item) => {
-          actions.setDocked(item.checked)
+          actions.setRobotWithBar(item.checked)
           actions.changed()
           rebuild()
         }
