@@ -98,11 +98,47 @@ export const SKINS: readonly Skin[] = [
     colors: { bodyTop: '#5b3f9e', bodyBottom: '#1d1640', bodyEdge: '#120d2a', screenTop: '#0b0820', screenBottom: '#030208', eye: '#e0b3ff', cheek: '#ff7ad9', accessory: '#ffd166', accessoryDark: '#0a0718' }
   },
   {
+    id: 'naranja',
+    name: { es: 'Naranja', en: 'Orange' },
+    colors: { bodyTop: '#ffd2a6', bodyBottom: '#f08a3c', bodyEdge: '#d9702a', screenTop: '#3a1f10', screenBottom: '#1a0d06', eye: '#fff1c2', cheek: '#ff7a59', accessory: '#2f6fdf', accessoryDark: '#3d230f' }
+  },
+  {
     id: 'chocolate',
     name: { es: 'Chocolate', en: 'Chocolate' },
     colors: { bodyTop: '#a9785a', bodyBottom: '#5c3a26', bodyEdge: '#4a2e1e', screenTop: '#24170f', screenBottom: '#0f0905', eye: '#ffd8a8', cheek: '#ff9f80', accessory: '#ff6f91', accessoryDark: '#2a1a10' }
   }
 ]
+
+/**
+ * Formas de la mascota. Todas comparten el mismo esqueleto (cuerpo, ojos y
+ * animaciones) y cambian lo de alrededor: orejas, cara, cola, alas...
+ * Las de videojuego son personajes genéricos, sin ninguno concreto.
+ * - face: 'screen' = pantalla oscura con ojos que brillan; 'fur' = cara clara
+ *   con ojos oscuros; 'bare' = sin cara, los ojos sobre el cuerpo.
+ * - skin: la que se pone al elegirla (luego se puede cambiar).
+ */
+export const SPECIES = [
+  { id: 'robot', name: { es: 'Robot', en: 'Robot' }, emoji: '🤖', face: 'screen', skin: 'clasico', group: 'basico' },
+  { id: 'gato', name: { es: 'Gato', en: 'Cat' }, emoji: '🐱', face: 'fur', skin: 'arena', group: 'animales' },
+  { id: 'perro', name: { es: 'Perro', en: 'Dog' }, emoji: '🐶', face: 'fur', skin: 'chocolate', group: 'animales' },
+  { id: 'conejo', name: { es: 'Conejo', en: 'Bunny' }, emoji: '🐰', face: 'fur', skin: 'lavanda', group: 'animales' },
+  { id: 'oso', name: { es: 'Oso', en: 'Bear' }, emoji: '🐻', face: 'fur', skin: 'chocolate', group: 'animales' },
+  { id: 'panda', name: { es: 'Panda', en: 'Panda' }, emoji: '🐼', face: 'fur', skin: 'clasico', group: 'animales' },
+  { id: 'zorro', name: { es: 'Zorro', en: 'Fox' }, emoji: '🦊', face: 'fur', skin: 'naranja', group: 'animales' },
+  { id: 'pinguino', name: { es: 'Pingüino', en: 'Penguin' }, emoji: '🐧', face: 'fur', skin: 'medianoche', group: 'animales' },
+  { id: 'rana', name: { es: 'Rana', en: 'Frog' }, emoji: '🐸', face: 'fur', skin: 'menta', group: 'animales' },
+  { id: 'dragon', name: { es: 'Dragón', en: 'Dragon' }, emoji: '🐲', face: 'fur', skin: 'coral', group: 'fantasia' },
+  { id: 'fantasma', name: { es: 'Fantasma', en: 'Ghost' }, emoji: '👻', face: 'bare', skin: 'clasico', group: 'fantasia' },
+  { id: 'slime', name: { es: 'Slime', en: 'Slime' }, emoji: '💧', face: 'bare', skin: 'oceano', group: 'juegos' },
+  { id: 'caballero', name: { es: 'Caballero', en: 'Knight' }, emoji: '🛡️', face: 'screen', skin: 'grafito', group: 'juegos' },
+  { id: 'alien', name: { es: 'Alien', en: 'Alien' }, emoji: '👽', face: 'screen', skin: 'menta', group: 'juegos' }
+] as const
+export type SpeciesId = (typeof SPECIES)[number]['id']
+export type Species = (typeof SPECIES)[number]
+
+export function speciesById(id: string): Species {
+  return SPECIES.find((s) => s.id === id) ?? SPECIES[0]
+}
 
 /** Temas para agrupar los accesorios en los ajustes. */
 export const ACCESSORY_THEMES = [
@@ -272,6 +308,27 @@ export const COLOR_PRESETS: readonly { color: string; name: Text }[] = [
   { color: '#2b2f3a', name: { es: 'Negro', en: 'Black' } }
 ]
 
+/** Tema de las ventanas: el del sistema, claro u oscuro. */
+export const UI_THEMES = [
+  { id: 'system', name: { es: 'Sistema', en: 'System' } },
+  { id: 'light', name: { es: 'Claro', en: 'Light' } },
+  { id: 'dark', name: { es: 'Oscuro', en: 'Dark' } }
+] as const
+export type UiTheme = (typeof UI_THEMES)[number]['id']
+
+/** Colores de acento de la barra y las ventanas (el primero es el de siempre). */
+export const ACCENT_PRESETS: readonly { color: string; name: Text }[] = [
+  { color: '#0a84ff', name: { es: 'Azul', en: 'Blue' } },
+  { color: '#7c5cff', name: { es: 'Violeta', en: 'Violet' } },
+  { color: '#ff4d8d', name: { es: 'Rosa', en: 'Pink' } },
+  { color: '#ff453a', name: { es: 'Rojo', en: 'Red' } },
+  { color: '#ff8a1f', name: { es: 'Naranja', en: 'Orange' } },
+  { color: '#e0a800', name: { es: 'Ámbar', en: 'Amber' } },
+  { color: '#30b85a', name: { es: 'Verde', en: 'Green' } },
+  { color: '#14b8c4', name: { es: 'Turquesa', en: 'Teal' } },
+  { color: '#6b7280', name: { es: 'Grafito', en: 'Graphite' } }
+]
+
 const HEX_COLOR = /^#[0-9a-f]{6}$/i
 
 /** Color "#rrggbb" válido (en minúsculas) o null. */
@@ -280,6 +337,8 @@ export function validColor(raw: unknown): string | null {
 }
 
 export interface Appearance {
+  /** Forma de la mascota (robot, gato, slime...). */
+  species: SpeciesId
   skin: string
   accessories: AccessoryId[]
   /** Color de ojos propio (null = el de la skin). */
@@ -295,7 +354,7 @@ export interface Personality {
   aiTone: AiTone
 }
 
-export const DEFAULT_APPEARANCE: Appearance = { skin: 'clasico', accessories: [], eyeColor: null, accessoryColor: null, eyeShape: 'normal' }
+export const DEFAULT_APPEARANCE: Appearance = { species: 'robot', skin: 'clasico', accessories: [], eyeColor: null, accessoryColor: null, eyeShape: 'normal' }
 export const DEFAULT_PERSONALITY: Personality = { name: 'Mascota', chattiness: 'normal', aiTone: 'cercano' }
 export const MAX_NAME_LENGTH = 20
 
@@ -324,7 +383,8 @@ export function validateAppearance(raw: unknown): Appearance {
   // Uno por zona: si hay varios (config editada a mano), gana el último.
   const accessories = valid.reduce<AccessoryId[]>((acc, id) => (acc.includes(id) ? acc : toggleAccessory(acc, id)), [])
   const eyeShape = EYE_SHAPES.find((s) => s.id === r.eyeShape)?.id ?? 'normal'
-  return { skin, accessories, eyeColor: validColor(r.eyeColor), accessoryColor: validColor(r.accessoryColor), eyeShape }
+  const species = SPECIES.find((s) => s.id === r.species)?.id ?? 'robot'
+  return { species, skin, accessories, eyeColor: validColor(r.eyeColor), accessoryColor: validColor(r.accessoryColor), eyeShape }
 }
 
 export function validatePersonality(raw: unknown): Personality {
@@ -344,6 +404,9 @@ export function skinCssVars(skin: Skin, custom: Pick<Appearance, 'eyeColor' | 'a
     '--screen-top': c.screenTop,
     '--screen-bottom': c.screenBottom,
     '--eye': c.eye,
+    // Ojos sobre una cara clara (formas con pelo) o sobre manchas negras (panda).
+    '--eye-fur': custom.eyeColor ?? '#2a2430',
+    '--eye-light': custom.eyeColor ?? '#ffffff',
     '--cheek': c.cheek,
     '--accessory': c.accessory,
     '--accessory-dark': c.accessoryDark
@@ -360,6 +423,9 @@ export interface SettingsView {
   startWithWindows: boolean
   /** El robot baja de la isla mientras la barra está abierta. */
   robotWithBar: boolean
+  /** Tema de las ventanas y color de acento (null = el azul de siempre). */
+  theme: UiTheme
+  accent: string | null
   /** La mascota (la isla de arriba) se ve. */
   visible: boolean
   /** Enseñar en la pestaña la canción que suena. */

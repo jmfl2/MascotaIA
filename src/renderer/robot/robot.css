@@ -275,3 +275,65 @@
   .is-thinking .thinking-dots circle,
   .is-sleeping .zzz text { animation: none; }
 }
+
+/* --- Formas de la mascota (speciesSvg.ts; appearance.ts pone species-<forma> y face-<tipo>) --- */
+.sp { display: none; }
+.species-gato .sp-gato,
+.species-perro .sp-perro,
+.species-conejo .sp-conejo,
+.species-oso .sp-oso,
+.species-panda .sp-panda,
+.species-zorro .sp-zorro,
+.species-pinguino .sp-pinguino,
+.species-rana .sp-rana,
+.species-dragon .sp-dragon,
+.species-fantasma .sp-fantasma,
+.species-slime .sp-slime,
+.species-caballero .sp-caballero,
+.species-alien .sp-alien { display: inline; }
+.robot:not(.species-robot) .robot-ears { display: none; }
+.species-fantasma .body-blob,
+.species-slime .body-blob { display: none; }
+
+.sp-dark { fill: color-mix(in srgb, var(--body-bottom) 62%, #000); }
+.sp-line {
+  fill: none;
+  stroke: color-mix(in srgb, var(--body-bottom) 35%, #2a2228);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+.sp-line-thick { stroke-width: 2.6; }
+.sp-tail {
+  fill: none;
+  stroke: var(--body-bottom);
+  stroke-width: 9;
+  stroke-linecap: round;
+}
+.sp-stalk {
+  fill: none;
+  stroke: var(--body-bottom);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+}
+
+/* Cara de pelo (clara, ojos oscuros) o sin cara (ojos sobre el cuerpo). */
+.stop-face-top { stop-color: color-mix(in srgb, var(--body-top) 55%, #fff); }
+.stop-face-bottom { stop-color: color-mix(in srgb, var(--body-top) 75%, var(--body-bottom)); }
+.face-fur #screen-bg { fill: url(#g-face); }
+.face-bare #screen-bg,
+.face-fur .screen-gloss,
+.face-bare .screen-gloss,
+.face-fur .eye-halo,
+.face-bare .eye-halo { display: none; }
+.face-fur .eye-fill,
+.face-bare .eye-fill { fill: var(--eye-fur); }
+.face-fur .eye-happy,
+.face-bare .eye-happy { stroke: var(--eye-fur); }
+/* El panda tiene los ojos sobre manchas negras: claros. */
+.species-panda .eye-fill { fill: var(--eye-light); }
+.species-panda .eye-happy { stroke: var(--eye-light); }
+/* Las antenas del alien brillan con el color de los ojos aunque la cara sea de pantalla. */
+.species-alien .sp-alien .eye-fill { fill: var(--eye); }
+/* La lucecita del pecho es cosa de máquinas. */
+.face-fur #belly-light,
+.face-bare #belly-light { display: none; }

@@ -619,3 +619,12 @@ h2 {
   font-size: 12px;
   color: var(--text-3);
 }
+
+/* Formas de la mascota: tarjetas con un emoji grande. */
+.species-cards { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.species-card { padding: 8px 2px 6px; }
+.species-emoji {
+  font-size: 22px;
+  line-height: 26px;
+  font-family: 'Segoe UI Emoji', var(--font);
+}

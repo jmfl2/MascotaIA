@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_APPEARANCE, sanitizeName, skinById, skinCssVars, toggleAccessory, validateAppearance, validatePersonality } from './appearance'
+import { DEFAULT_APPEARANCE, SKINS, SPECIES, sanitizeName, skinById, skinCssVars, toggleAccessory, validateAppearance, validatePersonality } from './appearance'
 
 describe('ajustes: validación', () => {
   it('limpia el nombre del robot', () => {
@@ -13,6 +13,7 @@ describe('ajustes: validación', () => {
 
   it('solo acepta skins y accesorios conocidos', () => {
     expect(validateAppearance({ skin: 'menta', accessories: ['gorro', 'gorro', 'gafas', '<script>'] })).toEqual({
+      species: 'robot',
       skin: 'menta',
       accessories: ['gorro', 'gafas'],
       eyeColor: null,
@@ -21,6 +22,12 @@ describe('ajustes: validación', () => {
     })
     expect(validateAppearance({ skin: '../../evil' })).toEqual(DEFAULT_APPEARANCE)
     expect(validateAppearance(null)).toEqual(DEFAULT_APPEARANCE)
+  })
+
+  it('formas: solo las conocidas (si no, robot)', () => {
+    expect(validateAppearance({ species: 'gato' }).species).toBe('gato')
+    expect(validateAppearance({ species: 'dinosaurio-de-otra-obra' }).species).toBe('robot')
+    expect(SPECIES.every((s) => SKINS.some((k) => k.id === s.skin))).toBe(true)
   })
 
   it('colores propios: solo "#rrggbb"', () => {

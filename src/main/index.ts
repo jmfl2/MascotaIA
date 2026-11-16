@@ -36,6 +36,7 @@ import {
   onRobotMoved
 } from './robotWindow'
 import { denyAllPermissions, isFrom } from './security'
+import { startUiTheme } from './uiTheme'
 import { dropDone, dropIncoming, mascotVisible, needRobot, revealMascot, setMascotVisible, setRobotWithBar, showInitialTab } from './dock'
 import { createTabWindow, getTabWindow, setTabInfo, tabAlertResized } from './tabWindow'
 import { applySettingsPatch, getSettingsView, notifySettingsChanged, onSettingsChange } from './settings'
@@ -81,6 +82,7 @@ app.on('will-quit', () => {
 
 function start(): void {
   setLang(getConfig().language)
+  startUiTheme() // antes de crear las ventanas: les pone el tema y el color de acento
   // Abierta a mano (no al iniciar sesión): la mascota se ve aunque se ocultara
   // antes. Si no, quien la ocultó por error no tendría forma de recuperarla.
   if (!openedAtLogin() && !getConfig().robotVisible) setConfig({ robotVisible: true })

@@ -9,6 +9,7 @@
  * Es una cadena estática del propio código (no contiene nada del usuario).
  */
 import { t } from '../../shared/i18n'
+import { SPECIES_BACK, SPECIES_BELLY, SPECIES_BODY, SPECIES_FRONT, SPECIES_IN_FACE } from './speciesSvg'
 
 /**
  * Pixel art a partir de un dibujo con caracteres: cada carácter es un color
@@ -124,6 +125,10 @@ export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" ar
       <stop offset="0" class="stop-screen-top" />
       <stop offset="1" class="stop-screen-bottom" />
     </linearGradient>
+    <linearGradient id="g-face" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" class="stop-face-top" />
+      <stop offset="1" class="stop-face-bottom" />
+    </linearGradient>
     <linearGradient id="g-screen-gloss" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#fff" stop-opacity="0.14" />
       <stop offset="1" stop-color="#fff" stop-opacity="0" />
@@ -188,14 +193,19 @@ export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" ar
       <rect x="-4" y="4.5" width="8" height="18" rx="2.5" fill="#24272d" />
     </g>
 
-    <!-- Orejas -->
-    <rect x="29" y="94" width="14" height="32" rx="7" fill="url(#g-body)" class="part-edge" />
-    <rect x="157" y="94" width="14" height="32" rx="7" fill="url(#g-body)" class="part-edge" />
+    <!-- Partes de la forma elegida que van detrás del cuerpo (orejas, colas, alas...) -->
+    ${SPECIES_BACK}
 
-    <!-- Cuerpo -->
-    <rect x="40" y="48" width="120" height="120" rx="54" fill="url(#g-body)" class="part-edge" />
-    <rect x="40" y="48" width="120" height="120" rx="54" fill="url(#g-body-shade)" />
+    <!-- Orejas del robot -->
+    <rect x="29" y="94" width="14" height="32" rx="7" fill="url(#g-body)" class="part-edge robot-ears" />
+    <rect x="157" y="94" width="14" height="32" rx="7" fill="url(#g-body)" class="part-edge robot-ears" />
+
+    <!-- Cuerpo (el fantasma y el slime usan otra silueta) -->
+    <rect x="40" y="48" width="120" height="120" rx="54" fill="url(#g-body)" class="part-edge body-blob" />
+    <rect x="40" y="48" width="120" height="120" rx="54" fill="url(#g-body-shade)" class="body-blob" />
+    ${SPECIES_BODY}
     <ellipse cx="76" cy="64" rx="22" ry="9" fill="url(#g-sheen)" transform="rotate(-22 76 64)" />
+    ${SPECIES_BELLY}
     <rect id="belly-light" x="92" y="149" width="16" height="5" rx="2.5" class="eye-fill" opacity="0.5" />
     <!-- Barrita del pomodoro (sustituye a la luz del pecho mientras hay uno activo) -->
     <g id="pomo" opacity="0">
@@ -221,11 +231,12 @@ export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" ar
     <g id="acc-collar" class="acc">${PEARLS}</g>
 
     <!-- Pantalla (cara) -->
-    <rect x="54" y="68" width="92" height="68" rx="30" fill="url(#g-screen)" />
+    <rect id="screen-bg" x="54" y="68" width="92" height="68" rx="30" fill="url(#g-screen)" />
     <g clip-path="url(#c-screen)">
       <g id="face">
         <!-- El brillo de los ojos es un halo con degradado: un filtro de desenfoque
              habría que recalcularlo en cada fotograma. -->
+        ${SPECIES_IN_FACE}
         <g>
           <g id="eye-l" transform="translate(82 100)">
             <ellipse class="eye-halo" rx="15" ry="19" fill="url(#g-glow)" opacity="0.5" />
@@ -287,8 +298,11 @@ export const ROBOT_SVG = `<svg id="robot" class="robot" viewBox="0 0 200 200" ar
           <circle cx="109" cy="124" r="2.2" class="eye-fill" />
         </g>
       </g>
-      <rect x="54" y="68" width="92" height="30" fill="url(#g-screen-gloss)" />
+      <rect class="screen-gloss" x="54" y="68" width="92" height="30" fill="url(#g-screen-gloss)" />
     </g>
+
+    <!-- Partes de la forma elegida encima de la cara (narices, bigotes, picos...) -->
+    ${SPECIES_FRONT}
 
     <!-- Accesorio: bigote -->
     <g id="acc-bigote" class="acc">

@@ -2,7 +2,8 @@
  * Lee y aplica los ajustes que cambia la ventana de ajustes. Todo lo que llega
  * se valida aquí (aunque la ventana sea nuestra, por principio).
  */
-import { validateAppearance, validatePersonality, type SettingsView } from '../shared/appearance'
+import { UI_THEMES, validColor, validateAppearance, validatePersonality, type SettingsView, type UiTheme } from '../shared/appearance'
+import { applyUiTheme } from './uiTheme'
 import { isLang, setLang } from '../shared/i18n'
 import { IPC } from '../shared/ipc'
 import { closeBar, getBarWindow } from './barWindow'
@@ -38,6 +39,8 @@ export function getSettingsView(): SettingsView {
     linkGuard: cfg.linkGuard,
     startWithWindows: startsWithWindows(),
     robotWithBar: cfg.robotWithBar,
+    theme: cfg.theme,
+    accent: cfg.accent,
     visible: cfg.robotVisible,
     nowPlaying: cfg.nowPlaying,
     language: cfg.language,
@@ -71,6 +74,14 @@ export function applySettingsPatch(raw: unknown): void {
   if (typeof patch.linkGuard === 'boolean') setLinkGuard(patch.linkGuard)
   if (typeof patch.startWithWindows === 'boolean') setStartsWithWindows(patch.startWithWindows)
   if (typeof patch.robotWithBar === 'boolean') setRobotWithBar(patch.robotWithBar)
+  if (UI_THEMES.some((th) => th.id === patch.theme)) {
+    setConfig({ theme: patch.theme as UiTheme })
+    applyUiTheme()
+  }
+  if (patch.accent !== undefined) {
+    setConfig({ accent: validColor(patch.accent) })
+    applyUiTheme()
+  }
   if (typeof patch.visible === 'boolean') setMascotVisible(patch.visible)
   if (typeof patch.nowPlaying === 'boolean') setConfig({ nowPlaying: patch.nowPlaying })
   if (isAssistant(patch.askAi)) setConfig({ askAi: patch.askAi })

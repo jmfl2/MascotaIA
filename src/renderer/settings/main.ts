@@ -22,6 +22,10 @@ import {
   skinById,
   SKINS,
   SLOT_NAMES,
+  SPECIES,
+  speciesById,
+  ACCENT_PRESETS,
+  UI_THEMES,
   type AccessoryId,
   type Appearance,
   toggleAccessory,
@@ -156,6 +160,24 @@ function savedTab(): Tab {
   return 'look'
 }
 
+// --- Forma (robot, gato, slime...) ----------------------------------------------------------
+const speciesEl = el<HTMLDivElement>('species')
+const speciesButtons = SPECIES.map((species) => {
+  const b = h('button', 'shape-card species-card')
+  b.type = 'button'
+  b.setAttribute('role', 'radio')
+  b.dataset.id = species.id
+  b.append(h('span', 'species-emoji', species.emoji), h('span', '', tx(species.name)))
+  b.addEventListener('click', () => {
+    if (!view || view.appearance.species === species.id) return
+    // Cada forma trae un color que le va (el panda blanco, el zorro naranja...).
+    updateAppearance({ ...view.appearance, species: species.id, skin: species.skin })
+    robot.setState('excited')
+  })
+  speciesEl.append(b)
+  return b
+})
+
 // --- Cuerpo (skins) -----------------------------------------------------------------------
 const skinsEl = el<HTMLDivElement>('skins')
 for (const skin of SKINS) {
@@ -240,6 +262,36 @@ function colorRow(root: HTMLElement, key: 'eyeColor' | 'accessoryColor') {
   }
 }
 const renderEyeColors = colorRow(el('eye-colors'), 'eyeColor')
+
+// --- Barra y ventanas: tema y color de acento ------------------------------------------------
+const setUiTheme = segmented(el('ui-theme'), UI_THEMES, (id) => {
+  if (!view || view.theme === id) return
+  view = { ...view, theme: id }
+  api.update({ theme: id })
+})
+const accentDots = ACCENT_PRESETS.map(({ color, name }, i) => {
+  const b = h('button', 'dot')
+  b.type = 'button'
+  b.setAttribute('role', 'radio')
+  b.title = tx(name)
+  b.setAttribute('aria-label', tx(name))
+  b.style.setProperty('--dot', color)
+  b.addEventListener('click', () => {
+    if (!view) return
+    // El primero es el de siempre: se guarda como "ninguno".
+    const accent = i === 0 ? null : color
+    view = { ...view, accent }
+    renderAccent()
+    api.update({ accent })
+  })
+  el('accent-colors').append(b)
+  return { b, color }
+})
+function renderAccent(): void {
+  if (!view) return
+  const current = view.accent ?? ACCENT_PRESETS[0].color
+  for (const d of accentDots) d.b.setAttribute('aria-checked', String(d.color === current))
+}
 const renderAccColors = colorRow(el('acc-colors'), 'accessoryColor')
 
 // --- Forma de los ojos ---------------------------------------------------------------------
@@ -397,8 +449,9 @@ function renderAccessories(appearance: Appearance): void {
     slotTabs.find((b) => b.dataset.id === slot.id)?.classList.toggle('has-acc', used)
   }
   for (const b of shapeButtons) b.setAttribute('aria-checked', String(b.dataset.id === appearance.eyeShape))
-  // Las miniaturas solo se repintan si cambian la skin, los colores o los ojos.
-  const key = JSON.stringify([appearance.skin, appearance.eyeColor, appearance.accessoryColor, appearance.eyeShape])
+  for (const b of speciesButtons) b.setAttribute('aria-checked', String(b.dataset.id === appearance.species))
+  // Las miniaturas solo se repintan si cambian la forma, la skin, los colores o los ojos.
+  const key = JSON.stringify([appearance.species, appearance.skin, appearance.eyeColor, appearance.accessoryColor, appearance.eyeShape])
   if (key === paintedAppearance) return
   paintedAppearance = key
   for (const card of cards.values()) if (card.thumb) applyAppearance(card.thumb, { ...appearance, accessories: card.accessories })
@@ -579,7 +632,7 @@ function render(): void {
   if (document.activeElement !== nameInput) nameInput.value = personality.name
   heroName.textContent = personality.name
   const count = appearance.accessories.length
-  heroSub.textContent = `${tx(skinById(appearance.skin).name)} · ${
+  heroSub.textContent = `${tx(speciesById(appearance.species).name)} · ${tx(skinById(appearance.skin).name)} · ${
     count === 0 ? t('sin accesorios', 'no accessories') : count === 1 ? t('1 accesorio', '1 accessory') : t(`${count} accesorios`, `${count} accessories`)
   }`
 
@@ -590,6 +643,8 @@ function render(): void {
   const tone = AI_TONES.find((c) => c.id === personality.aiTone)
   toneHint.textContent = tone ? tx(tone.hint) : ''
   setLanguage(view.language)
+  setUiTheme(view.theme)
+  renderAccent()
   setAskAi(view.askAi)
   renderClaudeOpen()
   renderKey()

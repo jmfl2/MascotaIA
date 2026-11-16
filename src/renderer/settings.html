@@ -32,7 +32,15 @@
         <main id="scroll" class="scroll">
         <section class="panel" data-panel="look" role="tabpanel">
           <h1 class="panel-title" data-en="Look">Apariencia</h1>
-          <h2 data-en="Body">Cuerpo</h2>
+          <h2 data-en="Shape">Forma</h2>
+          <div class="group">
+            <div class="row column">
+              <div id="species" class="shape-cards species-cards" role="radiogroup" aria-label="Forma de la mascota" data-en-aria-label="Mascot shape"></div>
+              <p class="hint" data-en="Picking one also sets a color that suits it; you can change it below">Al elegir una se pone también un color que le va; puedes cambiarlo abajo</p>
+            </div>
+          </div>
+
+          <h2 data-en="Color">Color</h2>
           <div class="group">
             <div class="row column">
               <div id="skins" class="swatches" role="radiogroup" aria-label="Color" data-en-aria-label="Color"></div>
@@ -181,8 +189,8 @@
             <label class="row">
               <span class="label-block">
                 <span class="label" data-en="Come down when the bar opens">Bajar al abrir la barra</span>
-                <span class="hint" data-en="The robot comes down from the island while the command bar is open and goes back up when you close it"
-                  >El robot baja de la isla mientras la barra de comandos está abierta y vuelve a subir al cerrarla</span
+                <span class="hint" data-en="The mascot comes down from the island while the command bar is open and goes back up when you close it"
+                  >La mascota baja de la isla mientras la barra de comandos está abierta y vuelve a subir al cerrarla</span
                 >
               </span>
               <input id="robotWithBar" class="switch" type="checkbox" />
@@ -190,12 +198,29 @@
             <label class="row">
               <span class="label-block">
                 <span class="label" data-en="React to music">Reaccionar a la música</span>
-                <span class="hint" data-en="The robot dances while something plays and the island at the top shows the song with its cover and controls"
-                  >El robot baila mientras suena algo y la isla de arriba enseña la canción con su carátula y controles</span
+                <span class="hint" data-en="The mascot dances while something plays and the island at the top shows the song with its cover and controls"
+                  >La mascota baila mientras suena algo y la isla de arriba enseña la canción con su carátula y controles</span
                 >
               </span>
               <input id="nowPlaying" class="switch" type="checkbox" />
             </label>
+          </div>
+
+          <h2 data-en="Bar and windows">Barra y ventanas</h2>
+          <div class="group">
+            <div class="row column">
+              <span class="label" data-en="Theme">Tema</span>
+              <div id="ui-theme" class="segmented" role="radiogroup" aria-label="Tema" data-en-aria-label="Theme"></div>
+            </div>
+            <div class="row column">
+              <span class="label-block">
+                <span class="label" data-en="Accent color">Color de acento</span>
+                <span class="hint" data-en="The one for the cursor, chips and selected options in the bar, the island and these settings"
+                  >El del cursor, las etiquetas y lo seleccionado en la barra, la isla y estos ajustes</span
+                >
+              </span>
+              <div id="accent-colors" class="dots" role="radiogroup" aria-label="Color de acento" data-en-aria-label="Accent color"></div>
+            </div>
           </div>
 
           <h2 data-en="Help and security">Ayuda y seguridad</h2>
