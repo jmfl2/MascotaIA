@@ -58,29 +58,90 @@ body {
   stroke-linecap: round;
 }
 
+/* --- Dos columnas: a la izquierda el robot y las secciones, a la derecha el contenido --- */
+.layout {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+.side {
+  flex: none;
+  width: 236px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 0 12px 18px 18px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
 .scroll {
   flex: 1;
   overflow-y: auto;
-  padding: 0 22px 22px;
+  padding: 2px 26px 26px 14px;
   scrollbar-width: thin;
 }
+.panel-title {
+  margin: 4px 4px 2px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* Menú de secciones */
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 38px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--text-2);
+  font: 600 13.5px var(--font);
+  text-align: left;
+  transition: background 150ms ease, color 150ms ease;
+}
+.nav-item:hover { background: var(--selection); color: var(--text); }
+.nav-item[aria-selected='true'] {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--text);
+}
+.nav-item svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.nav-item[aria-selected='true'] svg { color: var(--accent); }
 
 /* --- Vista previa (siempre visible, encima de las pestañas) --- */
 .hero {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 14px;
-  margin: 0 22px;
-  padding: 4px 18px 4px 6px;
+  gap: 2px;
+  padding: 10px 10px 14px;
   border-radius: 20px;
+  text-align: center;
   background:
     radial-gradient(120% 140% at 15% 50%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 60%),
     var(--selection);
 }
 .preview {
+  position: relative; /* la sombra del robot se coloca dentro de este recuadro */
   flex: none;
-  width: 128px;
-  height: 128px;
+  width: 176px;
+  height: 176px;
   cursor: pointer;
   /* Al ampliar una parte del cuerpo, el robot no se sale de su caja. */
   overflow: hidden;
@@ -186,10 +247,22 @@ h2 {
 }
 
 /* Colores */
+/* Rejilla fija: todas las columnas del mismo ancho, aunque los nombres midan distinto. */
 .swatches {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  gap: 14px 6px;
+  justify-items: center;
+}
+.swatch {
+  width: 100%;
+  min-width: 0;
+}
+.swatch > :last-child,
+.swatch {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .swatch {
   display: flex;
@@ -384,7 +457,7 @@ h2 {
 /* Tarjetas de accesorios con miniatura */
 .acc-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
   gap: 10px;
 }
 .acc-card {
@@ -406,6 +479,7 @@ h2 {
   background: color-mix(in srgb, var(--accent) 12%, var(--kbd-bg));
 }
 .acc-thumb {
+  position: relative;
   aspect-ratio: 1;
   border-radius: 10px;
   background: radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.5), transparent 70%), var(--selection);

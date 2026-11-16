@@ -17,22 +17,21 @@
         </button>
       </header>
 
-      <section class="hero">
-        <div id="preview" class="preview" title="Haz clic en él" data-en-title="Click it"></div>
-        <div class="hero-text">
-          <p id="hero-name" class="hero-name">Mascota</p>
-          <p id="hero-sub" class="hero-sub"></p>
-          <button id="surprise" class="link-button" type="button" data-en="🎲 Surprise me">🎲 Sorpréndeme</button>
-        </div>
-      </section>
+      <div class="layout">
+        <!-- Columna izquierda: el robot siempre a la vista y las secciones -->
+        <aside class="side">
+          <section class="hero">
+            <div id="preview" class="preview" title="Haz clic en él" data-en-title="Click it"></div>
+            <p id="hero-name" class="hero-name">Mascota</p>
+            <p id="hero-sub" class="hero-sub"></p>
+            <button id="surprise" class="link-button" type="button" data-en="🎲 Surprise me">🎲 Sorpréndeme</button>
+          </section>
+          <nav id="tabs" class="nav" role="tablist" aria-label="Secciones" data-en-aria-label="Sections"></nav>
+        </aside>
 
-      <nav class="tabs-wrap">
-        <div id="tabs" class="segmented tabs" role="tablist" aria-label="Secciones" data-en-aria-label="Sections"></div>
-      </nav>
-
-      <main id="scroll" class="scroll">
-        <!-- Apariencia -->
+        <main id="scroll" class="scroll">
         <section class="panel" data-panel="look" role="tabpanel">
+          <h1 class="panel-title" data-en="Look">Apariencia</h1>
           <h2 data-en="Body">Cuerpo</h2>
           <div class="group">
             <div class="row column">
@@ -48,8 +47,22 @@
             </div>
           </div>
 
+          <h2 data-en="Special dates">Fechas especiales</h2>
+          <div class="group">
+            <label class="row">
+              <span class="label-block">
+                <span class="label" data-en="Dress up for special dates">Ambientarse en fechas especiales</span>
+                <span id="season-hint" class="hint"></span>
+              </span>
+              <input id="seasonal" class="switch" type="checkbox" />
+            </label>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="accessories" role="tabpanel" hidden>
+          <h1 class="panel-title" data-en="Accessories">Accesorios</h1>
           <div class="h2-row">
-            <h2 data-en="Accessories">Accesorios</h2>
+            <span></span>
             <button id="clear-acc" class="link-button" type="button" data-en="Remove all">Quitar todos</button>
           </div>
           <div class="group">
@@ -65,20 +78,10 @@
               <div id="acc-colors" class="dots" role="radiogroup" aria-label="Color de los accesorios" data-en-aria-label="Accessory color"></div>
             </div>
           </div>
-          <h2 data-en="Special dates">Fechas especiales</h2>
-          <div class="group">
-            <label class="row">
-              <span class="label-block">
-                <span class="label" data-en="Dress up for special dates">Ambientarse en fechas especiales</span>
-                <span id="season-hint" class="hint"></span>
-              </span>
-              <input id="seasonal" class="switch" type="checkbox" />
-            </label>
-          </div>
         </section>
 
-        <!-- Personalidad -->
         <section class="panel" data-panel="personality" role="tabpanel" hidden>
+          <h1 class="panel-title" data-en="Personality">Personalidad</h1>
           <h2 data-en="Identity">Identidad</h2>
           <div class="group">
             <label class="row">
@@ -104,18 +107,8 @@
           </div>
         </section>
 
-        <!-- General -->
-        <section class="panel" data-panel="general" role="tabpanel" hidden>
-          <h2 data-en="Language">Idioma</h2>
-          <div class="group">
-            <div class="row column">
-              <div id="language" class="segmented" role="radiogroup" aria-label="Idioma" data-en-aria-label="Language"></div>
-              <p class="hint" data-en="The robot, the bar, the menus and the AI replies change too"
-                >También cambian el robot, la barra, los menús y las respuestas de la IA</p
-              >
-            </div>
-          </div>
-
+        <section class="panel" data-panel="ai" role="tabpanel" hidden>
+          <h1 class="panel-title" data-en="Artificial intelligence">Inteligencia artificial</h1>
           <h2 data-en="Ask an AI">Preguntar a una IA</h2>
           <div class="group">
             <div class="row column">
@@ -158,6 +151,19 @@
               >
                 Con una clave, Claude responde dentro de la barra (comando «claude»). Sin ella, se abre claude.ai con tu pregunta. Cada pregunta se cobra en tu cuenta de la API, aparte de la suscripción de claude.ai. La clave se guarda cifrada en este PC; consíguela en console.anthropic.com.
               </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="general" role="tabpanel" hidden>
+          <h1 class="panel-title" data-en="General">General</h1>
+          <h2 data-en="Language">Idioma</h2>
+          <div class="group">
+            <div class="row column">
+              <div id="language" class="segmented" role="radiogroup" aria-label="Idioma" data-en-aria-label="Language"></div>
+              <p class="hint" data-en="The robot, the bar, the menus and the AI replies change too"
+                >También cambian el robot, la barra, los menús y las respuestas de la IA</p
+              >
             </div>
           </div>
 
@@ -206,9 +212,11 @@
               <input id="startWithWindows" class="switch" type="checkbox" />
             </label>
           </div>
+        </section>
 
-          <h2 data-en="Updates">Actualizaciones</h2>
-          <div class="group">
+        <section class="panel" data-panel="updates" role="tabpanel" hidden>
+          <h1 class="panel-title" data-en="Updates">Actualizaciones</h1>
+                    <div class="group">
             <div class="row">
               <span class="label-block">
                 <span id="version" class="label">Mascota</span>
@@ -229,7 +237,8 @@
 
           <p class="footnote" data-en="Everything is stored on your PC, in %APPDATA%\mascota">Todo se guarda en tu PC, en %APPDATA%\mascota</p>
         </section>
-      </main>
+        </main>
+      </div>
     </div>
     <script type="module" src="./settings/main.ts"></script>
   </body>

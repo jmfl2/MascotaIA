@@ -103,18 +103,35 @@ function segmented<T extends string>(root: HTMLElement, options: readonly { id: 
 }
 
 // --- Pestañas ------------------------------------------------------------------------
-type Tab = 'look' | 'personality' | 'general'
-const TABS: readonly { id: Tab; name: Localized }[] = [
-  { id: 'look', name: { es: 'Apariencia', en: 'Look' } },
-  { id: 'personality', name: { es: 'Personalidad', en: 'Personality' } },
-  { id: 'general', name: { es: 'General', en: 'General' } }
+type Tab = 'look' | 'accessories' | 'personality' | 'ai' | 'general' | 'updates'
+/** Secciones del menú lateral, con su icono (trazos de 24x24). */
+const TABS: readonly { id: Tab; name: Localized; icon: string }[] = [
+  { id: 'look', name: { es: 'Apariencia', en: 'Look' }, icon: 'M12 3.5a8.5 8.5 0 1 0 0 17c1.4 0 2-1 2-2 0-1.6 1.2-2.5 2.6-2.5H18a2.5 2.5 0 0 0 2.5-2.5A8.5 8.5 0 0 0 12 3.5z M8 10.5h.01 M11.5 7.5h.01 M15.5 9h.01' },
+  { id: 'accessories', name: { es: 'Accesorios', en: 'Accessories' }, icon: 'M4 15c0-4.4 3.6-8 8-8s8 3.6 8 8z M2.5 15h19 M12 7V4.5' },
+  { id: 'personality', name: { es: 'Personalidad', en: 'Personality' }, icon: 'M12 3.5a8.5 8.5 0 1 0 0 17a8.5 8.5 0 0 0 0-17z M8.5 14a4.5 4.5 0 0 0 7 0 M9 9.5h.01 M15 9.5h.01' },
+  { id: 'ai', name: { es: 'IA', en: 'AI' }, icon: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z M18.5 15.5l.7 1.8l1.8.7l-1.8.7l-.7 1.8l-.7-1.8l-1.8-.7l1.8-.7z' },
+  { id: 'general', name: { es: 'General', en: 'General' }, icon: 'M12 9a3 3 0 1 0 0 6a3 3 0 0 0 0-6z M12 2.8v2.4 M12 18.8v2.4 M4.2 7.5l2.1 1.2 M17.7 15.3l2.1 1.2 M4.2 16.5l2.1-1.2 M17.7 8.7l2.1-1.2' },
+  { id: 'updates', name: { es: 'Actualizaciones', en: 'Updates' }, icon: 'M20 12a8 8 0 1 1-2.3-5.7 M20 4.5v4h-4' }
 ]
 const scroll = el<HTMLElement>('scroll')
 const panels = [...document.querySelectorAll<HTMLElement>('[data-panel]')]
-const setTabPill = segmented(el('tabs'), TABS, (id) => showTab(id))
+const navButtons = TABS.map((tab) => {
+  const b = h('button', 'nav-item')
+  b.type = 'button'
+  b.setAttribute('role', 'tab')
+  b.dataset.id = tab.id
+  b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${tab.icon}" /></svg>` // trazos fijos del propio código
+  b.append(h('span', '', tx(tab.name)))
+  b.addEventListener('click', () => showTab(tab.id))
+  el('tabs').append(b)
+  return b
+})
 
 function showTab(id: Tab, animated = true): void {
-  setTabPill(id)
+  for (const b of navButtons) b.setAttribute('aria-selected', String(b.dataset.id === id))
+  // El robot de la izquierda solo se acerca a una parte del cuerpo en Accesorios.
+  if (id === 'accessories') selectSlot(slotFilter)
+  else if (currentBox.join(' ') !== FULL_VIEWBOX) zoomPreview(FULL_VIEWBOX)
   for (const panel of panels) {
     const visible = panel.dataset.panel === id
     if (visible === !panel.hidden) continue
@@ -602,8 +619,8 @@ api.onChanged((next) => {
   render()
 })
 
-showTab(savedTab(), false)
 selectSlot('todo')
+showTab(savedTab(), false)
 
 void api.get().then((initial) => {
   if (!initial) return

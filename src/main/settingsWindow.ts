@@ -7,7 +7,8 @@ import { loadPage, PRELOAD_PATH } from './paths'
 import { hardenWebContents, secureWebPreferences } from './security'
 import { t } from '../shared/i18n'
 
-const SIZE = { width: 520, height: 720 }
+/** Dos columnas: el robot y las secciones a la izquierda, el contenido a la derecha. */
+const SIZE = { width: 880, height: 660 }
 
 let win: BrowserWindow | null = null
 
