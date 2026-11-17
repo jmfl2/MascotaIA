@@ -53,17 +53,26 @@ import { musicAction, musicSeek, startMusic, stopMusic, syncMusic } from './musi
 import { checkForUpdates, installOnQuit, installUpdate, onUpdateChange, startUpdater, updateView } from './updater'
 import { activeSeason, onSeasonChange, startSeasons } from './seasons'
 import { setLang, t } from '../shared/i18n'
+import { startLogFile } from './logFile'
+
+// Registro en disco desde el primer momento (para saber qué pasó si no arranca).
+startLogFile()
 
 // Una sola instancia: si se lanza otra vez, abrimos la barra de la que ya corre.
 if (!app.requestSingleInstanceLock()) {
+  console.warn('[arranque] ya hay otra Mascota abierta: se le pasa el aviso y esta se cierra')
   app.quit()
 } else {
   // Abrirla otra vez (menú Inicio, acceso directo): que se vea y abrir la barra.
   app.on('second-instance', () => {
+    console.log('[arranque] la abrieron otra vez: se enseña')
     revealMascot()
     openBar()
   })
-  app.whenReady().then(start)
+  app
+    .whenReady()
+    .then(start)
+    .catch((err) => console.error('[arranque] falló al arrancar:', err))
 }
 
 // Identificador de la app para Windows. En desarrollo tiene que ser la ruta de

@@ -154,6 +154,7 @@ export function installUpdate(relaunch = true): void {
   if (!readyFile || installing || !existsSync(readyFile)) return
   installing = true
   const args = relaunch ? ['/S', '--force-run'] : ['/S']
+  console.log(`[actualizaciones] instalando ${readyFile} ${args.join(' ')}`)
   spawn(readyFile, args, { detached: true, stdio: 'ignore', windowsHide: true }).unref()
   if (relaunch) app.quit()
 }
