@@ -28,7 +28,7 @@ import { remindersService } from './services/reminders'
 import { listTerminals, runInTerminal } from './services/terminals'
 import { closeProcesses, listProcesses } from './services/processes'
 import { cancelShutdown, lockPc, scheduleShutdown, setWindowsDarkMode, sleepPc } from './services/systemControl'
-import { changeVolume, getVolume } from './services/volume'
+import { getVolume } from './services/volume'
 import { showTabVolume } from './tabWindow'
 import { currentShortcut } from './shortcut'
 
@@ -93,13 +93,6 @@ function systemContext(): CommandContext['system'] {
     },
     async cancelShutdown() {
       return (await cancelShutdown()) ? { kind: 'close', toast: t('Apagado cancelado', 'Shutdown cancelled') } : fail(t('No había nada que cancelar', 'There was nothing to cancel'))
-    },
-    async volume(change) {
-      const now = await changeVolume(change)
-      if (!now) return fail(t('No se pudo cambiar el volumen', "Couldn't change the volume"))
-      // Se ve en la barra de volumen de la isla; si la isla está escondida, un aviso corto.
-      if (showTabVolume(now)) return { kind: 'close' }
-      return { kind: 'close', toast: now.muted ? t('🔇 Silenciado', '🔇 Muted') : t(`🔊 Volumen: ${now.level} %`, `🔊 Volume: ${now.level} %`) }
     },
     async volumeBar() {
       const now = await getVolume()

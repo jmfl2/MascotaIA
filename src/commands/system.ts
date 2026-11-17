@@ -1,7 +1,7 @@
 /**
- * Control del PC: bloquear, suspender, apagar, reiniciar, volumen y modo
- * oscuro de Windows. Con el prefijo "pc" se listan todas; sin prefijo, escribir
- * "bloquear" o "volumen 30" las ofrece. Apagar y reiniciar dejan 30 segundos
+ * Control del PC: bloquear, suspender, apagar, reiniciar, barra de volumen y
+ * modo oscuro de Windows. Con el prefijo "pc" se listan todas; sin prefijo,
+ * escribir "bloquear" o "volumen" las ofrece. Apagar y reiniciar dejan 30 segundos
  * para cancelar.
  */
 import { t } from '../shared/i18n'
@@ -65,27 +65,6 @@ const ACTIONS: Action[] = [
     run: (ctx) => ctx.system.cancelShutdown()
   },
   {
-    id: 'mute',
-    title: () => t('Silenciar o quitar el silencio', 'Mute or unmute'),
-    subtitle: () => t('El altavoz de Windows', 'The Windows speaker'),
-    words: () => [t('silencio', 'mute'), 'mute', 'silenciar', 'silencio'],
-    run: (ctx) => ctx.system.volume({ kind: 'mute' })
-  },
-  {
-    id: 'up',
-    title: () => t('Subir el volumen', 'Volume up'),
-    subtitle: () => t('10 % más', '10 % more'),
-    words: () => [t('subir volumen', 'volume up')],
-    run: (ctx) => ctx.system.volume({ kind: 'step', delta: 10 })
-  },
-  {
-    id: 'down',
-    title: () => t('Bajar el volumen', 'Volume down'),
-    subtitle: () => t('10 % menos', '10 % less'),
-    words: () => [t('bajar volumen', 'volume down')],
-    run: (ctx) => ctx.system.volume({ kind: 'step', delta: -10 })
-  },
-  {
     id: 'dark',
     title: () => t('Modo oscuro de Windows', 'Windows dark mode'),
     subtitle: () => t('Las apps y la barra de tareas en oscuro', 'Apps and the taskbar in dark'),
@@ -101,30 +80,12 @@ const ACTIONS: Action[] = [
   }
 ]
 
-/** Sin tildes y en minúsculas, para entender "más", "Súbelo"... */
+/** Sin tildes y en minúsculas, para entender "Súbelo", "música"... */
 const plain = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim()
 
-/** El texto habla del volumen ("volumen al 50", "sube el vol") o es solo un número ("30", "+10"). */
+/** El texto habla del volumen ("volumen al 50", "sube el vol", "silencio"): se ofrece la barra. */
 export function mentionsVolume(text: string): boolean {
-  const s = plain(text)
-  return /\bvol/.test(s) || /^[+-]?\s*\d{1,3}\s*%?$/.test(s)
-}
-
-/**
- * Cambio de volumen pedido con palabras normales, o null:
- * "30", "volumen al 50", "pon el volumen a 30 %", "vol +10", "sube el volumen",
- * "baja el volumen 5", "volume up".
- */
-export function parseVolume(text: string): { kind: 'set'; level: number } | { kind: 'step'; delta: number } | null {
-  const s = plain(text)
-  const num = /(\d{1,3})\s*%?/.exec(s)
-  const n = num ? Number(num[1]) : null
-  if (n !== null && n > 100) return null
-  const up = /(^|\s)\+|\b(sub|mas\b|up\b|aument|louder)/.test(s)
-  const down = /(^|\s)-|\b(baj|menos\b|down\b|reduc|quieter)/.test(s)
-  if (up !== down) return { kind: 'step', delta: (up ? 1 : -1) * (n ?? 10) }
-  if (n !== null) return { kind: 'set', level: n }
-  return null
+  return /\bvol|silenci|\bmute\b/.test(plain(text))
 }
 
 function actionRow(action: Action, ctx: CommandContext, score?: number): Suggestion {
@@ -141,30 +102,23 @@ export const system: CommandModule = {
     return t('Bloquear, apagar, suspender, volumen y modo oscuro', 'Lock, shut down, sleep, volume and dark mode')
   },
   get placeholder() {
-    return t('bloquear, apagar, volumen 30, modo oscuro…', 'lock, shut down, volume 30, dark mode…')
+    return t('bloquear, apagar, volumen, modo oscuro…', 'lock, shut down, volume, dark mode…')
   },
   accent: ACCENT,
   iconPath: SYSTEM_ICON,
   global: 'ranked',
   suggest(query, ctx) {
     const q = query.trim()
-    const rows: Suggestion[] = []
-    // "volumen al 50", "sube el volumen"... sin prefijo, o "30" con el prefijo "vol".
-    const vol = mentionsVolume(q) ? parseVolume(q) : null
-    if (vol) {
-      rows.push({
-        title: vol.kind === 'set' ? t(`Poner el volumen al ${vol.level} %`, `Set the volume to ${vol.level} %`) : t(`${vol.delta > 0 ? 'Subir' : 'Bajar'} el volumen un ${Math.abs(vol.delta)} %`, `Volume ${vol.delta > 0 ? 'up' : 'down'} by ${Math.abs(vol.delta)} %`),
-        subtitle: t('El altavoz de Windows', 'The Windows speaker'),
-        // Un número suelto en la búsqueda sin prefijo es más bien una cuenta: puntúa bajo.
-        score: /\bvol/.test(plain(q)) ? 95 : 40,
-        run: () => ctx.system.volume(vol)
-      })
-    }
     if (!q) return ACTIONS.map((a) => actionRow(a, ctx))
-    const ranked = ACTIONS.map((a) => ({ a, score: Math.max(0, ...a.words().map((w) => matchScore(w, q)), matchScore(a.title(), q)) }))
-      // Si ya se entendió un cambio de volumen, sobran "Subir/Bajar el volumen".
-      .filter((x) => x.score > 0 && !(vol && (x.a.id === 'up' || x.a.id === 'down' || x.a.id === 'volume-bar')))
+    // Cualquier cosa sobre el volumen ("volumen al 50", "sube el volumen", "silencio") ofrece la barra la primera.
+    // Un número suelto ("30" tras el prefijo "volumen") también, pero sin prefijo puntúa bajo: suele ser una cuenta.
+    const volume = mentionsVolume(q) ? 95 : /^[+-]?\s*\d{1,3}\s*%?$/.test(q) ? 40 : 0
+    const ranked = ACTIONS.map((a) => ({
+      a,
+      score: Math.max(a.id === 'volume-bar' ? volume : 0, ...a.words().map((w) => matchScore(w, q)), matchScore(a.title(), q))
+    }))
+      .filter((x) => x.score > 0)
       .sort((x, y) => y.score - x.score)
-    return [...rows, ...ranked.map(({ a, score }) => actionRow(a, ctx, score))]
+    return ranked.map(({ a, score }) => actionRow(a, ctx, score))
   }
 }

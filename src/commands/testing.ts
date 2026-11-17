@@ -56,7 +56,6 @@ export function fakeContext(now = new Date(2026, 10, 10, 12, 0, 0).getTime()) {
       sleep: async () => (state.ran.push('pc:sleep'), { kind: 'close' }),
       shutdown: async (restart) => (state.ran.push(restart ? 'pc:restart' : 'pc:shutdown'), { kind: 'close' }),
       cancelShutdown: async () => (state.ran.push('pc:cancel'), { kind: 'close' }),
-      volume: async (change) => (state.ran.push(`pc:vol:${JSON.stringify(change)}`), { kind: 'close' }),
       volumeBar: async () => (state.ran.push('pc:vol-bar'), { kind: 'close' }),
       darkMode: async (dark) => (state.ran.push(`pc:dark:${dark}`), { kind: 'close' })
     },
