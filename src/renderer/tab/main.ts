@@ -1,5 +1,5 @@
 import { t } from '../../shared/i18n'
-import type { BatteryReport, BubbleView, MediaAction, TabMediaView, TabPrivacyView } from '../../shared/ipc'
+import type { BatteryReport, BubbleView, MediaAction, TabMediaView, TabStatusView } from '../../shared/ipc'
 import { localizeDocument } from '../shared/i18nDom'
 import './tab.css'
 
@@ -47,32 +47,23 @@ function setPlaying(playing: boolean): void {
   pill.classList.toggle('is-playing', playing)
 }
 
-// --- Micro, cámara y batería (al lado de la isla) ---------------------------------------
+// --- Batería (al lado de la isla) ----------------------------------------------------------
 const statusEl = document.getElementById('status')!
 const statusLabel = document.getElementById('status-label')!
 const batteryEl = document.getElementById('st-battery')!
-let privacy: TabPrivacyView = { mic: [], camera: [], enabled: false }
+let statusView: TabStatusView = { enabled: false }
 let battery: BatteryReport | null = null
 /** Por debajo de esto se enseña la batería aunque no se esté cargando. */
 const LOW_BATTERY = 0.2
 
 function renderStatus(): void {
-  const on = privacy.enabled
-  const mic = on && privacy.mic.length > 0
-  const cam = on && privacy.camera.length > 0
   // Un PC sin batería dice "cargando al 100 %": solo se enseña cargando por debajo del 100 % o baja.
-  const showBattery = on && !!battery && (battery.charging ? battery.level < 1 : battery.level <= LOW_BATTERY)
-  statusEl.classList.toggle('has-mic', mic)
-  statusEl.classList.toggle('has-cam', cam)
+  const showBattery = statusView.enabled && !!battery && (battery.charging ? battery.level < 1 : battery.level <= LOW_BATTERY)
   statusEl.classList.toggle('has-battery', showBattery)
   statusEl.classList.toggle('is-charging', !!battery?.charging)
-  statusEl.classList.toggle('is-shown', mic || cam || showBattery)
+  statusEl.classList.toggle('is-shown', showBattery)
   if (battery) batteryEl.style.setProperty('--level', String(battery.level))
-  const parts: string[] = []
-  if (cam) parts.push(t(`Cámara: ${privacy.camera.join(', ')}`, `Camera: ${privacy.camera.join(', ')}`))
-  else if (mic) parts.push(t(`Micro: ${privacy.mic.join(', ')}`, `Mic: ${privacy.mic.join(', ')}`))
-  if (showBattery && battery) parts.push(`${battery.charging ? '⚡' : ''}${Math.round(battery.level * 100)} %`)
-  statusLabel.textContent = parts.join(' · ')
+  statusLabel.textContent = showBattery && battery ? `${battery.charging ? '⚡' : ''}${Math.round(battery.level * 100)} %` : ''
   placeStatus()
 }
 
@@ -93,8 +84,8 @@ function placeStatus(): void {
 }
 new ResizeObserver(placeStatus).observe(pill)
 
-api.onPrivacy((view) => {
-  privacy = view
+api.onStatus((view) => {
+  statusView = view
   renderStatus()
 })
 

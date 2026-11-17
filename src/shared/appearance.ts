@@ -433,7 +433,7 @@ export interface SettingsView {
   visible: boolean
   /** Enseñar en la pestaña la canción que suena. */
   nowPlaying: boolean
-  /** Micro, cámara y batería en la isla. */
+  /** Batería junto a la isla y sus avisos. */
   statusIndicators: boolean
   language: Lang
   /** De dónde sale la clave de API de Claude (la clave nunca llega a la página). */

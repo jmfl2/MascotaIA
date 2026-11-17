@@ -38,7 +38,7 @@ export interface Config {
   language: Lang
   /** Enseñar en la pestaña de arriba la canción que suena. */
   nowPlaying: boolean
-  /** Puntitos de micro y cámara en uso y avisos de batería en la isla. */
+  /** Batería junto a la isla y sus avisos. */
   statusIndicators: boolean
   /** Clave de API de Anthropic cifrada con safeStorage (base64), o null. */
   claudeKeyEnc: string | null

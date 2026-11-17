@@ -10,13 +10,15 @@ import { join } from 'node:path'
 
 const sys32 = (exe: string) => join(process.env.SystemRoot || 'C:\\Windows', 'System32', exe)
 
-function run(file: string, args: string[], timeout = 8000): Promise<{ ok: boolean; stdout: string }> {
+function run(file: string, args: string[], timeout = 8000): Promise<{ ok: boolean; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
-    execFile(file, args, { windowsHide: true, timeout }, (err, stdout) => resolve({ ok: !err, stdout: String(stdout ?? '') }))
+    execFile(file, args, { windowsHide: true, timeout }, (err, stdout, stderr) =>
+      resolve({ ok: !err, stdout: String(stdout ?? ''), stderr: `${err ? `${err.message}\n` : ''}${String(stderr ?? '')}` })
+    )
   })
 }
 
-function powershell(script: string, timeout = 15000): Promise<{ ok: boolean; stdout: string }> {
+function powershell(script: string, timeout = 15000): Promise<{ ok: boolean; stdout: string; stderr: string }> {
   const encoded = Buffer.from(script, 'utf16le').toString('base64')
   return run(sys32('WindowsPowerShell\\v1.0\\powershell.exe'), ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', encoded], timeout)
 }
@@ -99,6 +101,7 @@ export async function changeVolume(change: VolumeChange): Promise<{ level: numbe
   }
   const r = await powershell(`${AUDIO}\n${action}\n'{0}|{1}' -f [Math]::Round([MascotaAudio]::Volume * 100), [MascotaAudio]::Mute`)
   const m = /^(\d{1,3})\|(True|False)/m.exec(r.stdout.trim())
+  if (!m) console.warn('[volumen] no se pudo cambiar:', JSON.stringify(change), r.ok, r.stdout.slice(0, 300), r.stderr.slice(0, 1500))
   return m ? { level: Number(m[1]), muted: m[2] === 'True' } : null
 }
 

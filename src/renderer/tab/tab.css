@@ -512,9 +512,9 @@ body {
 .pill.can-seek .bar { cursor: pointer; }
 .pill.can-seek .bar:hover { height: 6px; }
 
-/* --- Micro, cámara y batería: una cápsula negra al lado de la isla ------------------------
- * Como una isla partida: solo aparece si hay algo que enseñar. Al acercar el ratón
- * a la isla (--near) dice qué app usa el micro o la cámara. */
+/* --- Batería: una cápsula negra al lado de la isla ---------------------------------------
+ * Como una isla partida: solo aparece si carga o está baja. Al acercar el ratón a la
+ * isla (--near) dice el porcentaje. */
 .status {
   position: absolute;
   top: 0;
@@ -537,16 +537,6 @@ body {
     scale 420ms var(--spring-island);
 }
 .status.is-shown { opacity: 1; scale: 1; }
-.st-dot {
-  display: none;
-  flex: none;
-  width: calc(7px + 2px * var(--near));
-  height: calc(7px + 2px * var(--near));
-  border-radius: 50%;
-}
-.status.has-mic .st-mic { display: block; background: #ff9f0a; box-shadow: 0 0 6px #ff9f0a; }
-.status.has-cam .st-cam { display: block; background: #30d158; box-shadow: 0 0 6px #30d158; }
-/* Si se usan los dos, la cámara manda (como en el iPhone), pero se ven ambos. */
 .st-battery {
   display: none;
   position: relative;

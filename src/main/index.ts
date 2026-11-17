@@ -101,7 +101,7 @@ function start(): void {
   // La música, cuando la pestaña ya está cargada (y al cambiar los ajustes o el modo).
   tabWin.webContents.once('did-finish-load', startMusic)
   onSettingsChange(syncMusic)
-  // Micro y cámara en uso, y avisos de batería.
+  // Batería junto a la isla y sus avisos.
   tabWin.webContents.once('did-finish-load', syncStatusIndicators)
   onSettingsChange(syncStatusIndicators)
   createBarWindow()

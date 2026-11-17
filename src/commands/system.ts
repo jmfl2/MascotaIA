@@ -94,14 +94,30 @@ const ACTIONS: Action[] = [
   }
 ]
 
-/** "30", "volumen 30", "vol +10", "-5 %": cambio de volumen, o null. */
+/** Sin tildes y en minúsculas, para entender "más", "Súbelo"... */
+const plain = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim()
+
+/** El texto habla del volumen ("volumen al 50", "sube el vol") o es solo un número ("30", "+10"). */
+export function mentionsVolume(text: string): boolean {
+  const s = plain(text)
+  return /\bvol/.test(s) || /^[+-]?\s*\d{1,3}\s*%?$/.test(s)
+}
+
+/**
+ * Cambio de volumen pedido con palabras normales, o null:
+ * "30", "volumen al 50", "pon el volumen a 30 %", "vol +10", "sube el volumen",
+ * "baja el volumen 5", "volume up".
+ */
 export function parseVolume(text: string): { kind: 'set'; level: number } | { kind: 'step'; delta: number } | null {
-  const m = /^(?:vol(?:umen|ume)?\s*)?([+-])?\s*(\d{1,3})\s*%?$/i.exec(text.trim())
-  if (!m) return null
-  const n = Number(m[2])
-  if (n > 100) return null
-  if (m[1]) return { kind: 'step', delta: m[1] === '-' ? -n : n }
-  return { kind: 'set', level: n }
+  const s = plain(text)
+  const num = /(\d{1,3})\s*%?/.exec(s)
+  const n = num ? Number(num[1]) : null
+  if (n !== null && n > 100) return null
+  const up = /(^|\s)\+|\b(sub|mas\b|up\b|aument|louder)/.test(s)
+  const down = /(^|\s)-|\b(baj|menos\b|down\b|reduc|quieter)/.test(s)
+  if (up !== down) return { kind: 'step', delta: (up ? 1 : -1) * (n ?? 10) }
+  if (n !== null) return { kind: 'set', level: n }
+  return null
 }
 
 function actionRow(action: Action, ctx: CommandContext, score?: number): Suggestion {
@@ -126,20 +142,21 @@ export const system: CommandModule = {
   suggest(query, ctx) {
     const q = query.trim()
     const rows: Suggestion[] = []
-    // "volumen 30" sin prefijo, o "30" con el prefijo "vol".
-    const vol = parseVolume(q)
-    if (vol && (/^vol/i.test(q) || /^[+-]?\d/.test(q))) {
+    // "volumen al 50", "sube el volumen"... sin prefijo, o "30" con el prefijo "vol".
+    const vol = mentionsVolume(q) ? parseVolume(q) : null
+    if (vol) {
       rows.push({
         title: vol.kind === 'set' ? t(`Poner el volumen al ${vol.level} %`, `Set the volume to ${vol.level} %`) : t(`${vol.delta > 0 ? 'Subir' : 'Bajar'} el volumen un ${Math.abs(vol.delta)} %`, `Volume ${vol.delta > 0 ? 'up' : 'down'} by ${Math.abs(vol.delta)} %`),
         subtitle: t('El altavoz de Windows', 'The Windows speaker'),
         // Un número suelto en la búsqueda sin prefijo es más bien una cuenta: puntúa bajo.
-        score: /^vol/i.test(q) ? 95 : 40,
+        score: /\bvol/.test(plain(q)) ? 95 : 40,
         run: () => ctx.system.volume(vol)
       })
     }
     if (!q) return ACTIONS.map((a) => actionRow(a, ctx))
     const ranked = ACTIONS.map((a) => ({ a, score: Math.max(0, ...a.words().map((w) => matchScore(w, q)), matchScore(a.title(), q)) }))
-      .filter((x) => x.score > 0)
+      // Si ya se entendió un cambio de volumen, sobran "Subir/Bajar el volumen".
+      .filter((x) => x.score > 0 && !(vol && (x.a.id === 'up' || x.a.id === 'down')))
       .sort((x, y) => y.score - x.score)
     return [...rows, ...ranked.map(({ a, score }) => actionRow(a, ctx, score))]
   }

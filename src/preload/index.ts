@@ -13,7 +13,7 @@ import {
   type CursorOffset,
   type MascotaApi,
   type PomodoroView,
-  type TabPrivacyView,
+  type TabStatusView,
   type RobotState,
   type TabInfo,
   type TabMediaView
@@ -67,7 +67,7 @@ const api: MascotaApi = {
     onNear: (cb) => listen<number>(IPC.tabNear, cb),
     onInfo: (cb) => listen<TabInfo>(IPC.tabInfo, cb),
     onPomodoro: (cb) => listen<PomodoroView>(IPC.tabPomodoro, cb),
-    onPrivacy: (cb) => listen<TabPrivacyView>(IPC.tabPrivacy, cb),
+    onStatus: (cb) => listen<TabStatusView>(IPC.tabStatus, cb),
     battery: (report) => ipcRenderer.send(IPC.tabBattery, report),
     onMedia: (cb) => listen<TabMediaView>(IPC.tabMedia, cb),
     dragOver: () => ipcRenderer.send(IPC.tabDragOver),

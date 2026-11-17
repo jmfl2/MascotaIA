@@ -32,8 +32,8 @@ export type TabMediaView = {
   timeline?: { duration: number; position: number; at: number; canSeek: boolean }
 } | null
 
-/** Apps que usan el micro o la cámara (para los puntitos de la isla). */
-export type TabPrivacyView = { mic: string[]; camera: string[]; enabled: boolean }
+/** Si la isla enseña la batería (Ajustes → General). */
+export type TabStatusView = { enabled: boolean }
 
 /** Batería que mide la página de la isla (nivel 0-1). */
 export type BatteryReport = { level: number; charging: boolean }
@@ -170,7 +170,7 @@ export const IPC = {
   tabNear: 'tab:near',
   tabInfo: 'tab:info',
   tabPomodoro: 'tab:pomodoro',
-  tabPrivacy: 'tab:privacy',
+  tabStatus: 'tab:status',
   tabBattery: 'tab:battery',
   tabContextMenu: 'tab:context-menu',
   tabMedia: 'tab:media',
@@ -256,8 +256,8 @@ export interface MascotaApi {
     /** Cercanía del cursor, de 0 (lejos) a 1 (encima). */
     onNear(cb: (near: number) => void): Unsubscribe
     onInfo(cb: (info: TabInfo) => void): Unsubscribe
-    /** Micro y cámara en uso, y si el indicador está encendido. */
-    onPrivacy(cb: (view: TabPrivacyView) => void): Unsubscribe
+    /** Si se enseña la batería junto a la isla. */
+    onStatus(cb: (view: TabStatusView) => void): Unsubscribe
     /** Batería que mide la página (al cambiar de nivel o al enchufar). */
     battery(report: BatteryReport): void
     onPomodoro(cb: (view: PomodoroView) => void): Unsubscribe

@@ -9,7 +9,7 @@
  */
 import { BrowserWindow, screen, type Rectangle } from 'electron'
 import { formatAccelerator } from '../shared/accelerator'
-import { IPC, type BubbleView, type PomodoroView, type TabInfo, type TabMediaView, type TabPrivacyView } from '../shared/ipc'
+import { IPC, type BubbleView, type PomodoroView, type TabInfo, type TabMediaView, type TabStatusView } from '../shared/ipc'
 import { loadPage, PRELOAD_PATH } from './paths'
 import { distanceToRect, nearness } from './tabGeometry'
 import { hardenWebContents, secureWebPreferences } from './security'
@@ -121,7 +121,7 @@ export function createTabWindow(): BrowserWindow {
     win?.webContents.send(IPC.tabPomodoro, pomodoro)
     win?.webContents.send(IPC.tabMedia, media)
     win?.webContents.send(IPC.tabAlert, alert)
-    win?.webContents.send(IPC.tabPrivacy, privacy)
+    win?.webContents.send(IPC.tabStatus, status)
   })
   win.on('show', startPolling)
   win.on('hide', stopPolling)
@@ -191,12 +191,12 @@ export function setTabMedia(view: TabMediaView, peek = false): void {
   getTabWindow()?.webContents.send(IPC.tabMedia, view)
 }
 
-let privacy: TabPrivacyView = { mic: [], camera: [], enabled: false }
+let status: TabStatusView = { enabled: false }
 
-/** Micro y cámara en uso (puntitos junto a la isla). */
-export function setTabPrivacy(view: TabPrivacyView): void {
-  privacy = view
-  getTabWindow()?.webContents.send(IPC.tabPrivacy, view)
+/** Si la isla enseña la batería (cápsula a su derecha). */
+export function setTabStatus(view: TabStatusView): void {
+  status = view
+  getTabWindow()?.webContents.send(IPC.tabStatus, view)
 }
 
 export function sendTabPomodoro(view: PomodoroView): void {

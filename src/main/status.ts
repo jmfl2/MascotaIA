@@ -1,17 +1,15 @@
 /**
- * Indicadores de estado en la isla: micro y cámara en uso (puntitos) y avisos
- * de batería (al enchufar el cargador y con poca batería).
+ * Batería en la isla: una cápsula a su derecha si carga o está baja, y avisos
+ * al enchufar el cargador y con poca batería.
  *
- * La batería la mide la página de la isla (navigator.getBattery) y la manda
- * aquí; el micro y la cámara los vigila services/privacy.ts.
+ * La batería la mide la página de la isla (navigator.getBattery) y la manda aquí.
  */
 import type { BatteryReport } from '../shared/ipc'
 import { t } from '../shared/i18n'
 import { showBubble } from './bubbleWindow'
 import { batteryNotice } from './services/battery'
-import { currentPrivacy, watchPrivacy } from './services/privacy'
 import { getConfig } from './store'
-import { setTabPrivacy } from './tabWindow'
+import { setTabStatus } from './tabWindow'
 
 let last: BatteryReport | null = null
 let warned = new Set<number>()
@@ -43,9 +41,7 @@ export function batteryReported(raw: unknown): void {
   }
 }
 
-/** Enciende o apaga los puntitos de micro y cámara según los ajustes. */
+/** Enseña (o no) la batería junto a la isla según los ajustes. */
 export function syncStatusIndicators(): void {
-  const enabled = getConfig().statusIndicators
-  watchPrivacy(enabled, (state) => setTabPrivacy({ ...state, enabled }))
-  setTabPrivacy({ ...currentPrivacy(), enabled })
+  setTabStatus({ enabled: getConfig().statusIndicators })
 }
