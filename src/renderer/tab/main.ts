@@ -18,8 +18,13 @@ const root = document.documentElement
 let robotName = 'Mascota'
 let media: TabMediaView = null
 
+/** Cuánto se ha acercado el ratón (0-1): con la isla abierta, la barra de la canción va a 60 fps. */
+let nearNow = 0
 api.onNear((near) => {
-  root.style.setProperty('--near', String(Math.min(1, Math.max(0, near))))
+  nearNow = Math.min(1, Math.max(0, near))
+  root.style.setProperty('--near', String(nearNow))
+  // Al abrirse, que la barra pase a ir fluida al momento.
+  if (nearNow > OPEN_NEAR) kickProgress()
 })
 
 function updateLabel(): void {
@@ -227,9 +232,16 @@ volMute.addEventListener('click', (e) => {
 
 // --- Barra de la canción -----------------------------------------------------------------
 const bar = document.getElementById('bar')!
+const barFill = bar.querySelector<HTMLElement>('.bar-fill')!
 const timeNow = document.getElementById('time-now')!
 const timeTotal = document.getElementById('time-total')!
+/** A partir de aquí la isla se considera abierta (se ven los tiempos). */
+const OPEN_NEAR = 0.3
+/** En reposo (una rayita fina) basta con 4 veces por segundo. */
+const PROGRESS_REST_MS = 250
 let progressTimer: number | undefined
+let progressFrame: number | undefined
+let shownSecond = -1
 
 /** 75 -> "1:15", 3725 -> "1:02:05". */
 function clock(seconds: number): string {
@@ -248,24 +260,52 @@ function currentPosition(): number {
   return Math.min(tl.duration, tl.position + elapsed)
 }
 
+/**
+ * Pinta la barra en su sitio exacto (sin transición: con una, iba medio segundo
+ * por detrás). Solo cambia el transform de la barra, que mueve la GPU, y los
+ * tiempos cuando cambia el segundo.
+ */
 function paintProgress(): void {
   const tl = media?.timeline
   if (!tl) return
   const pos = currentPosition()
-  root.style.setProperty('--progress', String(pos / tl.duration))
+  barFill.style.transform = `scaleX(${(pos / tl.duration).toFixed(4)})`
+  const second = Math.floor(pos)
+  if (second === shownSecond) return
+  shownSecond = second
   timeNow.textContent = clock(pos)
   timeTotal.textContent = clock(tl.duration)
   bar.setAttribute('aria-valuemax', String(Math.round(tl.duration)))
-  bar.setAttribute('aria-valuenow', String(Math.round(pos)))
+  bar.setAttribute('aria-valuenow', String(second))
+}
+
+function stopProgressLoop(): void {
+  window.clearTimeout(progressTimer)
+  if (progressFrame !== undefined) cancelAnimationFrame(progressFrame)
+  progressTimer = undefined
+  progressFrame = undefined
+}
+
+/** Abierta: en cada fotograma. En reposo: 4 veces por segundo. En pausa: nada. */
+function tickProgress(): void {
+  progressTimer = undefined
+  progressFrame = undefined
+  paintProgress()
+  if (!media?.timeline || !media.playing) return
+  if (nearNow > OPEN_NEAR) progressFrame = requestAnimationFrame(tickProgress)
+  else progressTimer = window.setTimeout(tickProgress, PROGRESS_REST_MS)
+}
+
+function kickProgress(): void {
+  stopProgressLoop()
+  tickProgress()
 }
 
 function syncProgress(): void {
-  window.clearInterval(progressTimer)
-  progressTimer = undefined
   pill.classList.toggle('has-timeline', !!media?.timeline)
   pill.classList.toggle('can-seek', !!media?.timeline?.canSeek)
-  paintProgress()
-  if (media?.timeline && media.playing) progressTimer = window.setInterval(paintProgress, 500)
+  shownSecond = -1
+  kickProgress()
 }
 
 bar.addEventListener('click', (e) => {
@@ -278,7 +318,8 @@ bar.addEventListener('click', (e) => {
   const seconds = fraction * tl.duration
   // Respuesta inmediata; la posición real llega en un momento.
   media = { ...media!, timeline: { ...tl, position: seconds, at: Date.now() } }
-  paintProgress()
+  shownSecond = -1
+  kickProgress()
   api.mediaSeek(seconds)
 })
 
@@ -307,7 +348,14 @@ for (const button of document.querySelectorAll<HTMLButtonElement>('.ctl')) {
     if (e.button !== 0) return
     const action = button.dataset.action as MediaAction
     // Respuesta inmediata; el estado real llega en menos de un segundo.
-    if (action === 'toggle') setPlaying(!pill.classList.contains('is-playing'))
+    if (action === 'toggle' && media) {
+      const playing = !pill.classList.contains('is-playing')
+      setPlaying(playing)
+      // La barra se para (o sigue) justo donde está, sin esperar a Windows.
+      const tl = media.timeline
+      media = { ...media, playing, ...(tl ? { timeline: { ...tl, position: currentPosition(), at: Date.now() } } : {}) }
+      kickProgress()
+    }
     api.mediaAction(action)
   })
 }

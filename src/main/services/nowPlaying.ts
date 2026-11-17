@@ -4,7 +4,7 @@
  *
  * Windows lo publica en los controles multimedia del sistema (los mismos que
  * salen junto al volumen). Se leen con un único PowerShell que se queda en
- * marcha: cada segundo mira la sesión actual y escribe una línea JSON solo si
+ * marcha: cada medio segundo mira la sesión actual y escribe una línea JSON solo si
  * algo cambió. Por la entrada estándar recibe órdenes fijas ("toggle", "next",
  * "prev" y "seek <segundos>", validada con una expresión regular): nada de lo
  * que llega se ejecuta como código.
@@ -129,7 +129,7 @@ while ($true) {
     $tick = 1
   }
   if ($tick -le 0) {
-    $tick = 4
+    $tick = 2
     $out = $null
     try {
       $pick = Pick-Session

@@ -83,7 +83,28 @@ app.on('will-quit', () => {
   installOnQuit()
 })
 
+/**
+ * Trabajo de fondo escalonado tras arrancar: si todo empieza a la vez (música,
+ * índice de apps, IA), el PC da tirones los primeros segundos.
+ */
+const STARTUP_MUSIC_MS = 3000
+const STARTUP_AI_MS = 8000
+const STARTUP_INDEX_MS = 15_000
+
+/** Solo para depurar (MASCOTA_LAG=1): apunta cuándo se bloquea el proceso principal. */
+function watchLag(): void {
+  const t0 = Date.now()
+  let last = Date.now()
+  setInterval(() => {
+    const now = Date.now()
+    const lag = now - last - 20
+    if (lag > 50) console.log(`[lag] ${((now - t0) / 1000).toFixed(1)} s: bloqueado ${lag} ms`)
+    last = now
+  }, 20)
+}
+
 function start(): void {
+  if (process.env.MASCOTA_LAG) watchLag()
   setLang(getConfig().language)
   startUiTheme() // antes de crear las ventanas: les pone el tema y el color de acento
   // Abierta a mano (no al iniciar sesión): la mascota se ve aunque se ocultara
@@ -100,8 +121,9 @@ function start(): void {
   refreshTabInfo()
   onSettingsChange(refreshTabInfo)
   onSeasonChange(refreshTabInfo)
-  // La música, cuando la pestaña ya está cargada (y al cambiar los ajustes o el modo).
-  tabWin.webContents.once('did-finish-load', startMusic)
+  // La música, un poco después de que la isla esté cargada: su PowerShell no
+  // compite con el arranque (y al cambiar los ajustes o el modo).
+  tabWin.webContents.once('did-finish-load', () => setTimeout(startMusic, STARTUP_MUSIC_MS))
   onSettingsChange(syncMusic)
   // Batería junto a la isla y sus avisos.
   tabWin.webContents.once('did-finish-load', syncStatusIndicators)
@@ -133,11 +155,11 @@ function start(): void {
       startSeasons()
     }, 600)
   )
-  // Indexa las apps del menú Inicio (y sus iconos) en segundo plano, cuando el
-  // robot ya está en pantalla: así no compite con el arranque. Si abres la
-  // barra antes, la búsqueda lo lanza ella misma.
-  setTimeout(() => void refreshIndex(), 4000)
-  void refreshAiStatus()
+  // Indexa las apps del menú Inicio (y sus iconos) en segundo plano, cuando ya
+  // pasó el arranque: así no da tirones. Si abres la barra antes, la búsqueda
+  // lo lanza ella misma.
+  setTimeout(() => void refreshIndex(), STARTUP_INDEX_MS)
+  setTimeout(() => void refreshAiStatus(), STARTUP_AI_MS)
   setInterval(() => void refreshAiStatus(), 60_000)
 
   const tray = createTray({

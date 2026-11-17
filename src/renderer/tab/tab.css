@@ -506,8 +506,9 @@ body {
   inset: 0;
   background: rgba(255, 255, 255, 0.92);
   transform-origin: left center;
-  transform: scaleX(var(--progress, 0));
-  transition: transform 500ms linear;
+  /* La mueve tab/main.ts en cada fotograma (abierta) o 4 veces por segundo (en reposo). */
+  transform: scaleX(0);
+  will-change: transform;
 }
 .pill.can-seek .bar { cursor: pointer; }
 .pill.can-seek .bar:hover { height: 6px; }
