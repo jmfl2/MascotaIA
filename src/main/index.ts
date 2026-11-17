@@ -54,21 +54,30 @@ import { checkForUpdates, installOnQuit, installUpdate, onUpdateChange, startUpd
 import { activeSeason, onSeasonChange, startSeasons } from './seasons'
 import { setLang, t } from '../shared/i18n'
 import { startLogFile } from './logFile'
+import { diskVersion, isOutdated, onWindowGone, relaunchFresh } from './selfHeal'
 
 // Registro en disco desde el primer momento (para saber qué pasó si no arranca).
 startLogFile()
 
 // Una sola instancia: si se lanza otra vez, abrimos la barra de la que ya corre.
-if (!app.requestSingleInstanceLock()) {
+// La nueva le dice su versión: si es otra, la vieja se reinicia (ver selfHeal.ts).
+if (!app.requestSingleInstanceLock({ version: app.getVersion() })) {
   console.warn('[arranque] ya hay otra Mascota abierta: se le pasa el aviso y esta se cierra')
   app.quit()
 } else {
   // Abrirla otra vez (menú Inicio, acceso directo): que se vea y abrir la barra.
-  app.on('second-instance', () => {
+  app.on('second-instance', (_event, _argv, _cwd, data) => {
+    const other = (data as { version?: unknown } | null)?.version
+    if (isOutdated(other)) return relaunchFresh(`abrieron la ${String(other ?? diskVersion())} y esta es la ${app.getVersion()}`)
+    // Si sus ventanas están rotas, mejor empezar de cero que no enseñar nada.
+    const tab = getTabWindow()
+    if (!tab || tab.webContents.isCrashed()) return relaunchFresh('la abrieron otra vez y su isla no estaba')
     console.log('[arranque] la abrieron otra vez: se enseña')
     revealMascot()
     openBar()
   })
+  // Una ventana rota se recarga sola (o la app se reinicia si hay versión nueva en disco).
+  app.on('render-process-gone', (_event, wc, details) => onWindowGone(wc, details.reason))
   app
     .whenReady()
     .then(start)

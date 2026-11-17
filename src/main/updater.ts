@@ -26,6 +26,8 @@ import { getConfig } from './store'
 const FIRST_CHECK_MS = 45_000
 const CHECK_EVERY_MS = 6 * 60 * 60_000
 const TIMEOUT_MS = 15_000
+/** Al actualizar, cuánto se espera a que Mascota se cierre sola antes de forzarlo. */
+const FORCE_EXIT_MS = 3000
 
 let view: UpdateView = { state: 'idle' }
 let readyFile: string | null = null
@@ -156,7 +158,11 @@ export function installUpdate(relaunch = true): void {
   const args = relaunch ? ['/S', '--force-run'] : ['/S']
   console.log(`[actualizaciones] instalando ${readyFile} ${args.join(' ')}`)
   spawn(readyFile, args, { detached: true, stdio: 'ignore', windowsHide: true }).unref()
-  if (relaunch) app.quit()
+  if (!relaunch) return
+  app.quit()
+  // Si algo frena el cierre, se fuerza: no puede quedar viva mientras el
+  // instalador cambia sus archivos (se quedaría rota y sin dejar abrir la nueva).
+  setTimeout(() => app.exit(0), FORCE_EXIT_MS).unref()
 }
 
 /** Al salir con una actualización descargada, se instala sin volver a abrir. */
