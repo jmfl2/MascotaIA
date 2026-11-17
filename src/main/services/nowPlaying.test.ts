@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { appLabel, nowPlaying, onNowPlayingChange, parseNowPlaying, setNowPlayingEnabled } from './nowPlaying'
+import { appLabel, nowPlaying, onNowPlayingChange, parseNowPlaying, parseTimeline, setNowPlayingEnabled } from './nowPlaying'
 
 describe('música: lo que llega del script', () => {
   it('lee la canción y limpia los textos', () => {
@@ -43,4 +43,23 @@ describe.skipIf(process.env.MEDIA_TEST !== '1')('música: Windows real', () => {
     setNowPlayingEnabled(false)
     expect(nowPlaying()).toBeNull()
   }, 20_000)
+})
+
+describe('barra de la canción', () => {
+  const now = 1_800_000_000_000
+  it('acepta duración y posición válidas', () => {
+    expect(parseTimeline(200, 75.5, now - 1000, true, now)).toEqual({ duration: 200, position: 75.5, at: now - 1000, canSeek: true })
+  })
+  it('sin duración (muchas webs) no hay barra', () => {
+    expect(parseTimeline(0, 0, now, false, now)).toBeUndefined()
+    expect(parseTimeline('3:00', 1, now, false, now)).toBeUndefined()
+    expect(parseTimeline(99 * 3600, 1, now, false, now)).toBeUndefined()
+  })
+  it('recorta la posición y corrige fechas imposibles', () => {
+    expect(parseTimeline(100, 150, -62135596800000, false, now)).toEqual({ duration: 100, position: 100, at: now, canSeek: false })
+  })
+  it('llega desde la línea del script', () => {
+    const parsed = parseNowPlaying(JSON.stringify({ title: 'Canción', artist: 'Grupo', app: 'Spotify.exe', playing: true, duration: 180, position: 10, at: Date.now(), canSeek: true }))
+    expect(parsed?.timeline?.duration).toBe(180)
+  })
 })

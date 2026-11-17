@@ -37,17 +37,18 @@ import {
 } from './robotWindow'
 import { denyAllPermissions, isFrom } from './security'
 import { startUiTheme } from './uiTheme'
+import { batteryReported, syncStatusIndicators } from './status'
 import { dropDone, dropIncoming, mascotVisible, needRobot, revealMascot, setMascotVisible, setRobotWithBar, showInitialTab } from './dock'
 import { createTabWindow, getTabWindow, setTabInfo, tabAlertResized } from './tabWindow'
 import { applySettingsPatch, getSettingsView, notifySettingsChanged, onSettingsChange } from './settings'
 import { closeSettings, getSettingsWindow, openSettings } from './settingsWindow'
-import { refreshIndex } from './services/launcher'
+import { launcherService, refreshIndex } from './services/launcher'
 import { pomodoroService } from './services/pomodoro'
 import { registerShortcut } from './shortcut'
 import { openedAtLogin, refreshLoginItem } from './startup'
 import { getConfig, setConfig } from './store'
 import { createTray } from './tray'
-import { musicAction, startMusic, stopMusic, syncMusic } from './music'
+import { musicAction, musicSeek, startMusic, stopMusic, syncMusic } from './music'
 import { checkForUpdates, installOnQuit, installUpdate, onUpdateChange, startUpdater, updateView } from './updater'
 import { activeSeason, onSeasonChange, startSeasons } from './seasons'
 import { setLang, t } from '../shared/i18n'
@@ -100,6 +101,9 @@ function start(): void {
   // La música, cuando la pestaña ya está cargada (y al cambiar los ajustes o el modo).
   tabWin.webContents.once('did-finish-load', startMusic)
   onSettingsChange(syncMusic)
+  // Micro y cámara en uso, y avisos de batería.
+  tabWin.webContents.once('did-finish-load', syncStatusIndicators)
+  onSettingsChange(syncStatusIndicators)
   createBarWindow()
   const bubbleWin = createBubbleWindow()
 
@@ -150,7 +154,7 @@ function start(): void {
     startOllama: () => void startOllama(),
     pullModel: () => void pullModel(),
     freeAiMemory: () => void freeAiMemory(),
-    openSettings,
+    openSettings: () => openSettings(),
     updateState: updateView,
     checkForUpdates: () => void checkForUpdates(true),
     installUpdate: () => installUpdate(),
@@ -241,6 +245,12 @@ function registerIpc(): void {
   ipcMain.on(IPC.tabMediaAction, (event, action: unknown) => {
     if (isFrom(event, tab())) musicAction(action)
   })
+  ipcMain.on(IPC.tabMediaSeek, (event, seconds: unknown) => {
+    if (isFrom(event, tab())) musicSeek(seconds)
+  })
+  ipcMain.on(IPC.tabBattery, (event, report: unknown) => {
+    if (isFrom(event, tab())) batteryReported(report)
+  })
   ipcMain.on(IPC.tabContextMenu, (event) => {
     const win = getTabWindow()
     if (!isFrom(event, tab()) || !win) return
@@ -266,6 +276,11 @@ function registerIpc(): void {
   ipcMain.handle(IPC.settingsGet, (event) => (isFrom(event, settingsWc()) ? getSettingsView() : null))
   ipcMain.on(IPC.settingsUpdate, (event, patch: unknown) => {
     if (isFrom(event, settingsWc())) applySettingsPatch(patch)
+  })
+  ipcMain.handle(IPC.settingsSearchApps, async (event, query: unknown) => {
+    if (!isFrom(event, settingsWc()) || !isShortString(query, 100) || !query.trim()) return []
+    const found = await launcherService.search(query.trim(), 6)
+    return found.map(({ id, name, icon }) => ({ id, name, ...(icon ? { icon } : {}) }))
   })
   ipcMain.on(IPC.settingsClose, (event) => {
     if (isFrom(event, settingsWc())) closeSettings()

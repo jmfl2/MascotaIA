@@ -10,6 +10,8 @@
  * usuario elige una fila: el renderer nunca decide qué se abre ni qué se borra.
  */
 
+import type { Routine } from '../shared/routines'
+
 export interface GlyphIcon {
   kind: 'glyph'
   /** Trazado SVG (viewBox 0 0 24 24) dibujado con trazo. */
@@ -202,6 +204,23 @@ export interface CommandContext {
   }
   /** Abre la ventana de ajustes. */
   openSettings(): void
+  system: {
+    lock(): Promise<Outcome>
+    sleep(): Promise<Outcome>
+    /** Apagar (o reiniciar) en 30 s, con un aviso para cancelar. */
+    shutdown(restart: boolean): Promise<Outcome>
+    cancelShutdown(): Promise<Outcome>
+    volume(change: { kind: 'set'; level: number } | { kind: 'step'; delta: number } | { kind: 'mute' }): Promise<Outcome>
+    darkMode(dark: boolean): Promise<Outcome>
+  }
+  routines: {
+    /** Atajos guardados (Ajustes → Atajos). */
+    all(): Routine[]
+    /** Abre todo lo del atajo. */
+    run(id: string): Promise<Outcome>
+    /** Abre Ajustes en la sección de atajos. */
+    edit(): void
+  }
   processes: {
     /** Programas abiertos, de más a menos memoria. */
     list(): Promise<ProcessGroup[]>

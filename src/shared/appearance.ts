@@ -5,6 +5,7 @@
 import type { Assistant } from './assistants'
 import type { Season } from './seasons'
 import type { Lang, Text } from './i18n'
+import type { Routine } from './routines'
 
 export interface SkinColors {
   bodyTop: string
@@ -426,10 +427,14 @@ export interface SettingsView {
   /** Tema de las ventanas y color de acento (null = el azul de siempre). */
   theme: UiTheme
   accent: string | null
+  /** Atajos propios (Ajustes → Atajos). */
+  routines: Routine[]
   /** La mascota (la isla de arriba) se ve. */
   visible: boolean
   /** Enseñar en la pestaña la canción que suena. */
   nowPlaying: boolean
+  /** Micro, cámara y batería en la isla. */
+  statusIndicators: boolean
   language: Lang
   /** De dónde sale la clave de API de Claude (la clave nunca llega a la página). */
   claudeKey: 'settings' | 'env' | null

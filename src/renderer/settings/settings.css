@@ -628,3 +628,103 @@ h2 {
   line-height: 26px;
   font-family: 'Segoe UI Emoji', var(--font);
 }
+
+/* --- Atajos propios --- */
+.panel-intro {
+  margin: 0 4px 14px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-2);
+}
+.routines {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.routine-head { gap: 10px; }
+.routine-icon { font-size: 16px; }
+.routine-name {
+  flex: 1;
+  width: auto;
+  text-align: left;
+  font-weight: 650;
+}
+.routine-delete.is-confirm {
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
+  color: var(--danger);
+}
+.routine-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.routine-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  height: 28px;
+  padding: 0 4px 0 10px;
+  border-radius: 999px;
+  background: var(--kbd-bg);
+  font-size: 13px;
+}
+.routine-chip-label {
+  overflow: hidden;
+  max-width: 220px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.routine-chip-remove {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-2);
+  font: 600 15px/1 var(--font);
+}
+.routine-chip-remove:hover { background: var(--selection); color: var(--text); }
+.routine-empty { font-size: 12.5px; color: var(--text-3); }
+.routine-add { display: flex; flex-direction: column; gap: 4px; }
+.routine-search {
+  width: 100%;
+  text-align: left;
+}
+.routine-search:disabled { opacity: 0.5; }
+.routine-results { display: flex; flex-direction: column; }
+.routine-results:empty { display: none; }
+.routine-result {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 34px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text);
+  font: 500 13.5px var(--font);
+  text-align: left;
+}
+.routine-result:hover,
+.routine-result:first-child { background: var(--selection); }
+.routine-results:hover .routine-result:first-child:not(:hover) { background: transparent; }
+.routine-result-icon {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  font-size: 15px;
+  line-height: 20px;
+  text-align: center;
+  object-fit: contain;
+}
+.routine-result-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.add-routine { margin: 12px 0 0 2px; }

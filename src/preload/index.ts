@@ -13,6 +13,7 @@ import {
   type CursorOffset,
   type MascotaApi,
   type PomodoroView,
+  type TabPrivacyView,
   type RobotState,
   type TabInfo,
   type TabMediaView
@@ -66,6 +67,8 @@ const api: MascotaApi = {
     onNear: (cb) => listen<number>(IPC.tabNear, cb),
     onInfo: (cb) => listen<TabInfo>(IPC.tabInfo, cb),
     onPomodoro: (cb) => listen<PomodoroView>(IPC.tabPomodoro, cb),
+    onPrivacy: (cb) => listen<TabPrivacyView>(IPC.tabPrivacy, cb),
+    battery: (report) => ipcRenderer.send(IPC.tabBattery, report),
     onMedia: (cb) => listen<TabMediaView>(IPC.tabMedia, cb),
     dragOver: () => ipcRenderer.send(IPC.tabDragOver),
     onAlert: (cb) => listen<BubbleView | null>(IPC.tabAlert, cb),
@@ -80,13 +83,16 @@ const api: MascotaApi = {
         .filter(Boolean)
       if (paths.length) ipcRenderer.send(IPC.tabDrop, paths)
     },
-    mediaAction: (action) => ipcRenderer.send(IPC.tabMediaAction, action)
+    mediaAction: (action) => ipcRenderer.send(IPC.tabMediaAction, action),
+    mediaSeek: (seconds) => ipcRenderer.send(IPC.tabMediaSeek, seconds)
   },
   settings: {
     get: () => ipcRenderer.invoke(IPC.settingsGet),
     update: (patch) => ipcRenderer.send(IPC.settingsUpdate, patch),
     close: () => ipcRenderer.send(IPC.settingsClose),
-    onChanged: (cb) => listen<SettingsView>(IPC.settingsChanged, cb)
+    onChanged: (cb) => listen<SettingsView>(IPC.settingsChanged, cb),
+    onShowTab: (cb) => listen<string>(IPC.settingsShowTab, cb),
+    searchApps: (query) => ipcRenderer.invoke(IPC.settingsSearchApps, query)
   },
   bar: {
     query: (req) => ipcRenderer.invoke(IPC.barQuery, req),

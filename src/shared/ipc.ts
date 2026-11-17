@@ -28,7 +28,15 @@ export type TabMediaView = {
   playing: boolean
   /** Carátula como data:image/png;base64. */
   art?: string
+  /** Duración y posición (s), cuándo se midió (ms) y si se puede saltar. */
+  timeline?: { duration: number; position: number; at: number; canSeek: boolean }
 } | null
+
+/** Apps que usan el micro o la cámara (para los puntitos de la isla). */
+export type TabPrivacyView = { mic: string[]; camera: string[]; enabled: boolean }
+
+/** Batería que mide la página de la isla (nivel 0-1). */
+export type BatteryReport = { level: number; charging: boolean }
 
 export type MediaAction = 'toggle' | 'next' | 'prev'
 
@@ -162,6 +170,8 @@ export const IPC = {
   tabNear: 'tab:near',
   tabInfo: 'tab:info',
   tabPomodoro: 'tab:pomodoro',
+  tabPrivacy: 'tab:privacy',
+  tabBattery: 'tab:battery',
   tabContextMenu: 'tab:context-menu',
   tabMedia: 'tab:media',
   tabDragOver: 'tab:drag-over',
@@ -172,11 +182,14 @@ export const IPC = {
   tabAlertSize: 'tab:alert-size',
   tabDrop: 'tab:drop',
   tabMediaAction: 'tab:media-action',
+  tabMediaSeek: 'tab:media-seek',
   // Ajustes
   settingsGet: 'settings:get',
   settingsUpdate: 'settings:update',
   settingsChanged: 'settings:changed',
   settingsClose: 'settings:close',
+  settingsShowTab: 'settings:show-tab',
+  settingsSearchApps: 'settings:search-apps',
   // Barra de comandos
   barQuery: 'bar:query',
   barExecute: 'bar:execute',
@@ -243,6 +256,10 @@ export interface MascotaApi {
     /** Cercanía del cursor, de 0 (lejos) a 1 (encima). */
     onNear(cb: (near: number) => void): Unsubscribe
     onInfo(cb: (info: TabInfo) => void): Unsubscribe
+    /** Micro y cámara en uso, y si el indicador está encendido. */
+    onPrivacy(cb: (view: TabPrivacyView) => void): Unsubscribe
+    /** Batería que mide la página (al cambiar de nivel o al enchufar). */
+    battery(report: BatteryReport): void
     onPomodoro(cb: (view: PomodoroView) => void): Unsubscribe
     /** Lo que suena (Spotify, el navegador...). */
     onMedia(cb: (view: TabMediaView) => void): Unsubscribe
@@ -258,12 +275,18 @@ export interface MascotaApi {
     /** Tamaño de la isla con el aviso (para saber dónde se puede hacer clic). */
     alertSize(width: number, height: number): void
     mediaAction(action: MediaAction): void
+    /** Saltar a ese segundo de la canción. */
+    mediaSeek(seconds: number): void
   }
   settings: {
     get(): Promise<SettingsView | null>
     update(patch: SettingsPatch): void
     close(): void
     onChanged(cb: (view: SettingsView) => void): Unsubscribe
+    /** El proceso principal pide enseñar una sección ('shortcuts'...). */
+    onShowTab(cb: (tab: string) => void): Unsubscribe
+    /** Apps del lanzador que encajan (para añadirlas a un atajo). */
+    searchApps(query: string): Promise<Array<{ id: string; name: string; icon?: string }>>
   }
   bar: {
     query(req: QueryRequest): Promise<QueryResponse>

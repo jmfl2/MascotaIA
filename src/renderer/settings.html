@@ -115,6 +115,15 @@
           </div>
         </section>
 
+        <section class="panel" data-panel="shortcuts" role="tabpanel" hidden>
+          <h1 class="panel-title" data-en="Shortcuts">Atajos</h1>
+          <p class="panel-intro" data-en="A name that opens several things at once. Type it in the bar (for example, “work”) and press Enter.">
+            Un nombre que abre varias cosas a la vez. Escríbelo en la barra (por ejemplo, «trabajo») y pulsa Intro.
+          </p>
+          <div id="routines" class="routines"></div>
+          <button id="add-routine" class="link-button add-routine" type="button" data-en="+ New shortcut">+ Nuevo atajo</button>
+        </section>
+
         <section class="panel" data-panel="ai" role="tabpanel" hidden>
           <h1 class="panel-title" data-en="Artificial intelligence">Inteligencia artificial</h1>
           <h2 data-en="Ask an AI">Preguntar a una IA</h2>
@@ -203,6 +212,15 @@
                 >
               </span>
               <input id="nowPlaying" class="switch" type="checkbox" />
+            </label>
+            <label class="row">
+              <span class="label-block">
+                <span class="label" data-en="Microphone, camera and battery">Micrófono, cámara y batería</span>
+                <span class="hint" data-en="Next to the island, a dot when an app uses the microphone (orange) or the camera (green), and alerts when you plug in the charger or the battery runs low"
+                  >Junto a la isla, un punto cuando una app usa el micrófono (naranja) o la cámara (verde), y avisos al enchufar el cargador o con poca batería</span
+                >
+              </span>
+              <input id="statusIndicators" class="switch" type="checkbox" />
             </label>
           </div>
 

@@ -21,7 +21,9 @@ import { notes } from './notes'
 import { pomodoro } from './pomodoro'
 import { processes } from './processes'
 import { reminders } from './reminders'
+import { routines } from './routines'
 import { settings } from './settings'
+import { system } from './system'
 import { terminal } from './terminal'
 import { translate } from './translate'
 import type { CommandModule } from './types'
@@ -36,6 +38,7 @@ export type { BuildResult } from './web'
 export const COMMANDS: readonly CommandModule[] = [
   google,
   launcher,
+  routines,
   ai,
   claude,
   chatgpt,
@@ -52,6 +55,7 @@ export const COMMANDS: readonly CommandModule[] = [
   calc,
   terminal,
   processes,
+  system,
   summarize,
   explain,
   settings

@@ -4,6 +4,7 @@
  */
 import { UI_THEMES, validColor, validateAppearance, validatePersonality, type SettingsView, type UiTheme } from '../shared/appearance'
 import { applyUiTheme } from './uiTheme'
+import { validateRoutines } from '../shared/routines'
 import { isLang, setLang } from '../shared/i18n'
 import { IPC } from '../shared/ipc'
 import { closeBar, getBarWindow } from './barWindow'
@@ -41,8 +42,10 @@ export function getSettingsView(): SettingsView {
     robotWithBar: cfg.robotWithBar,
     theme: cfg.theme,
     accent: cfg.accent,
+    routines: cfg.routines,
     visible: cfg.robotVisible,
     nowPlaying: cfg.nowPlaying,
+    statusIndicators: cfg.statusIndicators,
     language: cfg.language,
     claudeKey: claudeKeySource(),
     askAi: cfg.askAi,
@@ -78,12 +81,14 @@ export function applySettingsPatch(raw: unknown): void {
     setConfig({ theme: patch.theme as UiTheme })
     applyUiTheme()
   }
+  if (patch.routines !== undefined) setConfig({ routines: validateRoutines(patch.routines) })
   if (patch.accent !== undefined) {
     setConfig({ accent: validColor(patch.accent) })
     applyUiTheme()
   }
   if (typeof patch.visible === 'boolean') setMascotVisible(patch.visible)
   if (typeof patch.nowPlaying === 'boolean') setConfig({ nowPlaying: patch.nowPlaying })
+  if (typeof patch.statusIndicators === 'boolean') setConfig({ statusIndicators: patch.statusIndicators })
   if (isAssistant(patch.askAi)) setConfig({ askAi: patch.askAi })
   if (typeof patch.seasonal === 'boolean') {
     setConfig({ seasonal: patch.seasonal })

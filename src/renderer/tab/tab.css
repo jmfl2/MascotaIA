@@ -329,7 +329,9 @@ body {
 /* Sin carátula: una nota musical. */
 .pill:not(.has-art) .art {
   content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 17.5V6l9-2v11.5' fill='none' stroke='%23a1a4ad' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='17.5' r='2.3' fill='%23a1a4ad'/%3E%3Ccircle cx='16' cy='15.5' r='2.3' fill='%23a1a4ad'/%3E%3C/svg%3E");
-  padding: 18%;
+  /* En píxeles: un % se calcula sobre el ancho de la isla y la nota se hacía enorme. */
+  padding: calc(3px + 4px * var(--near));
+  box-sizing: border-box;
 }
 
 /* Título y artista: aparecen al abrirse. */
@@ -452,4 +454,135 @@ body {
     animation: none;
     transform: scaleY(0.7);
   }
+}
+
+/* --- Barra de la canción --------------------------------------------------------------
+ * En reposo, una rayita abajo con lo que lleva sonando. Abierta, una fila con los
+ * tiempos y la barra (se toca para saltar). Con ella, la isla abierta mide 76 px
+ * de alto (MUSIC_TIMELINE_PILL en src/main/tabWindow.ts). */
+.progress { display: none; }
+.pill.has-music.has-timeline {
+  --open-h: 76px;
+  /* La fila de la canción arriba y la barra debajo. */
+  align-items: flex-start;
+}
+.pill.has-music.has-timeline .music {
+  height: calc(100% - 20px * var(--near));
+}
+.pill.has-music.has-timeline .progress {
+  display: flex;
+  align-items: center;
+  gap: calc(8px * var(--near));
+  position: absolute;
+  left: calc(14px * var(--near));
+  right: calc(14px * var(--near));
+  bottom: calc(9px * var(--near));
+  height: calc(2px + 12px * var(--near));
+}
+/* En reposo la rayita no estorba a la del pomodoro: si hay pomodoro, manda él. */
+.pill.has-pomo:not(:hover) .progress { opacity: var(--near); }
+.time {
+  flex: none;
+  overflow: hidden;
+  width: calc(32px * clamp(0, (var(--near) - 0.5) * 2, 1));
+  opacity: clamp(0, (var(--near) - 0.6) * 3, 1);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(244, 245, 247, 0.6);
+  white-space: nowrap;
+}
+.time-total { text-align: right; }
+.bar {
+  position: relative;
+  flex: 1;
+  height: calc(2px + 2px * var(--near));
+  border-radius: 3px;
+  background: rgba(255, 255, 255, calc(0.12 + 0.1 * var(--near)));
+  overflow: hidden;
+  transition: height 140ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.bar-fill {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.92);
+  transform-origin: left center;
+  transform: scaleX(var(--progress, 0));
+  transition: transform 500ms linear;
+}
+.pill.can-seek .bar { cursor: pointer; }
+.pill.can-seek .bar:hover { height: 6px; }
+
+/* --- Micro, cámara y batería: una cápsula negra al lado de la isla ------------------------
+ * Como una isla partida: solo aparece si hay algo que enseñar. Al acercar el ratón
+ * a la isla (--near) dice qué app usa el micro o la cámara. */
+.status {
+  position: absolute;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: calc(14px + 10px * var(--near));
+  padding: 0 calc(6px + 3px * var(--near));
+  border-radius: 0 0 12px 12px;
+  background: #0c0c10;
+  color: #f4f5f7;
+  box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.08), 0 calc(6px * var(--near)) calc(18px * var(--near)) rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  scale: 0.6;
+  transform-origin: left top;
+  pointer-events: none;
+  transition:
+    opacity 200ms ease,
+    scale 420ms var(--spring-island),
+    height 140ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.status.is-shown { opacity: 1; scale: 1; }
+.st-dot {
+  display: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.status.has-mic .st-mic { display: block; background: #ff9f0a; box-shadow: 0 0 6px #ff9f0a; }
+.status.has-cam .st-cam { display: block; background: #30d158; box-shadow: 0 0 6px #30d158; }
+/* Si se usan los dos, la cámara manda (como en el iPhone), pero se ven ambos. */
+.st-battery {
+  display: none;
+  position: relative;
+  width: 16px;
+  height: 8px;
+  border: 1.2px solid rgba(244, 245, 247, 0.75);
+  border-radius: 2.5px;
+}
+.st-battery::after {
+  content: '';
+  position: absolute;
+  right: -3px;
+  top: 2px;
+  width: 1.6px;
+  height: 2.6px;
+  border-radius: 0 1px 1px 0;
+  background: rgba(244, 245, 247, 0.75);
+}
+.st-battery i {
+  position: absolute;
+  inset: 1px;
+  border-radius: 1px;
+  background: #ff453a;
+  transform-origin: left center;
+  transform: scaleX(var(--level, 1));
+}
+.status.is-charging .st-battery i { background: #30d158; }
+.status.has-battery .st-battery { display: block; }
+.status-label {
+  overflow: hidden;
+  max-width: calc(150px * clamp(0, (var(--near) - 0.4) * 2, 1));
+  opacity: clamp(0, (var(--near) - 0.55) * 3, 1);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+@media (prefers-reduced-motion: reduce) {
+  .status { transition: opacity 200ms ease; }
 }

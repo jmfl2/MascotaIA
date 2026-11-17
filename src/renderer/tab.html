@@ -38,6 +38,14 @@
         </span>
         <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
       </span>
+      <!-- Barra de la canción: una rayita en reposo; abierta, con tiempos y se puede tocar para saltar -->
+      <span class="progress">
+        <span id="time-now" class="time"></span>
+        <span id="bar" class="bar" role="slider" aria-label="Posición de la canción" data-en-aria-label="Song position" aria-valuemin="0">
+          <span class="bar-fill"></span>
+        </span>
+        <span id="time-total" class="time time-total"></span>
+      </span>
 
       <!-- Avisos dentro de la isla (como la Dynamic Island): la píldora se agranda -->
       <div id="alert" class="alert" role="status" aria-live="polite" hidden>
@@ -56,6 +64,14 @@
       </div>
 
       <span id="pomo" class="pomo" aria-hidden="true"></span>
+    </div>
+
+    <!-- Al lado de la isla: micro y cámara en uso y batería (como una isla partida) -->
+    <div id="status" class="status" role="status" aria-live="polite">
+      <span id="st-battery" class="st-battery" aria-hidden="true"><i></i></span>
+      <span class="st-dot st-mic" aria-hidden="true"></span>
+      <span class="st-dot st-cam" aria-hidden="true"></span>
+      <span id="status-label" class="status-label"></span>
     </div>
     <script type="module" src="./tab/main.ts"></script>
   </body>

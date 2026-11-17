@@ -1,5 +1,5 @@
 import { t } from '../../shared/i18n'
-import type { BubbleView, MediaAction, TabMediaView } from '../../shared/ipc'
+import type { BatteryReport, BubbleView, MediaAction, TabMediaView, TabPrivacyView } from '../../shared/ipc'
 import { localizeDocument } from '../shared/i18nDom'
 import './tab.css'
 
@@ -47,6 +47,117 @@ function setPlaying(playing: boolean): void {
   pill.classList.toggle('is-playing', playing)
 }
 
+// --- Micro, cámara y batería (al lado de la isla) ---------------------------------------
+const statusEl = document.getElementById('status')!
+const statusLabel = document.getElementById('status-label')!
+const batteryEl = document.getElementById('st-battery')!
+let privacy: TabPrivacyView = { mic: [], camera: [], enabled: false }
+let battery: BatteryReport | null = null
+/** Por debajo de esto se enseña la batería aunque no se esté cargando. */
+const LOW_BATTERY = 0.2
+
+function renderStatus(): void {
+  const on = privacy.enabled
+  const mic = on && privacy.mic.length > 0
+  const cam = on && privacy.camera.length > 0
+  // Un PC sin batería dice "cargando al 100 %": solo se enseña cargando por debajo del 100 % o baja.
+  const showBattery = on && !!battery && (battery.charging ? battery.level < 1 : battery.level <= LOW_BATTERY)
+  statusEl.classList.toggle('has-mic', mic)
+  statusEl.classList.toggle('has-cam', cam)
+  statusEl.classList.toggle('has-battery', showBattery)
+  statusEl.classList.toggle('is-charging', !!battery?.charging)
+  statusEl.classList.toggle('is-shown', mic || cam || showBattery)
+  if (battery) batteryEl.style.setProperty('--level', String(battery.level))
+  const parts: string[] = []
+  if (cam) parts.push(t(`Cámara: ${privacy.camera.join(', ')}`, `Camera: ${privacy.camera.join(', ')}`))
+  else if (mic) parts.push(t(`Micro: ${privacy.mic.join(', ')}`, `Mic: ${privacy.mic.join(', ')}`))
+  if (showBattery && battery) parts.push(`${battery.charging ? '⚡' : ''}${Math.round(battery.level * 100)} %`)
+  statusLabel.textContent = parts.join(' · ')
+  placeStatus()
+}
+
+/** Pegada a la derecha de la isla, que cambia de ancho al acercar el ratón. */
+function placeStatus(): void {
+  statusEl.style.left = `${pill.offsetLeft + pill.offsetWidth + 6}px`
+}
+new ResizeObserver(placeStatus).observe(pill)
+
+api.onPrivacy((view) => {
+  privacy = view
+  renderStatus()
+})
+
+// La batería se mide aquí (la página) y se manda al proceso principal para los avisos.
+type BatteryManager = EventTarget & { level: number; charging: boolean }
+const getBattery = (navigator as Navigator & { getBattery?: () => Promise<BatteryManager> }).getBattery
+void getBattery?.call(navigator).then((manager) => {
+  const report = () => {
+    battery = { level: manager.level, charging: manager.charging }
+    api.battery(battery)
+    renderStatus()
+  }
+  manager.addEventListener('levelchange', report)
+  manager.addEventListener('chargingchange', report)
+  report()
+}).catch(() => {})
+
+// --- Barra de la canción -----------------------------------------------------------------
+const bar = document.getElementById('bar')!
+const timeNow = document.getElementById('time-now')!
+const timeTotal = document.getElementById('time-total')!
+let progressTimer: number | undefined
+
+/** 75 -> "1:15", 3725 -> "1:02:05". */
+function clock(seconds: number): string {
+  const s = Math.max(0, Math.floor(seconds))
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  const ss = String(s % 60).padStart(2, '0')
+  return h ? `${h}:${String(m).padStart(2, '0')}:${ss}` : `${m}:${ss}`
+}
+
+/** Posición ahora: la última medida más lo que ha pasado si está sonando. */
+function currentPosition(): number {
+  const tl = media?.timeline
+  if (!tl) return 0
+  const elapsed = media?.playing ? (Date.now() - tl.at) / 1000 : 0
+  return Math.min(tl.duration, tl.position + elapsed)
+}
+
+function paintProgress(): void {
+  const tl = media?.timeline
+  if (!tl) return
+  const pos = currentPosition()
+  root.style.setProperty('--progress', String(pos / tl.duration))
+  timeNow.textContent = clock(pos)
+  timeTotal.textContent = clock(tl.duration)
+  bar.setAttribute('aria-valuemax', String(Math.round(tl.duration)))
+  bar.setAttribute('aria-valuenow', String(Math.round(pos)))
+}
+
+function syncProgress(): void {
+  window.clearInterval(progressTimer)
+  progressTimer = undefined
+  pill.classList.toggle('has-timeline', !!media?.timeline)
+  pill.classList.toggle('can-seek', !!media?.timeline?.canSeek)
+  paintProgress()
+  if (media?.timeline && media.playing) progressTimer = window.setInterval(paintProgress, 500)
+}
+
+bar.addEventListener('click', (e) => {
+  // No abre la barra de comandos: solo salta.
+  e.stopPropagation()
+  const tl = media?.timeline
+  if (!tl?.canSeek) return
+  const rect = bar.getBoundingClientRect()
+  const fraction = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width))
+  const seconds = fraction * tl.duration
+  // Respuesta inmediata; la posición real llega en un momento.
+  media = { ...media!, timeline: { ...tl, position: seconds, at: Date.now() } }
+  paintProgress()
+  api.mediaSeek(seconds)
+})
+
 api.onMedia((view) => {
   media = view
   pill.classList.toggle('has-music', !!view)
@@ -61,6 +172,7 @@ api.onMedia((view) => {
   } else {
     pill.removeAttribute('title')
   }
+  syncProgress()
   updateLabel()
 })
 

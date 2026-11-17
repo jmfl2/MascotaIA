@@ -6,7 +6,8 @@
  * salen junto al volumen). Se leen con un único PowerShell que se queda en
  * marcha: cada segundo mira la sesión actual y escribe una línea JSON solo si
  * algo cambió. Por la entrada estándar recibe órdenes fijas ("toggle", "next",
- * "prev"): nada de lo que llega se ejecuta como código.
+ * "prev" y "seek <segundos>", validada con una expresión regular): nada de lo
+ * que llega se ejecuta como código.
  *
  * Todo se queda en el PC: no se manda a ningún sitio.
  */
@@ -22,6 +23,8 @@ export interface NowPlaying {
   playing: boolean
   /** Carátula como data:image/png;base64 (128x128), si la hay. */
   art?: string
+  /** Duración y posición en segundos, y cuándo se midió la posición (ms). Solo si la app lo cuenta. */
+  timeline?: { duration: number; position: number; at: number; canSeek: boolean }
 }
 
 export type MediaAction = 'toggle' | 'next' | 'prev'
@@ -106,11 +109,19 @@ while ($true) {
     if ($null -eq $cmd) { break } # se cerró la entrada: la app se ha ido
     try {
       $s = if ($shown) { $shown } else { $mgr.GetCurrentSession() }
+      $c = $cmd.Trim()
       if ($s) {
-        switch ($cmd.Trim()) {
+        switch ($c) {
           'toggle' { $null = Await ($s.TryTogglePlayPauseAsync()) ([bool]) }
           'next' { $null = Await ($s.TrySkipNextAsync()) ([bool]) }
           'prev' { $null = Await ($s.TrySkipPreviousAsync()) ([bool]) }
+          default {
+            if ($c -match '^seek (\d{1,6}(\.\d{1,3})?)$') {
+              $tl = $s.GetTimelineProperties()
+              $ticks = [long](($tl.StartTime.TotalSeconds + [double]$Matches[1]) * 10000000)
+              $null = Await ($s.TryChangePlaybackPositionAsync($ticks)) ([bool])
+            }
+          }
         }
       }
     } catch {}
@@ -132,6 +143,13 @@ while ($true) {
           if (-not $art -and $artTries -lt 5) { $artTries++; $art = Get-Art $p }
           $playing = [string]$s.GetPlaybackInfo().PlaybackStatus -eq 'Playing'
           $out = [ordered]@{ title = $p.Title; artist = $p.Artist; app = $s.SourceAppUserModelId; playing = $playing; art = $art }
+          try {
+            $tl = $s.GetTimelineProperties()
+            $out.duration = [Math]::Round(($tl.EndTime - $tl.StartTime).TotalSeconds, 1)
+            $out.position = [Math]::Round(($tl.Position - $tl.StartTime).TotalSeconds, 1)
+            $out.at = $tl.LastUpdatedTime.ToUnixTimeMilliseconds()
+            $out.canSeek = [bool]$s.GetPlaybackInfo().Controls.IsPlaybackPositionEnabled
+          } catch {}
         }
       }
     } catch { $out = $null }
@@ -182,13 +200,27 @@ export function parseNowPlaying(line: string): NowPlaying | null | undefined {
   if (!title) return null
   const art =
     typeof r.art === 'string' && r.art.length <= MAX_ART_BASE64 && BASE64.test(r.art) ? `data:image/png;base64,${r.art}` : undefined
+  const timeline = parseTimeline(r.duration, r.position, r.at, r.canSeek === true)
   return {
     title,
     artist: cleanText(r.artist),
     app: typeof r.app === 'string' ? appLabel(r.app) : '',
     playing: r.playing === true,
-    ...(art ? { art } : {})
+    ...(art ? { art } : {}),
+    ...(timeline ? { timeline } : {})
   }
+}
+
+/** Más larga que esto no es una canción (o la app da datos raros). */
+const MAX_DURATION_S = 24 * 3600
+
+/** Duración y posición válidas, o nada (muchas webs no lo cuentan). */
+export function parseTimeline(duration: unknown, position: unknown, at: unknown, canSeek = false, now = Date.now()): NowPlaying['timeline'] {
+  if (typeof duration !== 'number' || !Number.isFinite(duration) || duration < 1 || duration > MAX_DURATION_S) return undefined
+  if (typeof position !== 'number' || !Number.isFinite(position)) return undefined
+  // Fechas imposibles (0001-01-01 o en el futuro): se toma "ahora".
+  const when = typeof at === 'number' && Number.isFinite(at) && at > now - 365 * 86_400_000 && at <= now + 5000 ? at : now
+  return { duration, position: Math.min(Math.max(position, 0), duration), at: when, canSeek }
 }
 
 /** Mismo contenido (para no avisar si no cambia nada). */
@@ -269,4 +301,10 @@ export function setNowPlayingEnabled(enabled: boolean): void {
 export function mediaAction(action: MediaAction): void {
   if (!MEDIA_ACTIONS.includes(action)) return
   child?.stdin?.write(`${action}\n`)
+}
+
+/** Salta a ese segundo de la canción (si la app lo permite). */
+export function mediaSeek(seconds: number): void {
+  if (!Number.isFinite(seconds) || seconds < 0 || seconds > MAX_DURATION_S) return
+  child?.stdin?.write(`seek ${seconds.toFixed(2)}\n`)
 }

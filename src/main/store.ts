@@ -15,6 +15,7 @@ import {
 import { isLang, langFromLocale, type Lang } from '../shared/i18n'
 import { readJson, writeJson } from './services/jsonFile'
 import { isAssistant, type Assistant } from '../shared/assistants'
+import { validateRoutines, type Routine } from '../shared/routines'
 
 export interface Config {
   /** Atajo global para abrir la barra, en formato de acelerador de Electron. */
@@ -37,6 +38,8 @@ export interface Config {
   language: Lang
   /** Enseñar en la pestaña de arriba la canción que suena. */
   nowPlaying: boolean
+  /** Puntitos de micro y cámara en uso y avisos de batería en la isla. */
+  statusIndicators: boolean
   /** Clave de API de Anthropic cifrada con safeStorage (base64), o null. */
   claudeKeyEnc: string | null
   /** IA a la que mandar lo que copias ("Preguntar a…" en el bocadillo). */
@@ -47,6 +50,8 @@ export interface Config {
   claudeOpenIn: 'web' | 'app' | null
   /** Ambientarse solo en fechas especiales (Navidad, Halloween...). */
   seasonal: boolean
+  /** Atajos propios: un nombre que abre varias apps, webs y carpetas. */
+  routines: Routine[]
   /** Tema de las ventanas (sistema, claro, oscuro). */
   theme: UiTheme
   /** Color de acento "#rrggbb" de la barra y las ventanas (null = el de siempre). */
@@ -72,6 +77,7 @@ const DEFAULTS: Config = {
   personality: DEFAULT_PERSONALITY,
   language: 'es',
   nowPlaying: true,
+  statusIndicators: true,
   claudeKeyEnc: null,
   askAi: 'claude',
   autoUpdate: true,
@@ -80,7 +86,8 @@ const DEFAULTS: Config = {
   lastSeasonGreeting: null,
   lastTerminal: null,
   theme: 'system',
-  accent: null
+  accent: null,
+  routines: []
 }
 
 let cache: Config | null = null
@@ -101,6 +108,7 @@ function validate(raw: unknown): Config {
   if (r.personality !== undefined) cfg.personality = validatePersonality(r.personality)
   if (isLang(r.language)) cfg.language = r.language
   if (typeof r.nowPlaying === 'boolean') cfg.nowPlaying = r.nowPlaying
+  if (typeof r.statusIndicators === 'boolean') cfg.statusIndicators = r.statusIndicators
   if (isAssistant(r.askAi)) cfg.askAi = r.askAi
   if (typeof r.autoUpdate === 'boolean') cfg.autoUpdate = r.autoUpdate
   if (r.claudeOpenIn === 'web' || r.claudeOpenIn === 'app') cfg.claudeOpenIn = r.claudeOpenIn
@@ -108,6 +116,7 @@ function validate(raw: unknown): Config {
   if (typeof r.lastSeasonGreeting === 'string' && r.lastSeasonGreeting.length < 40) cfg.lastSeasonGreeting = r.lastSeasonGreeting
   if (UI_THEMES.some((th) => th.id === r.theme)) cfg.theme = r.theme as UiTheme
   cfg.accent = validColor(r.accent)
+  cfg.routines = validateRoutines(r.routines)
   if (typeof r.lastTerminal === 'string' && /^[a-z0-9-]{1,20}$/.test(r.lastTerminal)) cfg.lastTerminal = r.lastTerminal
   if (typeof r.claudeKeyEnc === 'string' && /^[A-Za-z0-9+/]+={0,2}$/.test(r.claudeKeyEnc) && r.claudeKeyEnc.length < 4000) {
     cfg.claudeKeyEnc = r.claudeKeyEnc

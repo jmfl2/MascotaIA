@@ -5,7 +5,7 @@
  * luego desaparece. Con una canción nueva, la píldora se asoma abierta un
  * momento. El robot, además, se mueve al ritmo mientras suena.
  */
-import { MEDIA_ACTIONS, mediaAction, onNowPlayingChange, setNowPlayingEnabled, type MediaAction, type NowPlaying } from './services/nowPlaying'
+import { MEDIA_ACTIONS, mediaAction, mediaSeek, onNowPlayingChange, setNowPlayingEnabled, type MediaAction, type NowPlaying } from './services/nowPlaying'
 import { getConfig } from './store'
 import { sendRobotMusic } from './robotWindow'
 import { setTabMedia } from './tabWindow'
@@ -52,6 +52,11 @@ export function syncMusic(): void {
 
 export function musicAction(raw: unknown): void {
   if (typeof raw === 'string' && MEDIA_ACTIONS.includes(raw as MediaAction)) mediaAction(raw as MediaAction)
+}
+
+/** Salta a ese segundo (lo pide la isla al tocar la barra de la canción). */
+export function musicSeek(raw: unknown): void {
+  if (typeof raw === 'number') mediaSeek(raw)
 }
 
 export function stopMusic(): void {

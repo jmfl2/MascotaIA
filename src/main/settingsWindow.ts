@@ -6,6 +6,7 @@ import { BrowserWindow, screen } from 'electron'
 import { loadPage, PRELOAD_PATH } from './paths'
 import { hardenWebContents, secureWebPreferences } from './security'
 import { t } from '../shared/i18n'
+import { IPC } from '../shared/ipc'
 
 /** Margen transparente para la sombra (igual que el padding del body en settings.css). */
 const PAD = { side: 22, top: 22, bottom: 30 }
@@ -18,9 +19,11 @@ export function getSettingsWindow(): BrowserWindow | null {
   return win && !win.isDestroyed() ? win : null
 }
 
-export function openSettings(): void {
+/** Abre los ajustes (en una sección concreta, si se indica: 'shortcuts'...). */
+export function openSettings(tab?: string): void {
   const existing = getSettingsWindow()
   if (existing) {
+    if (tab) existing.webContents.send(IPC.settingsShowTab, tab)
     existing.show()
     existing.focus()
     return
@@ -51,6 +54,7 @@ export function openSettings(): void {
   win.on('closed', () => {
     win = null
   })
+  if (tab) win.webContents.once('did-finish-load', () => win?.webContents.send(IPC.settingsShowTab, tab))
   void loadPage(win, 'settings')
 }
 

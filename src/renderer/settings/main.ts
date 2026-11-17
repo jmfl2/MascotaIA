@@ -31,6 +31,7 @@ import {
   toggleAccessory,
   type SettingsView
 } from '../../shared/appearance'
+import { MAX_ROUTINE_ITEMS, MAX_ROUTINE_NAME, MAX_ROUTINES, routinePath, routineUrl, type Routine, type RoutineItem } from '../../shared/routines'
 import { ASSISTANTS } from '../../shared/assistants'
 import { SEASONS } from '../../shared/seasons'
 import { LANGUAGES, t, tx, type Localized } from '../../shared/i18n'
@@ -107,12 +108,13 @@ function segmented<T extends string>(root: HTMLElement, options: readonly { id: 
 }
 
 // --- Pestañas ------------------------------------------------------------------------
-type Tab = 'look' | 'accessories' | 'personality' | 'ai' | 'general' | 'updates'
+type Tab = 'look' | 'accessories' | 'personality' | 'shortcuts' | 'ai' | 'general' | 'updates'
 /** Secciones del menú lateral, con su icono (trazos de 24x24). */
 const TABS: readonly { id: Tab; name: Localized; icon: string }[] = [
   { id: 'look', name: { es: 'Apariencia', en: 'Look' }, icon: 'M12 3.5a8.5 8.5 0 1 0 0 17c1.4 0 2-1 2-2 0-1.6 1.2-2.5 2.6-2.5H18a2.5 2.5 0 0 0 2.5-2.5A8.5 8.5 0 0 0 12 3.5z M8 10.5h.01 M11.5 7.5h.01 M15.5 9h.01' },
   { id: 'accessories', name: { es: 'Accesorios', en: 'Accessories' }, icon: 'M4 15c0-4.4 3.6-8 8-8s8 3.6 8 8z M2.5 15h19 M12 7V4.5' },
   { id: 'personality', name: { es: 'Personalidad', en: 'Personality' }, icon: 'M12 3.5a8.5 8.5 0 1 0 0 17a8.5 8.5 0 0 0 0-17z M8.5 14a4.5 4.5 0 0 0 7 0 M9 9.5h.01 M15 9.5h.01' },
+  { id: 'shortcuts', name: { es: 'Atajos', en: 'Shortcuts' }, icon: 'M13 2.5L5 13.5h6l-1 8l8-11h-6z' },
   { id: 'ai', name: { es: 'IA', en: 'AI' }, icon: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z M18.5 15.5l.7 1.8l1.8.7l-1.8.7l-.7 1.8l-.7-1.8l-1.8-.7l1.8-.7z' },
   { id: 'general', name: { es: 'General', en: 'General' }, icon: 'M12 9a3 3 0 1 0 0 6a3 3 0 0 0 0-6z M12 2.8v2.4 M12 18.8v2.4 M4.2 7.5l2.1 1.2 M17.7 15.3l2.1 1.2 M4.2 16.5l2.1-1.2 M17.7 8.7l2.1-1.2' },
   { id: 'updates', name: { es: 'Actualizaciones', en: 'Updates' }, icon: 'M20 12a8 8 0 1 1-2.3-5.7 M20 4.5v4h-4' }
@@ -566,9 +568,196 @@ function renderUpdate(): void {
   updateAction.textContent = u.state === 'ready' ? t('Reiniciar y actualizar', 'Restart and update') : t('Buscar ahora', 'Check now')
 }
 
-for (const key of ['visible', 'robotWithBar', 'nowPlaying', 'linkGuard', 'clipboardEnabled', 'startWithWindows', 'autoUpdate', 'seasonal'] as const) {
+for (const key of ['visible', 'robotWithBar', 'nowPlaying', 'statusIndicators', 'linkGuard', 'clipboardEnabled', 'startWithWindows', 'autoUpdate', 'seasonal'] as const) {
   el<HTMLInputElement>(key).addEventListener('change', (e) => api.update({ [key]: (e.target as HTMLInputElement).checked }))
 }
+
+// --- Atajos propios -------------------------------------------------------------------------
+const routinesEl = el<HTMLDivElement>('routines')
+/** Elementos de cada atajo ya pintado (se reutilizan para no perder el foco al escribir). */
+const routineEls = new Map<string, { root: HTMLElement; name: HTMLInputElement; items: HTMLElement; search: HTMLInputElement; results: HTMLElement }>()
+let routinesSaveTimer: number | undefined
+
+function saveRoutines(routines: Routine[], delayed = false): void {
+  if (!view) return
+  view = { ...view, routines }
+  window.clearTimeout(routinesSaveTimer)
+  const send = () => view && api.update({ routines: view.routines })
+  if (delayed) routinesSaveTimer = window.setTimeout(send, 300)
+  else send()
+}
+
+function editRoutine(id: string, change: (r: Routine) => Routine, delayed = false): void {
+  if (!view) return
+  saveRoutines(view.routines.map((r) => (r.id === id ? change(r) : r)), delayed)
+  renderRoutines()
+}
+
+const KIND_ICON: Record<RoutineItem['kind'], string> = { app: '🧩', url: '🌐', path: '📁' }
+
+function itemLabel(item: RoutineItem): string {
+  if (item.kind === 'app') return item.name
+  if (item.kind === 'url') return new URL(item.url).host.replace(/^www\./, '')
+  return item.path.split(/[\\/]/).filter(Boolean).pop() ?? item.path
+}
+
+/** Sugerencias al escribir en "Añadir…": apps que encajan, una web o una carpeta. */
+async function searchRoutineItems(query: string): Promise<Array<{ item: RoutineItem; label: string; icon?: string }>> {
+  const q = query.trim()
+  if (!q) return []
+  const out: Array<{ item: RoutineItem; label: string; icon?: string }> = []
+  const path = routinePath(q)
+  if (path) out.push({ item: { kind: 'path', path }, label: t(`Carpeta o archivo: ${path}`, `Folder or file: ${path}`) })
+  const url = path ? null : routineUrl(q)
+  if (url) out.push({ item: { kind: 'url', url }, label: t(`Web: ${url}`, `Website: ${url}`) })
+  if (!path) {
+    const apps = await api.searchApps(q).catch(() => [])
+    for (const app of apps) out.push({ item: { kind: 'app', id: app.id, name: app.name }, label: app.name, icon: app.icon })
+  }
+  return out.slice(0, 6)
+}
+
+function buildRoutine(routine: Routine) {
+  const root = h('div', 'group routine')
+  const head = h('div', 'row routine-head')
+  const icon = h('span', 'routine-icon', '⚡')
+  const name = h('input', 'text-input routine-name')
+  name.type = 'text'
+  name.maxLength = MAX_ROUTINE_NAME
+  name.placeholder = t('Nombre (p. ej. trabajo)', 'Name (e.g. work)')
+  name.setAttribute('aria-label', t('Nombre del atajo', 'Shortcut name'))
+  name.addEventListener('input', () => editRoutine(routine.id, (r) => ({ ...r, name: name.value }), true))
+  const del = h('button', 'link-button routine-delete', t('Borrar', 'Delete'))
+  del.type = 'button'
+  let confirmTimer: number | undefined
+  del.addEventListener('click', () => {
+    // Dos clics: el primero pregunta.
+    if (!del.classList.contains('is-confirm')) {
+      del.classList.add('is-confirm')
+      del.textContent = t('¿Borrar?', 'Delete?')
+      confirmTimer = window.setTimeout(() => {
+        del.classList.remove('is-confirm')
+        del.textContent = t('Borrar', 'Delete')
+      }, 3000)
+      return
+    }
+    window.clearTimeout(confirmTimer)
+    if (view) saveRoutines(view.routines.filter((r) => r.id !== routine.id))
+    renderRoutines()
+  })
+  head.append(icon, name, del)
+
+  const body = h('div', 'row column routine-body')
+  const items = h('div', 'routine-items')
+  const add = h('div', 'routine-add')
+  const search = h('input', 'text-input routine-search')
+  search.type = 'text'
+  search.spellcheck = false
+  search.setAttribute('aria-label', t('Añadir al atajo', 'Add to shortcut'))
+  const results = h('div', 'routine-results')
+  results.setAttribute('role', 'listbox')
+  add.append(search, results)
+  body.append(items, add)
+  root.append(head, body)
+
+  let searchTimer: number | undefined
+  let searchSeq = 0
+  const addItem = (item: RoutineItem) => {
+    editRoutine(routine.id, (r) => (r.items.length >= MAX_ROUTINE_ITEMS ? r : { ...r, items: [...r.items, item] }))
+    search.value = ''
+    results.replaceChildren()
+    search.focus()
+  }
+  search.addEventListener('input', () => {
+    window.clearTimeout(searchTimer)
+    const seq = ++searchSeq
+    searchTimer = window.setTimeout(async () => {
+      const found = await searchRoutineItems(search.value)
+      if (seq !== searchSeq) return
+      results.replaceChildren(
+        ...found.map(({ item, label, icon: img }) => {
+          const b = h('button', 'routine-result')
+          b.type = 'button'
+          b.setAttribute('role', 'option')
+          if (img) {
+            const im = h('img', 'routine-result-icon')
+            im.src = img // data:image/png del propio lanzador
+            im.alt = ''
+            b.append(im)
+          } else {
+            b.append(h('span', 'routine-result-icon', KIND_ICON[item.kind]))
+          }
+          b.append(h('span', 'routine-result-label', label))
+          b.addEventListener('click', () => addItem(item))
+          return b
+        })
+      )
+    }, 150)
+  })
+  search.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      results.querySelector<HTMLButtonElement>('.routine-result')?.click()
+    } else if (e.key === 'Escape' && search.value) {
+      e.stopPropagation() // Esc borra la búsqueda en vez de cerrar los ajustes
+      search.value = ''
+      results.replaceChildren()
+    }
+  })
+  return { root, name, items, search, results }
+}
+
+function renderRoutines(): void {
+  if (!view) return
+  const seen = new Set<string>()
+  for (const routine of view.routines) {
+    seen.add(routine.id)
+    let els = routineEls.get(routine.id)
+    if (!els) {
+      els = buildRoutine(routine)
+      routineEls.set(routine.id, els)
+    }
+    if (els.root.parentElement !== routinesEl) routinesEl.append(els.root)
+    if (document.activeElement !== els.name) els.name.value = routine.name
+    const full = routine.items.length >= MAX_ROUTINE_ITEMS
+    els.search.disabled = full
+    els.search.placeholder = full
+      ? t(`Máximo ${MAX_ROUTINE_ITEMS} cosas por atajo`, `Up to ${MAX_ROUTINE_ITEMS} items per shortcut`)
+      : t('Añadir una app, una web o una carpeta…', 'Add an app, a website or a folder…')
+    els.items.replaceChildren(
+      ...routine.items.map((item, i) => {
+        const chip = h('span', 'routine-chip')
+        chip.title = item.kind === 'url' ? item.url : item.kind === 'path' ? item.path : item.name
+        chip.append(h('span', 'routine-chip-icon', KIND_ICON[item.kind]), h('span', 'routine-chip-label', itemLabel(item)))
+        const remove = h('button', 'routine-chip-remove', '×')
+        remove.type = 'button'
+        remove.setAttribute('aria-label', t(`Quitar ${itemLabel(item)}`, `Remove ${itemLabel(item)}`))
+        remove.addEventListener('click', () => editRoutine(routine.id, (r) => ({ ...r, items: r.items.filter((_, j) => j !== i) })))
+        chip.append(remove)
+        return chip
+      })
+    )
+    if (!routine.items.length) els.items.append(h('span', 'routine-empty', t('Todavía no abre nada: añade algo abajo', "It doesn't open anything yet: add something below")))
+  }
+  for (const [id, els] of routineEls) {
+    if (seen.has(id)) continue
+    els.root.remove()
+    routineEls.delete(id)
+  }
+  el<HTMLButtonElement>('add-routine').disabled = view.routines.length >= MAX_ROUTINES
+}
+
+el<HTMLButtonElement>('add-routine').addEventListener('click', () => {
+  if (!view || view.routines.length >= MAX_ROUTINES) return
+  const id = Math.random().toString(36).slice(2, 10)
+  saveRoutines([...view.routines, { id, name: '', items: [] }])
+  renderRoutines()
+  routineEls.get(id)?.name.focus()
+})
+
+api.onShowTab((tab) => {
+  if (TABS.some((x) => x.id === tab)) showTab(tab as Tab)
+})
 
 // --- Clave de API de Claude ----------------------------------------------------------
 const keyForm = el<HTMLFormElement>('key-form')
@@ -644,6 +833,7 @@ function render(): void {
   toneHint.textContent = tone ? tx(tone.hint) : ''
   setLanguage(view.language)
   setUiTheme(view.theme)
+  renderRoutines()
   renderAccent()
   setAskAi(view.askAi)
   renderClaudeOpen()
@@ -656,6 +846,7 @@ function render(): void {
   el<HTMLInputElement>('robotWithBar').checked = view.robotWithBar
   el<HTMLInputElement>('robotWithBar').disabled = !view.visible
   el<HTMLInputElement>('nowPlaying').checked = view.nowPlaying
+  el<HTMLInputElement>('statusIndicators').checked = view.statusIndicators
   el<HTMLInputElement>('linkGuard').checked = view.linkGuard
   el<HTMLInputElement>('clipboardEnabled').checked = view.clipboardEnabled
   el<HTMLInputElement>('startWithWindows').checked = view.startWithWindows

@@ -1,4 +1,5 @@
 /** Contexto falso en memoria para probar los comandos sin Electron. */
+import type { Routine } from '../shared/routines'
 import type { AiStatus, CommandContext, LaunchTarget, Note, Outcome, PomodoroStatus, ProcessGroup, Reminder, TerminalInfo } from './types'
 
 export function fakeContext(now = new Date(2026, 10, 10, 12, 0, 0).getTime()) {
@@ -26,7 +27,10 @@ export function fakeContext(now = new Date(2026, 10, 10, 12, 0, 0).getTime()) {
       { name: 'chrome', image: 'chrome.exe', pids: [10, 11], memoryKb: 900_000 },
       { name: 'notepad', image: 'notepad.exe', pids: [20], memoryKb: 20_000 }
     ] as ProcessGroup[],
-    closed: [] as string[]
+    closed: [] as string[],
+    routines: [
+      { id: 'r1', name: 'Trabajo', items: [{ kind: 'url', url: 'https://notion.so/' }, { kind: 'app', id: 'app:Spotify', name: 'Spotify' }] }
+    ] as Routine[]
   }
   let seq = 0
   const id = () => String(++seq)
@@ -47,6 +51,22 @@ export function fakeContext(now = new Date(2026, 10, 10, 12, 0, 0).getTime()) {
       }
     },
     openSettings: () => void state.opened.push('ajustes'),
+    system: {
+      lock: async () => (state.ran.push('pc:lock'), { kind: 'close' }),
+      sleep: async () => (state.ran.push('pc:sleep'), { kind: 'close' }),
+      shutdown: async (restart) => (state.ran.push(restart ? 'pc:restart' : 'pc:shutdown'), { kind: 'close' }),
+      cancelShutdown: async () => (state.ran.push('pc:cancel'), { kind: 'close' }),
+      volume: async (change) => (state.ran.push(`pc:vol:${JSON.stringify(change)}`), { kind: 'close' }),
+      darkMode: async (dark) => (state.ran.push(`pc:dark:${dark}`), { kind: 'close' })
+    },
+    routines: {
+      all: () => state.routines,
+      run: async (routineId) => {
+        state.ran.push(`atajo:${routineId}`)
+        return { kind: 'close' }
+      },
+      edit: () => void state.opened.push('ajustes:atajos')
+    },
     processes: {
       list: async () => state.processes,
       close: async (group, force) => {

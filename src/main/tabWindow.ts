@@ -9,17 +9,19 @@
  */
 import { BrowserWindow, screen, type Rectangle } from 'electron'
 import { formatAccelerator } from '../shared/accelerator'
-import { IPC, type BubbleView, type PomodoroView, type TabInfo, type TabMediaView } from '../shared/ipc'
+import { IPC, type BubbleView, type PomodoroView, type TabInfo, type TabMediaView, type TabPrivacyView } from '../shared/ipc'
 import { loadPage, PRELOAD_PATH } from './paths'
 import { distanceToRect, nearness } from './tabGeometry'
 import { hardenWebContents, secureWebPreferences } from './security'
 
-/** Ventana con margen para la sombra de la isla más grande (con un aviso dentro). */
-export const TAB_SIZE = { width: 460, height: 260 }
+/** Ventana con margen para la sombra de la isla más grande (con un aviso dentro) y la cápsula de estado a su derecha. */
+export const TAB_SIZE = { width: 720, height: 260 }
 /** Píldora abierta (coincide con tab.css), relativa a la ventana. */
 const OPEN_PILL = { width: 208, height: 34 }
 /** Píldora abierta con música: carátula, título y controles (tab.css, .has-music). */
 const MUSIC_PILL = { width: 320, height: 56 }
+/** Con la barra de la canción debajo (tab.css, .has-timeline). */
+const MUSIC_TIMELINE_PILL = { width: 320, height: 76 }
 /** Al cambiar de canción, la píldora se asoma abierta este rato. */
 const PEEK_MS = 3500
 /** Cada cuánto se mira el cursor: más despacio si está lejos. */
@@ -38,7 +40,7 @@ let peekUntil = 0
 let alert: BubbleView | null = null
 let alertSize = { width: 380, height: 90 }
 
-const openPill = () => (alert ? alertSize : media ? MUSIC_PILL : OPEN_PILL)
+const openPill = () => (alert ? alertSize : media ? (media.timeline ? MUSIC_TIMELINE_PILL : MUSIC_PILL) : OPEN_PILL)
 
 export function getTabWindow(): BrowserWindow | null {
   return win && !win.isDestroyed() ? win : null
@@ -119,6 +121,7 @@ export function createTabWindow(): BrowserWindow {
     win?.webContents.send(IPC.tabPomodoro, pomodoro)
     win?.webContents.send(IPC.tabMedia, media)
     win?.webContents.send(IPC.tabAlert, alert)
+    win?.webContents.send(IPC.tabPrivacy, privacy)
   })
   win.on('show', startPolling)
   win.on('hide', stopPolling)
@@ -186,6 +189,14 @@ export function setTabMedia(view: TabMediaView, peek = false): void {
   media = view
   if (peek && view) peekUntil = Date.now() + PEEK_MS
   getTabWindow()?.webContents.send(IPC.tabMedia, view)
+}
+
+let privacy: TabPrivacyView = { mic: [], camera: [], enabled: false }
+
+/** Micro y cámara en uso (puntitos junto a la isla). */
+export function setTabPrivacy(view: TabPrivacyView): void {
+  privacy = view
+  getTabWindow()?.webContents.send(IPC.tabPrivacy, view)
 }
 
 export function sendTabPomodoro(view: PomodoroView): void {
