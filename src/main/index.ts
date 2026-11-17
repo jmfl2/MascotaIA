@@ -38,8 +38,9 @@ import {
 import { denyAllPermissions, isFrom } from './security'
 import { startUiTheme } from './uiTheme'
 import { batteryReported, syncStatusIndicators } from './status'
+import { changeVolume, stopVolume } from './services/volume'
 import { dropDone, dropIncoming, mascotVisible, needRobot, revealMascot, setMascotVisible, setRobotWithBar, showInitialTab } from './dock'
-import { createTabWindow, getTabWindow, setTabInfo, tabAlertResized } from './tabWindow'
+import { createTabWindow, getTabWindow, setTabInfo, setTabVolumeOpen, showTabVolume, tabAlertResized } from './tabWindow'
 import { applySettingsPatch, getSettingsView, notifySettingsChanged, onSettingsChange } from './settings'
 import { closeSettings, getSettingsWindow, openSettings } from './settingsWindow'
 import { launcherService, refreshIndex } from './services/launcher'
@@ -78,6 +79,7 @@ app.on('will-quit', () => {
   globalShortcut.unregisterAll()
   shutdownAi()
   stopMusic()
+  stopVolume()
   installOnQuit()
 })
 
@@ -247,6 +249,17 @@ function registerIpc(): void {
   })
   ipcMain.on(IPC.tabMediaSeek, (event, seconds: unknown) => {
     if (isFrom(event, tab())) musicSeek(seconds)
+  })
+  // Barra de volumen de la isla: arrastrar y silenciar.
+  ipcMain.on(IPC.tabVolumeSet, (event, level: unknown) => {
+    if (isFrom(event, tab()) && typeof level === 'number' && Number.isFinite(level)) void changeVolume({ kind: 'set', level })
+  })
+  ipcMain.on(IPC.tabVolumeMute, (event) => {
+    if (!isFrom(event, tab())) return
+    void changeVolume({ kind: 'mute' }).then((state) => state && showTabVolume(state))
+  })
+  ipcMain.on(IPC.tabVolumeOpen, (event, open: unknown) => {
+    if (isFrom(event, tab())) setTabVolumeOpen(open === true)
   })
   ipcMain.on(IPC.tabBattery, (event, report: unknown) => {
     if (isFrom(event, tab())) batteryReported(report)

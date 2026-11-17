@@ -577,3 +577,114 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .status { transition: opacity 200ms ease; }
 }
+
+
+/* --- Barra de volumen ----------------------------------------------------------------------
+ * La isla se convierte en un deslizador (300x44, VOLUME_PILL en src/main/tabWindow.ts):
+ * altavoz (toca para silenciar), barra que se arrastra y porcentaje. */
+.volume { display: none; }
+.pill.has-volume {
+  width: 300px;
+  height: 44px;
+  border-radius: 0 0 22px 22px;
+  background: #0c0c10;
+  color: #f4f5f7;
+  justify-content: flex-start;
+  transition:
+    width 420ms var(--spring-island),
+    height 420ms var(--spring-island),
+    border-radius 300ms ease,
+    background 200ms ease;
+}
+.pill.has-volume .content,
+.pill.has-volume .music,
+.pill.has-volume .progress,
+.pill.has-volume .pomo { display: none; }
+.pill.has-volume:not(.has-alert) .volume {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  padding: 0 16px 0 10px;
+  box-sizing: border-box;
+  animation: vol-in 240ms ease 90ms both;
+}
+@keyframes vol-in { from { opacity: 0; } to { opacity: 1; } }
+.vol-icon {
+  all: unset;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 120ms ease, transform 250ms var(--spring);
+}
+.vol-icon:hover { background: rgba(255, 255, 255, 0.1); }
+.vol-icon:active { transform: scale(0.86); }
+.vol-icon svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.vol-speaker { fill: currentColor; }
+.vol-slash { display: none; }
+.pill.is-muted .vol-slash { display: inline; }
+.pill.is-muted .vol-wave1,
+.pill.is-muted .vol-wave2,
+.pill.vol-low .vol-wave2 { display: none; }
+.vol-track {
+  position: relative;
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.18);
+  cursor: pointer;
+  touch-action: none;
+}
+/* Más alto para acertar con el ratón, sin que se vea. */
+.vol-track::before {
+  content: '';
+  position: absolute;
+  inset: -12px 0;
+}
+.vol-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: calc(var(--vol, 0) * 100%);
+  border-radius: 3px;
+  background: #f4f5f7;
+}
+.pill.is-muted .vol-fill { background: rgba(255, 255, 255, 0.35); }
+.vol-knob {
+  position: absolute;
+  top: 50%;
+  left: calc(var(--vol, 0) * 100%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+  translate: -50% -50%;
+  transition: scale 150ms ease;
+}
+.vol-track:hover .vol-knob,
+.pill.is-dragging .vol-knob { scale: 1.2; }
+.vol-pct {
+  flex: none;
+  width: 52px;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+/* Arrastrando la barra, la isla no se encoge como al hacer clic. */
+.pill.has-volume:active { transform: none; }

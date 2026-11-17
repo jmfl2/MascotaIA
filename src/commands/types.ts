@@ -211,6 +211,8 @@ export interface CommandContext {
     shutdown(restart: boolean): Promise<Outcome>
     cancelShutdown(): Promise<Outcome>
     volume(change: { kind: 'set'; level: number } | { kind: 'step'; delta: number } | { kind: 'mute' }): Promise<Outcome>
+    /** Enseña la barra de volumen en la isla para arrastrarla. */
+    volumeBar(): Promise<Outcome>
     darkMode(dark: boolean): Promise<Outcome>
   }
   routines: {

@@ -23,6 +23,13 @@ interface Action {
 
 const ACTIONS: Action[] = [
   {
+    id: 'volume-bar',
+    title: () => t('Barra de volumen', 'Volume bar'),
+    subtitle: () => t('En la isla: arrástrala para subir o bajar el volumen', 'In the island: drag it to turn the volume up or down'),
+    words: () => [t('volumen', 'volume'), 'volumen', 'volume', t('barra de volumen', 'volume bar')],
+    run: (ctx) => ctx.system.volumeBar()
+  },
+  {
     id: 'lock',
     title: () => t('Bloquear el PC', 'Lock the PC'),
     subtitle: () => t('Como Windows + L', 'Like Windows + L'),
@@ -156,7 +163,7 @@ export const system: CommandModule = {
     if (!q) return ACTIONS.map((a) => actionRow(a, ctx))
     const ranked = ACTIONS.map((a) => ({ a, score: Math.max(0, ...a.words().map((w) => matchScore(w, q)), matchScore(a.title(), q)) }))
       // Si ya se entendió un cambio de volumen, sobran "Subir/Bajar el volumen".
-      .filter((x) => x.score > 0 && !(vol && (x.a.id === 'up' || x.a.id === 'down')))
+      .filter((x) => x.score > 0 && !(vol && (x.a.id === 'up' || x.a.id === 'down' || x.a.id === 'volume-bar')))
       .sort((x, y) => y.score - x.score)
     return [...rows, ...ranked.map(({ a, score }) => actionRow(a, ctx, score))]
   }

@@ -42,68 +42,7 @@ export function cancelShutdown(): Promise<boolean> {
   return run(sys32('shutdown.exe'), ['/a']).then((r) => r.ok)
 }
 
-/** Volumen del altavoz por defecto con la API de audio de Windows (Core Audio). */
-const AUDIO = String.raw`
-Add-Type -TypeDefinition @'
-using System;
-using System.Runtime.InteropServices;
-[Guid("5CDF2C82-841E-4546-9722-0CF74078229A"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-interface IAudioEndpointVolume {
-  int f(); int g(); int h(); int i();
-  int SetMasterVolumeLevelScalar(float fLevel, Guid pguidEventContext);
-  int j();
-  int GetMasterVolumeLevelScalar(out float pfLevel);
-  int k(); int l(); int m(); int n();
-  int SetMute([MarshalAs(UnmanagedType.Bool)] bool bMute, Guid pguidEventContext);
-  int GetMute(out bool pbMute);
-}
-[Guid("D666063F-1587-4E43-81F1-B948E807363F"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-interface IMMDevice { int Activate(ref Guid id, int clsCtx, int activationParams, out IAudioEndpointVolume aev); }
-[Guid("A95664D2-9614-4F35-A746-DE8DB63617E6"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-interface IMMDeviceEnumerator { int f(); int GetDefaultAudioEndpoint(int dataFlow, int role, out IMMDevice endpoint); }
-[ComImport, Guid("BCDE0395-E52F-467C-8E3D-C4579291692E")] class MMDeviceEnumeratorComObject { }
-public class MascotaAudio {
-  static IAudioEndpointVolume Vol() {
-    var enumerator = new MMDeviceEnumeratorComObject() as IMMDeviceEnumerator;
-    IMMDevice dev = null;
-    Marshal.ThrowExceptionForHR(enumerator.GetDefaultAudioEndpoint(0, 1, out dev));
-    IAudioEndpointVolume epv = null;
-    var epvid = typeof(IAudioEndpointVolume).GUID;
-    Marshal.ThrowExceptionForHR(dev.Activate(ref epvid, 23, 0, out epv));
-    return epv;
-  }
-  public static float Volume {
-    get { float v = -1; Marshal.ThrowExceptionForHR(Vol().GetMasterVolumeLevelScalar(out v)); return v; }
-    set { Marshal.ThrowExceptionForHR(Vol().SetMasterVolumeLevelScalar(value, Guid.Empty)); }
-  }
-  public static bool Mute {
-    get { bool m; Marshal.ThrowExceptionForHR(Vol().GetMute(out m)); return m; }
-    set { Marshal.ThrowExceptionForHR(Vol().SetMute(value, Guid.Empty)); }
-  }
-}
-'@
-`
-
-export type VolumeChange = { kind: 'set'; level: number } | { kind: 'step'; delta: number } | { kind: 'mute' }
-
-/** Cambia el volumen y devuelve cómo queda (0-100 y si está silenciado), o null si falló. */
-export async function changeVolume(change: VolumeChange): Promise<{ level: number; muted: boolean } | null> {
-  let action: string
-  if (change.kind === 'mute') action = '[MascotaAudio]::Mute = -not [MascotaAudio]::Mute'
-  else {
-    const value = change.kind === 'set' ? change.level : change.delta
-    if (!Number.isFinite(value)) return null
-    const n = Math.round(Math.min(Math.max(value, -100), 100))
-    action =
-      change.kind === 'set'
-        ? `[MascotaAudio]::Mute = $false; [MascotaAudio]::Volume = ${Math.max(0, n) / 100}`
-        : `[MascotaAudio]::Mute = $false; [MascotaAudio]::Volume = [Math]::Min(1, [Math]::Max(0, [MascotaAudio]::Volume + ${n / 100}))`
-  }
-  const r = await powershell(`${AUDIO}\n${action}\n'{0}|{1}' -f [Math]::Round([MascotaAudio]::Volume * 100), [MascotaAudio]::Mute`)
-  const m = /^(\d{1,3})\|(True|False)/m.exec(r.stdout.trim())
-  if (!m) console.warn('[volumen] no se pudo cambiar:', JSON.stringify(change), r.ok, r.stdout.slice(0, 300), r.stderr.slice(0, 1500))
-  return m ? { level: Number(m[1]), muted: m[2] === 'True' } : null
-}
+// El volumen está en services/volume.ts (un PowerShell que se queda abierto).
 
 const PERSONALIZE = 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize'
 

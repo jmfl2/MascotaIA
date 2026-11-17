@@ -47,6 +47,23 @@
         <span id="time-total" class="time time-total"></span>
       </span>
 
+      <!-- Barra de volumen: la isla se convierte en un deslizador (se esconde sola) -->
+      <div id="volume" class="volume" hidden>
+        <button id="vol-mute" class="vol-icon" type="button" aria-label="Silenciar o quitar el silencio" data-en-aria-label="Mute or unmute">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path class="vol-speaker" d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" />
+            <path class="vol-wave1" d="M15 9.5a3.5 3.5 0 0 1 0 5" />
+            <path class="vol-wave2" d="M17.5 7a7 7 0 0 1 0 10" />
+            <path class="vol-slash" d="M15.5 9.5l5 5 M20.5 9.5l-5 5" />
+          </svg>
+        </button>
+        <div id="vol-track" class="vol-track" role="slider" aria-label="Volumen" data-en-aria-label="Volume" aria-valuemin="0" aria-valuemax="100">
+          <span class="vol-fill"></span>
+          <span class="vol-knob"></span>
+        </div>
+        <span id="vol-pct" class="vol-pct"></span>
+      </div>
+
       <!-- Avisos dentro de la isla (como la Dynamic Island): la píldora se agranda -->
       <div id="alert" class="alert" role="status" aria-live="polite" hidden>
         <div id="alert-inner" class="alert-inner">

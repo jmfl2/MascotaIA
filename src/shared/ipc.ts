@@ -35,6 +35,9 @@ export type TabMediaView = {
 /** Si la isla enseña la batería (Ajustes → General). */
 export type TabStatusView = { enabled: boolean }
 
+/** Volumen del altavoz para la barra de volumen de la isla (0-100). */
+export type TabVolumeView = { level: number; muted: boolean }
+
 /** Batería que mide la página de la isla (nivel 0-1). */
 export type BatteryReport = { level: number; charging: boolean }
 
@@ -171,6 +174,10 @@ export const IPC = {
   tabInfo: 'tab:info',
   tabPomodoro: 'tab:pomodoro',
   tabStatus: 'tab:status',
+  tabVolume: 'tab:volume',
+  tabVolumeSet: 'tab:volume-set',
+  tabVolumeMute: 'tab:volume-mute',
+  tabVolumeOpen: 'tab:volume-open',
   tabBattery: 'tab:battery',
   tabContextMenu: 'tab:context-menu',
   tabMedia: 'tab:media',
@@ -258,6 +265,14 @@ export interface MascotaApi {
     onInfo(cb: (info: TabInfo) => void): Unsubscribe
     /** Si se enseña la batería junto a la isla. */
     onStatus(cb: (view: TabStatusView) => void): Unsubscribe
+    /** Enseñar la barra de volumen con este valor. */
+    onVolume(cb: (view: TabVolumeView) => void): Unsubscribe
+    /** Arrastrando la barra de volumen (0-100). */
+    volumeSet(level: number): void
+    /** Tocar el altavoz: silenciar o quitar el silencio. */
+    volumeMute(): void
+    /** La barra de volumen se ve o se ha escondido (para saber dónde se puede hacer clic). */
+    volumeOpen(open: boolean): void
     /** Batería que mide la página (al cambiar de nivel o al enchufar). */
     battery(report: BatteryReport): void
     onPomodoro(cb: (view: PomodoroView) => void): Unsubscribe

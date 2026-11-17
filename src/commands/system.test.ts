@@ -62,3 +62,13 @@ describe('control del PC', () => {
     expect(titles).toContain('Modo oscuro de Windows')
   })
 })
+
+describe('barra de volumen', () => {
+  it('"volumen" a secas ofrece la barra la primera', async () => {
+    const { ctx, state } = fakeContext()
+    const [first] = await suggestFor(null, 'volumen', ctx)
+    expect(first.suggestion.title).toBe('Barra de volumen')
+    await first.suggestion.run()
+    expect(state.ran).toEqual(['pc:vol-bar'])
+  })
+})

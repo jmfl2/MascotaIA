@@ -14,6 +14,7 @@ import {
   type MascotaApi,
   type PomodoroView,
   type TabStatusView,
+  type TabVolumeView,
   type RobotState,
   type TabInfo,
   type TabMediaView
@@ -68,6 +69,10 @@ const api: MascotaApi = {
     onInfo: (cb) => listen<TabInfo>(IPC.tabInfo, cb),
     onPomodoro: (cb) => listen<PomodoroView>(IPC.tabPomodoro, cb),
     onStatus: (cb) => listen<TabStatusView>(IPC.tabStatus, cb),
+    onVolume: (cb) => listen<TabVolumeView>(IPC.tabVolume, cb),
+    volumeSet: (level) => ipcRenderer.send(IPC.tabVolumeSet, level),
+    volumeMute: () => ipcRenderer.send(IPC.tabVolumeMute),
+    volumeOpen: (open) => ipcRenderer.send(IPC.tabVolumeOpen, open),
     battery: (report) => ipcRenderer.send(IPC.tabBattery, report),
     onMedia: (cb) => listen<TabMediaView>(IPC.tabMedia, cb),
     dragOver: () => ipcRenderer.send(IPC.tabDragOver),

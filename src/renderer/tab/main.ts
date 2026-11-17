@@ -1,5 +1,5 @@
 import { t } from '../../shared/i18n'
-import type { BatteryReport, BubbleView, MediaAction, TabMediaView, TabStatusView } from '../../shared/ipc'
+import type { BatteryReport, BubbleView, MediaAction, TabMediaView, TabStatusView, TabVolumeView } from '../../shared/ipc'
 import { localizeDocument } from '../shared/i18nDom'
 import './tab.css'
 
@@ -102,6 +102,128 @@ void getBattery?.call(navigator).then((manager) => {
   manager.addEventListener('chargingchange', report)
   report()
 }).catch(() => {})
+
+// --- Barra de volumen (la isla se convierte en un deslizador) ------------------------------
+const volumeEl = document.getElementById('volume')!
+const volTrack = document.getElementById('vol-track')!
+const volPct = document.getElementById('vol-pct')!
+const volMute = document.getElementById('vol-mute')!
+/** Se esconde sola tras este rato sin tocarla. */
+const VOLUME_HIDE_MS = 3000
+/** Cada cuánto se manda el volumen mientras se arrastra. */
+const VOLUME_SEND_MS = 40
+let volume: TabVolumeView = { level: 0, muted: false }
+let volDragging = false
+let volHover = false
+let volHideTimer: number | undefined
+let volSendTimer: number | undefined
+let volLastSent = -1
+
+function paintVolume(): void {
+  root.style.setProperty('--vol', String(volume.level / 100))
+  pill.classList.toggle('is-muted', volume.muted)
+  pill.classList.toggle('vol-low', volume.level < 50)
+  volPct.textContent = volume.muted ? t('Silencio', 'Muted') : `${volume.level} %`
+  volTrack.setAttribute('aria-valuenow', String(volume.level))
+}
+
+function scheduleVolumeHide(): void {
+  window.clearTimeout(volHideTimer)
+  if (volDragging || volHover) return
+  volHideTimer = window.setTimeout(hideVolume, VOLUME_HIDE_MS)
+}
+
+function showVolume(view: TabVolumeView): void {
+  // Mientras se arrastra manda el dedo: lo que llega de vuelta va con retraso.
+  if (!volDragging) volume = view
+  paintVolume()
+  if (!pill.classList.contains('has-volume')) {
+    volumeEl.hidden = false
+    pill.classList.add('has-volume')
+    api.volumeOpen(true)
+  }
+  scheduleVolumeHide()
+}
+
+function hideVolume(): void {
+  pill.classList.remove('has-volume')
+  api.volumeOpen(false)
+  window.setTimeout(() => {
+    if (!pill.classList.contains('has-volume')) volumeEl.hidden = true
+  }, 200)
+}
+
+/** Manda el volumen como mucho cada VOLUME_SEND_MS (y siempre el último). */
+function sendVolume(): void {
+  if (volSendTimer !== undefined) return
+  volSendTimer = window.setTimeout(() => {
+    volSendTimer = undefined
+    if (volume.level !== volLastSent) {
+      volLastSent = volume.level
+      api.volumeSet(volume.level)
+    }
+  }, VOLUME_SEND_MS)
+}
+
+function setVolumeFrom(clientX: number): void {
+  const rect = volTrack.getBoundingClientRect()
+  const level = Math.round(Math.min(1, Math.max(0, (clientX - rect.left) / rect.width)) * 100)
+  volume = { level, muted: false }
+  paintVolume()
+  sendVolume()
+}
+
+api.onVolume(showVolume)
+// Tocar la barra no abre la barra de comandos.
+volumeEl.addEventListener('click', (e) => e.stopPropagation())
+volumeEl.addEventListener('pointerenter', () => {
+  volHover = true
+  window.clearTimeout(volHideTimer)
+})
+volumeEl.addEventListener('pointerleave', () => {
+  volHover = false
+  scheduleVolumeHide()
+})
+volTrack.addEventListener('pointerdown', (e) => {
+  if (e.button !== 0) return
+  e.stopPropagation()
+  volDragging = true
+  pill.classList.add('is-dragging')
+  volTrack.setPointerCapture(e.pointerId)
+  window.clearTimeout(volHideTimer)
+  setVolumeFrom(e.clientX)
+})
+volTrack.addEventListener('pointermove', (e) => {
+  if (volDragging) setVolumeFrom(e.clientX)
+})
+const endVolumeDrag = () => {
+  if (!volDragging) return
+  volDragging = false
+  pill.classList.remove('is-dragging')
+  sendVolume()
+  scheduleVolumeHide()
+}
+volTrack.addEventListener('pointerup', endVolumeDrag)
+volTrack.addEventListener('lostpointercapture', endVolumeDrag)
+// La rueda del ratón sube o baja de 2 en 2.
+volumeEl.addEventListener(
+  'wheel',
+  (e) => {
+    e.preventDefault()
+    volume = { level: Math.min(100, Math.max(0, volume.level + (e.deltaY < 0 ? 2 : -2))), muted: false }
+    paintVolume()
+    sendVolume()
+    scheduleVolumeHide()
+  },
+  { passive: false }
+)
+volMute.addEventListener('click', (e) => {
+  e.stopPropagation()
+  volume = { ...volume, muted: !volume.muted }
+  paintVolume()
+  api.volumeMute()
+  scheduleVolumeHide()
+})
 
 // --- Barra de la canción -----------------------------------------------------------------
 const bar = document.getElementById('bar')!

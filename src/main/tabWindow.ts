@@ -9,7 +9,7 @@
  */
 import { BrowserWindow, screen, type Rectangle } from 'electron'
 import { formatAccelerator } from '../shared/accelerator'
-import { IPC, type BubbleView, type PomodoroView, type TabInfo, type TabMediaView, type TabStatusView } from '../shared/ipc'
+import { IPC, type BubbleView, type PomodoroView, type TabInfo, type TabMediaView, type TabStatusView, type TabVolumeView } from '../shared/ipc'
 import { loadPage, PRELOAD_PATH } from './paths'
 import { distanceToRect, nearness } from './tabGeometry'
 import { hardenWebContents, secureWebPreferences } from './security'
@@ -20,6 +20,8 @@ export const TAB_SIZE = { width: 720, height: 260 }
 const OPEN_PILL = { width: 208, height: 34 }
 /** Píldora abierta con música: carátula, título y controles (tab.css, .has-music). */
 const MUSIC_PILL = { width: 320, height: 56 }
+/** Con la barra de volumen (tab.css, .has-volume). */
+const VOLUME_PILL = { width: 300, height: 44 }
 /** Con la barra de la canción debajo (tab.css, .has-timeline). */
 const MUSIC_TIMELINE_PILL = { width: 320, height: 76 }
 /** Al cambiar de canción, la píldora se asoma abierta este rato. */
@@ -40,7 +42,7 @@ let peekUntil = 0
 let alert: BubbleView | null = null
 let alertSize = { width: 380, height: 90 }
 
-const openPill = () => (alert ? alertSize : media ? (media.timeline ? MUSIC_TIMELINE_PILL : MUSIC_PILL) : OPEN_PILL)
+const openPill = () => (alert ? alertSize : volumeOpen ? VOLUME_PILL : media ? (media.timeline ? MUSIC_TIMELINE_PILL : MUSIC_PILL) : OPEN_PILL)
 
 export function getTabWindow(): BrowserWindow | null {
   return win && !win.isDestroyed() ? win : null
@@ -192,6 +194,20 @@ export function setTabMedia(view: TabMediaView, peek = false): void {
 }
 
 let status: TabStatusView = { enabled: false }
+/** ¿Se ve la barra de volumen en la isla? (lo dice la página) */
+let volumeOpen = false
+
+/** Enseña la barra de volumen en la isla con este valor. Devuelve false si la isla no se ve. */
+export function showTabVolume(view: TabVolumeView): boolean {
+  const w = getTabWindow()
+  if (!w?.isVisible()) return false
+  w.webContents.send(IPC.tabVolume, view)
+  return true
+}
+
+export function setTabVolumeOpen(open: boolean): void {
+  volumeOpen = open
+}
 
 /** Si la isla enseña la batería (cápsula a su derecha). */
 export function setTabStatus(view: TabStatusView): void {

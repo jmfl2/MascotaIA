@@ -27,7 +27,9 @@ import { pomodoroService } from './services/pomodoro'
 import { remindersService } from './services/reminders'
 import { listTerminals, runInTerminal } from './services/terminals'
 import { closeProcesses, listProcesses } from './services/processes'
-import { cancelShutdown, changeVolume, lockPc, scheduleShutdown, setWindowsDarkMode, sleepPc } from './services/systemControl'
+import { cancelShutdown, lockPc, scheduleShutdown, setWindowsDarkMode, sleepPc } from './services/systemControl'
+import { changeVolume, getVolume } from './services/volume'
+import { showTabVolume } from './tabWindow'
 import { currentShortcut } from './shortcut'
 
 /** Abre una URL en el navegador. Los comandos ya la validaron; aquí se comprueba otra vez. */
@@ -95,7 +97,15 @@ function systemContext(): CommandContext['system'] {
     async volume(change) {
       const now = await changeVolume(change)
       if (!now) return fail(t('No se pudo cambiar el volumen', "Couldn't change the volume"))
+      // Se ve en la barra de volumen de la isla; si la isla está escondida, un aviso corto.
+      if (showTabVolume(now)) return { kind: 'close' }
       return { kind: 'close', toast: now.muted ? t('🔇 Silenciado', '🔇 Muted') : t(`🔊 Volumen: ${now.level} %`, `🔊 Volume: ${now.level} %`) }
+    },
+    async volumeBar() {
+      const now = await getVolume()
+      if (!now) return fail(t('No se pudo leer el volumen', "Couldn't read the volume"))
+      if (!showTabVolume(now)) return fail(t('La barra de volumen sale en la isla: enciende "Mostrar la mascota"', 'The volume bar shows in the island: turn on "Show the mascot"'))
+      return { kind: 'close' }
     },
     async darkMode(dark) {
       if (!(await setWindowsDarkMode(dark))) return fail(t('No se pudo cambiar el tema de Windows', "Couldn't change the Windows theme"))
