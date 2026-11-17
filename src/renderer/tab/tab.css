@@ -520,10 +520,11 @@ body {
   top: 0;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
-  height: calc(14px + 10px * var(--near));
-  padding: 0 calc(6px + 3px * var(--near));
-  border-radius: 0 0 12px 12px;
+  /* Alto, ancho mínimo y esquinas los pone tab/main.ts, iguales a los de la isla. */
+  box-sizing: border-box;
+  padding: 0 calc(6px + 4px * var(--near));
   background: #0c0c10;
   color: #f4f5f7;
   box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.08), 0 calc(6px * var(--near)) calc(18px * var(--near)) rgba(0, 0, 0, 0.25);
@@ -533,14 +534,14 @@ body {
   pointer-events: none;
   transition:
     opacity 200ms ease,
-    scale 420ms var(--spring-island),
-    height 140ms cubic-bezier(0.22, 1, 0.36, 1);
+    scale 420ms var(--spring-island);
 }
 .status.is-shown { opacity: 1; scale: 1; }
 .st-dot {
   display: none;
-  width: 7px;
-  height: 7px;
+  flex: none;
+  width: calc(7px + 2px * var(--near));
+  height: calc(7px + 2px * var(--near));
   border-radius: 50%;
 }
 .status.has-mic .st-mic { display: block; background: #ff9f0a; box-shadow: 0 0 6px #ff9f0a; }

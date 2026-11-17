@@ -76,9 +76,20 @@ function renderStatus(): void {
   placeStatus()
 }
 
-/** Pegada a la derecha de la isla, que cambia de ancho al acercar el ratón. */
+/** Mínimo alto de la cápsula (la isla en reposo es una rayita de 6 px). */
+const STATUS_MIN_HEIGHT = 18
+
+/**
+ * Pegada a la derecha de la isla y cuadrada con ella: la misma altura y las
+ * mismas esquinas en cada momento (la isla crece al acercar el ratón).
+ */
 function placeStatus(): void {
+  const height = Math.max(pill.offsetHeight, STATUS_MIN_HEIGHT)
+  const radius = Math.min(parseFloat(getComputedStyle(pill).borderBottomLeftRadius) || 0, height / 2)
   statusEl.style.left = `${pill.offsetLeft + pill.offsetWidth + 6}px`
+  statusEl.style.height = `${height}px`
+  statusEl.style.minWidth = `${height}px`
+  statusEl.style.borderRadius = `0 0 ${Math.max(radius, 7)}px ${Math.max(radius, 7)}px`
 }
 new ResizeObserver(placeStatus).observe(pill)
 
