@@ -27,6 +27,13 @@ const FACE_CENTER = { x: 0.5, y: 0.51 }
 const HIT = { x: 26, y: 20, width: 148, height: 152, radius: 56 }
 /** Modo pestaña: cuánto se mete la ventana bajo la píldora (su parte de arriba es transparente). */
 const DOCK_TUCK = 12
+/**
+ * Nivel de "siempre encima": el mismo que la barra. En Windows todas las
+ * ventanas "siempre encima" comparten capa y gana la última que se subió, así
+ * que al bajar además se sube con moveTop(): si no, a veces se quedaba por
+ * debajo de otra ventana (p. ej. con el ratón sobre la isla) y no se veía.
+ */
+const ROBOT_LEVEL = 'pop-up-menu'
 /** Lo que tarda en subir antes de ocultar la ventana (coincide con el muelle del renderer). */
 const LEAVE_MS = 380
 
@@ -83,7 +90,7 @@ export function createRobotWindow(): BrowserWindow {
     webPreferences: secureWebPreferences(PRELOAD_PATH)
   })
 
-  win.setAlwaysOnTop(true, 'floating')
+  win.setAlwaysOnTop(true, ROBOT_LEVEL)
   win.setIgnoreMouseEvents(true, { forward: true })
   hardenWebContents(win.webContents)
 
@@ -132,6 +139,9 @@ export function enterDocked(): void {
   moveTo(anchor.centerX - ROBOT_SIZE.width / 2, anchor.bottom - DOCK_TUCK)
   w.webContents.send(IPC.robotEnter)
   w.showInactive()
+  // Arriba del todo (sin quitarle el foco a la barra): que nada lo tape al bajar.
+  w.setAlwaysOnTop(true, ROBOT_LEVEL)
+  w.moveTop()
 }
 
 /** Sube el robot a la pestaña y oculta la ventana al terminar. */

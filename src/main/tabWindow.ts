@@ -71,6 +71,9 @@ function poll(): void {
   const distance = distanceToRect(screen.getCursorScreenPoint(), rect)
   // Recién cambiada la canción, se enseña abierta aunque el ratón esté lejos.
   const near = Date.now() < peekUntil ? 1 : nearness(distance)
+  // Al acercar el ratón, la isla se vuelve a poner encima de todo: otras
+  // ventanas "siempre encima" pueden haberla tapado mientras tanto.
+  if (near > 0 && lastNear <= 0) w.moveTop()
   if (near !== lastNear) {
     lastNear = near
     w.webContents.send(IPC.tabNear, near)
@@ -146,6 +149,7 @@ export function showTab(): void {
   if (!w) return
   w.setBounds(tabBounds())
   w.showInactive()
+  w.moveTop()
 }
 
 export function hideTab(): void {
