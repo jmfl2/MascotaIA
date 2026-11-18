@@ -27,7 +27,7 @@ import { notesService } from './services/notes'
 import { pomodoroService } from './services/pomodoro'
 import { remindersService } from './services/reminders'
 import { listTerminals, runInTerminal } from './services/terminals'
-import { closeProcesses, listProcesses } from './services/processes'
+import { closeProgram, closeProgramAsAdmin, listProcesses, type CloseResult } from './services/processes'
 import { cancelShutdown, lockPc, scheduleShutdown, setWindowsDarkMode, sleepPc } from './services/systemControl'
 import { getVolume } from './services/volume'
 import { showTabVolume } from './tabWindow'
@@ -108,6 +108,37 @@ function systemContext(): CommandContext['system'] {
   }
 }
 
+/** Qué contar tras intentar cerrar un programa (y qué ofrecer si sigue abierto). */
+function closeOutcome(name: string, image: string, result: CloseResult): Outcome {
+  if (result === 'closed') return { kind: 'close', mood: 'wink', toast: t(`${name} cerrado`, `${name} closed`) }
+  if (result === 'failed') return { kind: 'error', message: t(`No se pudo cerrar ${name}`, `Couldn't close ${name}`) }
+  const admin = result === 'denied'
+  // Se pregunta en la isla: forzar puede perder lo que no esté guardado.
+  showBubble({
+    kind: 'info',
+    title: admin ? t(`${name} está abierto como administrador`, `${name} is running as administrator`) : t(`${name} sigue abierto`, `${name} is still open`),
+    text: admin
+      ? t('Para cerrarlo, Windows te pedirá permiso.', 'To close it, Windows will ask for permission.')
+      : t('Puede que se haya ido a la bandeja o que te pregunte si guardas.', 'It may have gone to the tray or be asking you to save.'),
+    actions: [
+      {
+        id: admin ? 'admin' : 'force',
+        label: admin ? t('Cerrar como administrador', 'Close as administrator') : t('Forzar el cierre', 'Force close'),
+        primary: true,
+        run: () =>
+          void (async () => {
+            const next = admin ? await closeProgramAsAdmin(image) : await closeProgram(image, true)
+            if (next === 'closed') toast(t(`${name} cerrado`, `${name} closed`))
+            else if (next === 'denied' && !admin) closeOutcome(name, image, next)
+            else toast(t(`No se pudo cerrar ${name}`, `Couldn't close ${name}`))
+          })()
+      }
+    ],
+    timeoutMs: 12_000
+  })
+  return { kind: 'close' }
+}
+
 /** Segundos para cancelar un apagado o reinicio. */
 const SHUTDOWN_DELAY_S = 30
 
@@ -168,10 +199,8 @@ export const commandContext: CommandContext = {
   processes: {
     list: listProcesses,
     async close(group, force) {
-      if (await closeProcesses(group.pids, force)) return { kind: 'close', mood: 'wink', toast: t(`${group.name} cerrado`, `${group.name} closed`) }
-      return force
-        ? { kind: 'error', message: t(`No se pudo cerrar ${group.name} (quizá necesita permisos de administrador)`, `Couldn't close ${group.name} (it may need admin rights)`) }
-        : { kind: 'error', message: t(`${group.name} no se cerró del todo: pulsa Supr para forzarlo`, `${group.name} didn't fully close: press Delete to force it`) }
+      const result = await closeProgram(group.image, force)
+      return closeOutcome(group.name, group.image, result)
     }
   },
   terminal: {
