@@ -197,6 +197,7 @@ export const IPC = {
   settingsClose: 'settings:close',
   settingsShowTab: 'settings:show-tab',
   settingsSearchApps: 'settings:search-apps',
+  settingsPickPaths: 'settings:pick-paths',
   // Barra de comandos
   barQuery: 'bar:query',
   barExecute: 'bar:execute',
@@ -302,6 +303,8 @@ export interface MascotaApi {
     onShowTab(cb: (tab: string) => void): Unsubscribe
     /** Apps del lanzador que encajan (para añadirlas a un atajo). */
     searchApps(query: string): Promise<Array<{ id: string; name: string; icon?: string }>>
+    /** Abre el selector de Windows para elegir archivos o programas, o carpetas. Devuelve las rutas elegidas. */
+    pickPaths(kind: 'file' | 'folder'): Promise<string[]>
   }
   bar: {
     query(req: QueryRequest): Promise<QueryResponse>

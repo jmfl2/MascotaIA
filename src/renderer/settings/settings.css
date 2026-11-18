@@ -728,3 +728,11 @@ h2 {
   white-space: nowrap;
 }
 .add-routine { margin: 12px 0 0 2px; }
+
+/* Elegir del sistema: programa o archivo, o carpeta. */
+.routine-pick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}

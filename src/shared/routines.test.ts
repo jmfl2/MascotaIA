@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { suggestFor } from '../commands/engine'
 import { parseInput } from '../commands/index'
 import { fakeContext } from '../commands/testing'
-import { routinePath, routineSummary, routineUrl, validateRoutines } from './routines'
+import { expandPath, isProgramPath, pathLabel, routinePath, routineSummary, routineUrl, validateRoutines } from './routines'
 
 describe('atajos: validación', () => {
   it('webs: solo http(s), y sin esquema se pone https', () => {
@@ -20,6 +20,20 @@ describe('atajos: validación', () => {
     expect(routinePath('\\\\servidor\\compartida\\x')).toBe('\\\\servidor\\compartida\\x')
     expect(routinePath('Documentos')).toBeNull()
     expect(routinePath('C:\\a\u0000b')).toBeNull()
+  })
+
+  it('rutas con variables y programas', () => {
+    expect(routinePath('%USERPROFILE%\\Documentos')).toBe('%USERPROFILE%\\Documentos')
+    expect(routinePath('%APPDATA%')).toBe('%APPDATA%')
+    expect(routinePath('%no válida%\\x')).toBeNull()
+    expect(expandPath('%userprofile%\\Documentos', { USERPROFILE: 'C:\\Users\\Jose' })).toBe('C:\\Users\\Jose\\Documentos')
+    expect(expandPath('%NOEXISTE%\\x', {})).toBe('%NOEXISTE%\\x')
+    expect(isProgramPath('C:\\Program Files (x86)\\Steam\\steam.exe')).toBe(true)
+    expect(isProgramPath('C:\\Scripts\\copia.bat')).toBe(true)
+    expect(isProgramPath('C:\\Users\\Jose\\informe.pdf')).toBe(false)
+    expect(pathLabel('C:\\Program Files (x86)\\Steam\\steam.exe')).toBe('steam')
+    expect(pathLabel('C:\\Users\\Jose\\Proyectos\\')).toBe('Proyectos')
+    expect(pathLabel('C:\\Users\\Jose\\informe.pdf')).toBe('informe.pdf')
   })
 
   it('limpia lo que llega de fuera', () => {

@@ -97,7 +97,8 @@ const api: MascotaApi = {
     close: () => ipcRenderer.send(IPC.settingsClose),
     onChanged: (cb) => listen<SettingsView>(IPC.settingsChanged, cb),
     onShowTab: (cb) => listen<string>(IPC.settingsShowTab, cb),
-    searchApps: (query) => ipcRenderer.invoke(IPC.settingsSearchApps, query)
+    searchApps: (query) => ipcRenderer.invoke(IPC.settingsSearchApps, query),
+    pickPaths: (kind) => ipcRenderer.invoke(IPC.settingsPickPaths, kind)
   },
   bar: {
     query: (req) => ipcRenderer.invoke(IPC.barQuery, req),

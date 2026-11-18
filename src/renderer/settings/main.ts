@@ -31,7 +31,7 @@ import {
   toggleAccessory,
   type SettingsView
 } from '../../shared/appearance'
-import { MAX_ROUTINE_ITEMS, MAX_ROUTINE_NAME, MAX_ROUTINES, routinePath, routineUrl, type Routine, type RoutineItem } from '../../shared/routines'
+import { isProgramPath, MAX_ROUTINE_ITEMS, MAX_ROUTINE_NAME, MAX_ROUTINES, pathLabel, routinePath, routineUrl, type Routine, type RoutineItem } from '../../shared/routines'
 import { ASSISTANTS } from '../../shared/assistants'
 import { SEASONS } from '../../shared/seasons'
 import { LANGUAGES, t, tx, type Localized } from '../../shared/i18n'
@@ -593,12 +593,19 @@ function editRoutine(id: string, change: (r: Routine) => Routine, delayed = fals
   renderRoutines()
 }
 
-const KIND_ICON: Record<RoutineItem['kind'], string> = { app: '🧩', url: '🌐', path: '📁' }
+/** Icono de cada cosa: app, web, programa (.exe, .lnk, .bat…), archivo o carpeta. */
+function itemIcon(item: RoutineItem): string {
+  if (item.kind === 'app') return '🧩'
+  if (item.kind === 'url') return '🌐'
+  if (isProgramPath(item.path)) return '🚀'
+  // Con extensión, un documento; sin ella, una carpeta.
+  return /\.[a-z0-9]{1,6}$/i.test(pathLabel(item.path)) ? '📄' : '📁'
+}
 
 function itemLabel(item: RoutineItem): string {
   if (item.kind === 'app') return item.name
   if (item.kind === 'url') return new URL(item.url).host.replace(/^www\./, '')
-  return item.path.split(/[\\/]/).filter(Boolean).pop() ?? item.path
+  return pathLabel(item.path)
 }
 
 /** Sugerencias al escribir en "Añadir…": apps que encajan, una web o una carpeta. */
@@ -607,7 +614,11 @@ async function searchRoutineItems(query: string): Promise<Array<{ item: RoutineI
   if (!q) return []
   const out: Array<{ item: RoutineItem; label: string; icon?: string }> = []
   const path = routinePath(q)
-  if (path) out.push({ item: { kind: 'path', path }, label: t(`Carpeta o archivo: ${path}`, `Folder or file: ${path}`) })
+  if (path)
+    out.push({
+      item: { kind: 'path', path },
+      label: isProgramPath(path) ? t(`Programa: ${path}`, `Program: ${path}`) : t(`Carpeta o archivo: ${path}`, `Folder or file: ${path}`)
+    })
   const url = path ? null : routineUrl(q)
   if (url) out.push({ item: { kind: 'url', url }, label: t(`Web: ${url}`, `Website: ${url}`) })
   if (!path) {
@@ -656,7 +667,24 @@ function buildRoutine(routine: Routine) {
   search.setAttribute('aria-label', t('Añadir al atajo', 'Add to shortcut'))
   const results = h('div', 'routine-results')
   results.setAttribute('role', 'listbox')
-  add.append(search, results)
+  // O elegir del sistema con el selector de Windows: cualquier programa, archivo o carpeta.
+  const pick = h('div', 'routine-pick')
+  const pickFile = h('button', 'link-button', t('🚀 Programa o archivo…', '🚀 Program or file…'))
+  const pickFolder = h('button', 'link-button', t('📁 Carpeta…', '📁 Folder…'))
+  for (const [button, kind] of [[pickFile, 'file'], [pickFolder, 'folder']] as const) {
+    button.type = 'button'
+    button.addEventListener('click', async () => {
+      const paths = await api.pickPaths(kind).catch(() => [] as string[])
+      if (!paths.length) return
+      editRoutine(routine.id, (r) => {
+        const room = MAX_ROUTINE_ITEMS - r.items.length
+        const fresh = paths.filter((p) => !r.items.some((i) => i.kind === 'path' && i.path.toLowerCase() === p.toLowerCase()))
+        return { ...r, items: [...r.items, ...fresh.slice(0, Math.max(0, room)).map((path): RoutineItem => ({ kind: 'path', path }))] }
+      })
+    })
+    pick.append(button)
+  }
+  add.append(search, results, pick)
   body.append(items, add)
   root.append(head, body)
 
@@ -685,7 +713,7 @@ function buildRoutine(routine: Routine) {
             im.alt = ''
             b.append(im)
           } else {
-            b.append(h('span', 'routine-result-icon', KIND_ICON[item.kind]))
+            b.append(h('span', 'routine-result-icon', itemIcon(item)))
           }
           b.append(h('span', 'routine-result-label', label))
           b.addEventListener('click', () => addItem(item))
@@ -721,14 +749,15 @@ function renderRoutines(): void {
     if (document.activeElement !== els.name) els.name.value = routine.name
     const full = routine.items.length >= MAX_ROUTINE_ITEMS
     els.search.disabled = full
+    for (const b of els.root.querySelectorAll<HTMLButtonElement>('.routine-pick button')) b.disabled = full
     els.search.placeholder = full
       ? t(`Máximo ${MAX_ROUTINE_ITEMS} cosas por atajo`, `Up to ${MAX_ROUTINE_ITEMS} items per shortcut`)
-      : t('Añadir una app, una web o una carpeta…', 'Add an app, a website or a folder…')
+      : t('Añadir una app, una web o una ruta (C:\\…, %USERPROFILE%\\…)', 'Add an app, a website or a path (C:\\…, %USERPROFILE%\\…)')
     els.items.replaceChildren(
       ...routine.items.map((item, i) => {
         const chip = h('span', 'routine-chip')
         chip.title = item.kind === 'url' ? item.url : item.kind === 'path' ? item.path : item.name
-        chip.append(h('span', 'routine-chip-icon', KIND_ICON[item.kind]), h('span', 'routine-chip-label', itemLabel(item)))
+        chip.append(h('span', 'routine-chip-icon', itemIcon(item)), h('span', 'routine-chip-label', itemLabel(item)))
         const remove = h('button', 'routine-chip-remove', '×')
         remove.type = 'button'
         remove.setAttribute('aria-label', t(`Quitar ${itemLabel(item)}`, `Remove ${itemLabel(item)}`))

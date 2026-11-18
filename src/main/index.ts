@@ -2,7 +2,7 @@
  * Proceso principal: arranca la app, crea las ventanas y conecta
  * el atajo global, la bandeja, los servicios y los canales IPC.
  */
-import { app, globalShortcut, ipcMain, Menu } from 'electron'
+import { app, dialog, globalShortcut, ipcMain, Menu } from 'electron'
 import { IPC, type ExecuteRequest, type ExecuteResponse, type QueryRequest, type QueryResponse } from '../shared/ipc'
 import {
   barHidden,
@@ -54,6 +54,7 @@ import { checkForUpdates, installOnQuit, installUpdate, onUpdateChange, startUpd
 import { activeSeason, onSeasonChange, startSeasons } from './seasons'
 import { setLang, t } from '../shared/i18n'
 import { startLogFile } from './logFile'
+import { routinePath } from '../shared/routines'
 import { diskVersion, isOutdated, onWindowGone, relaunchFresh } from './selfHeal'
 
 // Registro en disco desde el primer momento (para saber qué pasó si no arranca).
@@ -329,6 +330,25 @@ function registerIpc(): void {
   ipcMain.handle(IPC.settingsGet, (event) => (isFrom(event, settingsWc()) ? getSettingsView() : null))
   ipcMain.on(IPC.settingsUpdate, (event, patch: unknown) => {
     if (isFrom(event, settingsWc())) applySettingsPatch(patch)
+  })
+  // Elegir archivos, programas o carpetas para un atajo con el diálogo de Windows.
+  ipcMain.handle(IPC.settingsPickPaths, async (event, kind: unknown) => {
+    const win = getSettingsWindow()
+    if (!isFrom(event, settingsWc()) || !win || (kind !== 'file' && kind !== 'folder')) return []
+    const result = await dialog.showOpenDialog(win, {
+      title: kind === 'file' ? t('Elige archivos o programas', 'Choose files or programs') : t('Elige carpetas', 'Choose folders'),
+      properties: kind === 'file' ? ['openFile', 'multiSelections', 'dontAddToRecent'] : ['openDirectory', 'multiSelections', 'dontAddToRecent'],
+      ...(kind === 'file'
+        ? {
+            filters: [
+              { name: t('Todos los archivos', 'All files'), extensions: ['*'] },
+              { name: t('Programas', 'Programs'), extensions: ['exe', 'lnk', 'bat', 'cmd', 'msc'] }
+            ]
+          }
+        : {})
+    })
+    if (result.canceled) return []
+    return result.filePaths.map((p) => routinePath(p)).filter((p): p is string => p !== null)
   })
   ipcMain.handle(IPC.settingsSearchApps, async (event, query: unknown) => {
     if (!isFrom(event, settingsWc()) || !isShortString(query, 100) || !query.trim()) return []

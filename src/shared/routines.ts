@@ -49,11 +49,37 @@ export function routineUrl(raw: string): string | null {
   }
 }
 
-/** Ruta absoluta de Windows ("C:\…" o "\\servidor\…"), o null. */
+/**
+ * Ruta absoluta de Windows ("C:\…", "\\servidor\…" o que empiece por una
+ * variable como "%USERPROFILE%\…" o "%APPDATA%\…"), o null. Vale cualquier
+ * carpeta, archivo o programa (.exe, .lnk, .bat…).
+ */
 export function routinePath(raw: string): string | null {
   const text = raw.trim().replace(/^"(.*)"$/, '$1')
   if (!text || text.length > 400 || /[\p{Cc}\p{Cf}]/u.test(text)) return null
-  return /^[a-zA-Z]:[\\/]/.test(text) || /^\\\\[^\\]+\\/.test(text) ? text : null
+  return /^[a-zA-Z]:[\\/]/.test(text) || /^\\\\[^\\]+\\/.test(text) || /^%[A-Za-z_][A-Za-z0-9_()]*%([\\/]|$)/.test(text) ? text : null
+}
+
+/** "%USERPROFILE%\Documentos" -> "C:\Users\Jose\Documentos" (las variables que no existen se dejan tal cual). */
+export function expandPath(path: string, env: Record<string, string | undefined>): string {
+  return path.replace(/%([A-Za-z_][A-Za-z0-9_()]*)%/g, (whole, name: string) => {
+    const key = Object.keys(env).find((k) => k.toLowerCase() === name.toLowerCase())
+    return key && env[key] ? env[key] : whole
+  })
+}
+
+/** Lo que se ejecuta: programas, accesos directos y scripts. */
+const PROGRAM_EXT = /\.(exe|lnk|bat|cmd|com|msc|appref-ms|url)$/i
+
+/** ¿Es un programa (lo que se ejecuta) en vez de una carpeta o un documento? */
+export function isProgramPath(path: string): boolean {
+  return PROGRAM_EXT.test(path)
+}
+
+/** Nombre para enseñar: "C:\…\steam.exe" -> "steam", "C:\Proyectos\web" -> "web". */
+export function pathLabel(path: string): string {
+  const last = path.split(/[\\/]/).filter(Boolean).pop() ?? path
+  return isProgramPath(last) ? last.replace(PROGRAM_EXT, '') : last
 }
 
 const APP_ID = /^(app|lnk|fav):.{1,480}$/s
@@ -98,7 +124,7 @@ export function validateRoutines(raw: unknown): Routine[] {
 
 /** "Spotify, notion.so y 1 carpeta". */
 export function routineSummary(items: readonly RoutineItem[], lang: 'es' | 'en'): string {
-  const labels = items.map((i) => (i.kind === 'app' ? i.name : i.kind === 'url' ? new URL(i.url).hostname.replace(/^www\./, '') : (i.path.split(/[\\/]/).filter(Boolean).pop() ?? i.path)))
+  const labels = items.map((i) => (i.kind === 'app' ? i.name : i.kind === 'url' ? new URL(i.url).hostname.replace(/^www\./, '') : pathLabel(i.path)))
   if (!labels.length) return lang === 'es' ? 'Vacío' : 'Empty'
   if (labels.length === 1) return labels[0]
   const and = lang === 'es' ? ' y ' : ' and '

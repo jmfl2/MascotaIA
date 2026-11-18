@@ -9,6 +9,7 @@
 import { clipboard, shell } from 'electron'
 import { COMMANDS, type CommandContext, type Outcome } from '../commands'
 import { t } from '../shared/i18n'
+import { expandPath } from '../shared/routines'
 import { getClaudeKey } from './claudeKey'
 import { openClaude } from './claudeApp'
 import { suggestFor, type Ranked } from '../commands/engine'
@@ -123,8 +124,11 @@ async function runRoutine(id: string): Promise<Outcome> {
         // Ya validada al guardar (solo http y https).
         await shell.openExternal(item.url)
         opened++
-      } else if ((await shell.openPath(item.path)) === '') {
-        opened++
+      } else {
+        // Carpetas, documentos y programas (.exe, .lnk, .bat...): como un doble clic.
+        const error = await shell.openPath(expandPath(item.path, process.env))
+        if (error) console.warn('[atajos] no se pudo abrir', item.path, error)
+        else opened++
       }
     } catch (err) {
       console.warn('[atajos] no se pudo abrir:', err)
