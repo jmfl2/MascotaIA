@@ -1,9 +1,9 @@
 # Mascota
 
-Asistente de escritorio para Windows con forma de robot. Una barra de comandos
-al estilo Spotlight para buscar en la web, abrir aplicaciones, tomar notas,
-programar recordatorios y usar un temporizador Pomodoro, con IA local opcional
-que se ejecuta íntegramente en tu equipo.
+Asistente de escritorio para Windows que vive en una isla en el borde superior
+de la pantalla. Una barra de comandos para buscar, abrir apps, controlar el PC y
+la música, y una mascota personalizable (robot, gato, zorro, dragón…) que te
+acompaña. Con IA local opcional que se ejecuta íntegramente en tu equipo.
 
 [![Descargar para Windows](https://img.shields.io/badge/Descargar-Windows%2010%2F11-0a84ff?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/jmfl2/MascotaIA/releases/latest/download/Mascota-Setup.exe)
 
@@ -11,11 +11,26 @@ que se ejecuta íntegramente en tu equipo.
 [![Licencia MIT](https://img.shields.io/badge/licencia-MIT-green)](LICENSE)
 ![Plataforma](https://img.shields.io/badge/plataforma-Windows%20x64-lightgrey)
 
+![La isla con la canción que suena y la batería](docs/img/isla-musica.png)
+
+![La barra de comandos](docs/img/barra.png)
+
 ## Características
 
+- **La isla:** una píldora en el borde superior de la pantalla que crece al
+  acercar el ratón. Muestra la canción que suena con carátula, controles y una
+  barra para saltar a cualquier punto; la barra de volumen; la batería cuando
+  carga o queda poca, y los avisos (recordatorios, Pomodoro, actualizaciones).
 - **Barra de comandos** (`Ctrl+Espacio`): búsqueda en Google, YouTube, Maps y
-  GitHub, traductor, lanzador de aplicaciones y favoritos. Al abrirla, tus
-  aplicaciones más usadas aparecen las primeras.
+  GitHub, traductor, calculadora, lanzador de aplicaciones y favoritos. Al
+  abrirla, tus aplicaciones más usadas aparecen las primeras.
+- **Atajos propios:** un nombre («trabajo») que abre a la vez varias apps, webs
+  y carpetas.
+- **Control del PC:** bloquear, suspender, apagar o reiniciar (con 30 segundos
+  para cancelar), volumen con una barra que se arrastra y modo oscuro o claro de
+  Windows.
+- **Terminal y programas:** ejecuta lo que escribes en la terminal que elijas
+  (PowerShell, Símbolo del sistema, Git Bash…) y cierra programas abiertos.
 - **Productividad:** notas rápidas, recordatorios en lenguaje natural
   (`rec mañana 9:00 dentista`) y temporizador Pomodoro.
 - **IA local con Ollama** (opcional): chat, resúmenes, explicaciones y
@@ -23,28 +38,23 @@ que se ejecuta íntegramente en tu equipo.
 - **Claude, ChatGPT, Perplexity y Gemini:** pregúntales desde la barra o desde
   lo que copias; se abre su web con la pregunta escrita. Con una clave de API
   de Anthropic (opcional), Claude responde dentro de la barra.
-- **Calculadora y conversiones:** escribe `12*7+3`, `20% de 85` o
-  `5 km en millas` y el resultado aparece el primero.
 - **Detector de enlaces sospechosos:** analiza en local los enlaces que copias
   y avisa de suplantaciones, homógrafos y acortadores.
 - **Portapapeles inteligente:** al copiar un texto ofrece buscarlo, traducirlo,
   guardarlo, resumirlo o preguntárselo a una IA, e ignora contraseñas y claves.
+- **Personalizable:** catorce formas de mascota, dieciséis colores, cuarenta y
+  siete accesorios, cinco formas de ojos, nombre y personalidad, y el tema y el
+  color de acento de la barra y las ventanas.
+- **Fechas especiales:** en Navidad, Año Nuevo, Halloween y San Valentín se
+  disfraza sola, con nieve, confeti, murciélagos o corazones.
 - **Se actualiza sola:** descarga las versiones nuevas de GitHub y comprueba su
   huella antes de instalarlas.
-- **Suelta archivos en el robot:** pregúntale a una IA por ellos, resúmelos,
-  comprímelos en un .zip, añádelos a favoritos o copia su ruta.
-- **Música en la pestaña:** como la isla del iPhone, la pestaña de arriba
-  muestra lo que suena en Spotify, el navegador u otras apps, con carátula y
-  botones de anterior, pausa y siguiente.
-- **Discreto:** vive escondido en una pestaña en el borde superior de la
-  pantalla y apenas consume recursos en reposo.
-- **Personalizable:** quince colores, cuarenta y siete accesorios por partes del
-  cuerpo (con vista ampliada de cada parte), cinco formas de ojos, color propio
-  para los ojos y los accesorios, nombre, nivel de conversación y tono de la IA.
-- **Fechas especiales:** en Navidad, Año Nuevo, Halloween y San Valentín se
-  disfraza solo, con nieve, confeti, murciélagos o corazones.
+- **Ligera y discreta:** en reposo apenas consume recursos, y el trabajo de
+  fondo se reparte para no dar tirones al arrancar.
 - **En español e inglés:** el idioma se elige en los ajustes; la primera vez se
   usa el de Windows.
+
+![Las catorce formas de la mascota](docs/img/formas.png)
 
 ## Instalación
 
@@ -78,16 +88,24 @@ carpeta si no deseas mantenerlos.
 
 ## Uso
 
-Acerca el ratón a la pestaña del borde superior y haz clic, o pulsa
-`Ctrl+Espacio`. El robot aparece y se abre la barra de comandos.
+Acerca el ratón a la isla del borde superior y haz clic, o pulsa
+`Ctrl+Espacio`, para abrir la barra de comandos. Si está activado *Bajar al
+abrir la barra* (en Ajustes → General), la mascota baja de la isla mientras la
+barra está abierta.
 
-Sin prefijo, el texto se busca en Google y se sugieren las aplicaciones que
-coinciden. Con un prefijo seguido de un espacio se usa un comando concreto:
+Sin prefijo, el texto se busca en Google y se sugieren las aplicaciones, los
+atajos y las acciones que coinciden. Con un prefijo seguido de un espacio se usa
+un comando concreto:
 
 | Prefijo                     | Función            | Ejemplo                                                    |
 | --------------------------- | ------------------ | ---------------------------------------------------------- |
 | `g`                         | Google             | `g receta de croquetas`                                    |
 | `a`, `abrir`, `app`, `open` | Apps y favoritos   | `a calculadora` · sin texto: favoritos                     |
+| `atajo`, `atajos`           | Atajos propios     | `atajo` lista los tuyos · sin prefijo: escribe su nombre   |
+| `pc`, `sistema`             | Control del PC     | `bloquear` · `apagar` · `modo oscuro` (sin prefijo también) |
+| `volumen`, `vol`            | Barra de volumen   | `volumen` abre la barra de volumen en la isla              |
+| `>`, `term`, `terminal`     | Terminal           | `> ipconfig` · elige la terminal                           |
+| `cerrar`, `kill`, `proc`    | Cerrar programas   | `cerrar chrome` · `Supr` lo fuerza                         |
 | `yt`                        | YouTube            | `yt lofi para estudiar`                                    |
 | `maps`, `map`               | Google Maps        | `maps farmacia de guardia`                                 |
 | `gh`                        | GitHub             | `gh electron/electron`                                     |
@@ -116,13 +134,56 @@ programan para el día siguiente.
 | --------------------------- | ------------------------------------------------------- |
 | `↑` `↓` `RePág` `AvPág`     | Seleccionar fila                                        |
 | `Intro`                     | Ejecutar la fila seleccionada                           |
-| `Supr`                      | Borrar nota, cancelar recordatorio, quitar favorito o quitar de las más usadas |
+| `Supr`                      | Borrar nota, cancelar recordatorio, quitar favorito, forzar el cierre de un programa o quitar de las más usadas |
 | `Tab`                       | Fijar el comando de la fila seleccionada                |
 | `Retroceso`                 | Con el campo vacío, quitar el comando fijado            |
 | `Ctrl+N`                    | En el chat, empezar una conversación nueva              |
 | `Esc`                       | Cerrar la barra o detener la respuesta de la IA         |
 
 ## Funciones
+
+### La isla
+
+- **Música:** muestra lo que suena en Spotify, el navegador u otras apps, con
+  carátula, botones de anterior, pausa y siguiente, y una barra con el tiempo.
+  Si la app lo permite, al tocar la barra salta a ese punto.
+- **Volumen:** escribe `volumen` y la isla se convierte en una barra que se
+  arrastra o se mueve con la rueda del ratón; el altavoz silencia.
+- **Batería:** a su lado aparece la batería mientras carga o cuando queda poca,
+  con avisos al enchufar el cargador y al bajar del 20 % y del 10 %.
+- **Avisos:** los recordatorios, el Pomodoro y las actualizaciones aparecen
+  dentro de la isla, que se agranda con sus botones. Si la isla está oculta, se
+  muestran como notificaciones de Windows.
+
+![La barra de volumen en la isla](docs/img/isla-volumen.png)
+
+### Atajos propios
+
+En *Ajustes → Atajos* creas un nombre que abre varias cosas a la vez: apps (con
+buscador), webs y carpetas o archivos, hasta ocho por atajo. Después basta con
+escribir su nombre en la barra y pulsar `Intro`.
+
+![La sección de atajos de los ajustes](docs/img/atajos.png)
+
+### Control del PC
+
+Sin prefijo o con `pc`:
+
+- `bloquear` y `suspender`, al momento.
+- `apagar` y `reiniciar`, con 30 segundos para cancelarlo desde la isla.
+- `volumen`, que abre la barra de volumen de la isla.
+- `modo oscuro` y `modo claro` de Windows.
+
+### Terminal y programas
+
+- `> comando` ejecuta lo escrito en la terminal que elijas: Windows Terminal,
+  PowerShell 7, Windows PowerShell, Símbolo del sistema o Git Bash. La ventana
+  se queda abierta para ver el resultado y la última terminal usada aparece la
+  primera. Al escribir cualquier cosa en la barra también aparece la opción
+  *Ejecutar en la terminal*.
+- `cerrar <programa>` lista los programas abiertos de más a menos memoria.
+  `Intro` lo cierra como el botón ✕ (puede preguntar si guardas) y `Supr` lo
+  fuerza. Los procesos del sistema y la propia Mascota no se muestran.
 
 ### IA local
 
@@ -161,8 +222,8 @@ elaborado y puede marcar algún enlace legítimo.
 
 ### Portapapeles inteligente
 
-Al copiar un texto, el robot ofrece buscarlo, traducirlo, guardarlo como nota o,
-con la IA disponible, resumirlo o explicarlo. No ofrece nada cuando:
+Al copiar un texto, la mascota ofrece buscarlo, traducirlo, guardarlo como nota
+o, con la IA disponible, resumirlo o explicarlo. No ofrece nada cuando:
 
 - la aplicación de origen lo marca como privado (gestores de contraseñas como
   Bitwarden, 1Password o KeePass);
@@ -175,27 +236,32 @@ como nota.
 
 ### Personalización
 
-Desde *Ajustes* (bandeja, clic derecho sobre el robot o `ajustes` en la barra):
+![La ventana de ajustes](docs/img/ajustes.png)
 
-- **Color:** Clásico, Medianoche, Menta, Coral, Lavanda y Grafito.
-- **Accesorios:** uno por zona del robot (cabeza, cara, manos, espalda,
-  orejas, cuello y encima de la cabeza). Incluye gorros, gafas, auriculares y
-  una serie de objetos temáticos de videojuegos, anime y terror.
-- **Nombre** del robot, que también usa la IA.
-- **Nivel de conversación:** *discreto* (solo avisos importantes), *normal* o
-  *hablador* (saludos, ánimos y recordatorios de descanso).
-- **Tono de la IA:** cercano, formal o divertido.
-- **Modo de pantalla:** escondido en la pestaña superior (por defecto) o el
-  robot siempre visible, que se puede arrastrar a cualquier posición.
+Desde *Ajustes* (bandeja, clic derecho sobre la isla o `ajustes` en la barra):
+
+- **Forma:** robot, gato, perro, conejo, oso, panda, zorro, pingüino, rana,
+  dragón, fantasma, slime, caballero o alien. Todas se animan igual y llevan
+  cualquier accesorio; los personajes son genéricos, sin copiar ninguno
+  existente.
+- **Color:** dieciséis combinaciones, con color propio opcional para los ojos y
+  los accesorios.
+- **Accesorios:** uno por zona (cabeza, cara, boca, orejas, cuello, cuerpo,
+  manos, espalda y encima), con vista ampliada de cada zona. Incluye gorros,
+  gafas, auriculares y objetos temáticos de videojuegos, anime y terror.
+- **Ojos:** normales, redondos, finos, corazones o estrellas.
+- **Personalidad:** nombre, cuánto habla (*discreto*, *normal* o *hablador*) y
+  tono de la IA (cercano, formal o divertido).
+- **Barra y ventanas:** tema claro, oscuro o el del sistema y color de acento.
 
 ### Otras funciones
 
-- **Favoritos:** arrastra un archivo, una carpeta o un acceso directo sobre el
-  robot para añadirlo. Se abren con `a <nombre>`.
-- **Avisos:** los recordatorios y las fases del Pomodoro se muestran en un
-  bocadillo junto al robot, o como notificación de Windows si está oculto.
-- **Bandeja del sistema:** mostrar u ocultar, cambiar el atajo, activar o
-  desactivar funciones e iniciar con Windows.
+- **Soltar archivos en la isla:** arrastra un archivo, una carpeta o un acceso
+  directo sobre la isla para añadirlo a favoritos (se abren con `a <nombre>`),
+  preguntarle a una IA por él, comprimirlo o copiar su ruta.
+- **Bandeja del sistema:** mostrar u ocultar la mascota, elegir si baja al
+  abrir la barra, cambiar el atajo, activar o desactivar funciones e iniciar
+  con Windows.
 - **Atajo personalizado:** además de los predefinidos de la bandeja, admite
   cualquier [acelerador de Electron](https://www.electronjs.org/docs/latest/api/accelerator)
   en el campo `shortcut` de `%APPDATA%\mascota\config.json`.
@@ -203,9 +269,14 @@ Desde *Ajustes* (bandeja, clic derecho sobre el robot o `ajustes` en la barra):
 ## Privacidad y datos
 
 Todos los datos se guardan en local, en `%APPDATA%\mascota`: configuración,
-notas, recordatorios, favoritos y la caché de iconos. La aplicación no envía
-telemetría. Las únicas conexiones a internet son las que abres tú (búsquedas y
-enlaces) y la consulta al acortador al revisar un enlace acortado.
+notas, recordatorios, favoritos, atajos y la caché de iconos. La aplicación no
+envía telemetría. Las únicas conexiones a internet son las que abres tú
+(búsquedas y enlaces), la consulta al acortador al revisar un enlace acortado y
+la comprobación de versiones nuevas en GitHub.
+
+Para poder diagnosticar fallos, Mascota guarda un registro de lo que hace la
+propia aplicación en `%APPDATA%\mascota\logs\mascota.log`. No incluye nada de
+lo que escribes ni de lo que copias.
 
 Los detalles de seguridad (aislamiento de las páginas, validación de URL e IPC,
 límites de la IA) están en [docs/arquitectura.md](docs/arquitectura.md#seguridad).
@@ -238,6 +309,8 @@ Notas:
 - Desde WSL, ejecuta los comandos en PowerShell o cmd: Electron debe ser el de
   Windows para que funcionen la transparencia y la bandeja del sistema.
 - La versión instalada y `npm run dev` no pueden ejecutarse a la vez.
+- Con la variable `MASCOTA_LAG=1`, el registro apunta cuándo se bloquea el
+  proceso principal (útil para buscar tirones).
 
 La estructura del código, cómo añadir comandos, los tests de integración y las
 decisiones de diseño están documentados en
